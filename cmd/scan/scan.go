@@ -1,6 +1,8 @@
 /*
 Copyright © 2024 Antonino Adornetto
-*/package scan
+*/
+
+package scan
 
 import (
 	"github.com/spf13/cobra"
