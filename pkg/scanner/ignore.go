@@ -16,7 +16,7 @@ type IgnoreFileOpener interface {
 }
 
 /*
-Takes a path (`gitIgnorePath`) and a file opener (`fr`) as input and returns a slice of compiled regular expressions -
+Takes a path (`gitIgnorePath`) and a file opener (`fo`) as input and returns a slice of compiled regular expressions -
 that represent the patterns found in the .gitignore file.
 
 The file opener is an interface that allows the caller to provide a custom implementation for opening files.
