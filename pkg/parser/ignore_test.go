@@ -1,4 +1,4 @@
-package scanner_test
+package parser_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scanner"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,7 +53,7 @@ func TestProcessIgnorePatterns(t *testing.T) {
 
 	mockIgnoreFileOpener := MockIgnoreFileOpener{File: tempFile}
 
-	regexpPatterns, err := scanner.ProcessIgnorePatterns(
+	regexpPatterns, err := parser.ProcessIgnorePatterns(
 		tempFile.Name(),
 		mockIgnoreFileOpener,
 	)
