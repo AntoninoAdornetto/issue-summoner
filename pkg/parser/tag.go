@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -11,6 +12,7 @@ type Tag struct {
 	TagName     string
 	LineNum     uint64
 	FileInfo    os.FileInfo
+	FileExt     string
 	IsProcessed bool
 }
 
@@ -19,7 +21,7 @@ type TagOpener interface {
 }
 
 type TagParser interface {
-	FindTags(path string, re regexp.Regexp) ([]Tag, error)
+	FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error)
 }
 
 func FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error) {
@@ -45,6 +47,7 @@ func FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error) {
 			tags = append(tags, Tag{
 				LineNum:  lineNum + 1,
 				FileInfo: fileInfo,
+				FileExt:  filepath.Ext(fileInfo.Name()),
 			})
 		}
 		lineNum++
