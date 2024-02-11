@@ -1,67 +1,71 @@
 package tag
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 )
 
 type Tag struct {
-	TagName     string
-	LineNum     uint64
-	FileInfo    os.FileInfo
-	FileExt     string
-	IsProcessed bool
+	LineNum  uint64
+	FileInfo os.FileInfo
 }
 
-type TagOpener interface {
-	Open(fileName string) (*os.File, error)
+type TagManager struct {
+	TagName string
+	Mode    string
 }
 
-type TagParser interface {
-	FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error)
+type PendedTagManager struct {
+	TagManager
 }
 
-func FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error) {
+type PendedTagParser interface {
+	FindTags(path string) ([]Tag, error)
+}
+
+type IssuedTagManager struct {
+	TagManager
+}
+
+type IssuedTagParser interface {
+	FindTags(path string) ([]Tag, error)
+	CompileSingleLineComment() regexp.Regexp // @TODO - Implement
+}
+
+const (
+	IssueMode   string = "I"
+	PendingMode string = "P"
+)
+
+func (tm *TagManager) ValidateMode(mode string) error {
+	switch mode {
+	case IssueMode, PendingMode:
+		return nil
+	default:
+		return fmt.Errorf(
+			"Error: mode %s is invalid\nI (Issue Mode) & P (Pending Mode) are the available options",
+			mode,
+		)
+	}
+}
+
+/*
+@TODO - Implement
+PendedTagManagers `FindTags` method will search for tags that have not been reported to a source code manager. The function will account for both
+single line & multi line comment syntax.
+*/
+func (pm *PendedTagManager) FindTags(path string) ([]Tag, error) {
 	tags := make([]Tag, 0)
-
-	file, err := fo.Open(path)
-	if err != nil {
-		return tags, err
-	}
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return tags, err
-	}
-
-	fmt.Printf("Processing file: %s\n", fileInfo.Name())
-
-	defer file.Close()
-
-	lineNum := uint64(0)
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		if re.Match(scanner.Bytes()) {
-			tags = append(tags, Tag{
-				LineNum:  lineNum + 1,
-				FileInfo: fileInfo,
-				FileExt:  filepath.Ext(fileInfo.Name()),
-			})
-		}
-		lineNum++
-	}
-
-	if err := scanner.Err(); err != nil {
-		return tags, err
-	}
-
 	return tags, nil
 }
 
-func CompileTagRegexp(tagName string) regexp.Regexp {
-	return *regexp.MustCompile(fmt.Sprintf("^(.*)%s(.*)$", tagName))
+/*
+@TODO - Implement
+IssuedTagManager `FindTags` method will search for tags that have been reported to a source code manager. The function will account for both
+single line & multi line comment syntax.
+*/
+func (im *IssuedTagManager) FindTags(path string) ([]Tag, error) {
+	tags := make([]Tag, 0)
+	return tags, nil
 }
