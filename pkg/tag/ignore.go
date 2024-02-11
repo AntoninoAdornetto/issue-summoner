@@ -1,4 +1,4 @@
-package parser
+package tag
 
 import (
 	"bufio"
@@ -19,7 +19,7 @@ type IgnoreFileOpener interface {
 Takes a path (`gitIgnorePath`) and a file opener (`fo`) as input and returns a slice of compiled regular expressions -
 that represent the patterns found in the .gitignore file.
 
-The file opener is an interface that allows the caller to provide a custom implementation for opening files.
+The file opener is an interface that allows the caller to provide a custom implementation for opening files. see `utils/os_file_opener.go`
 
 The function reads the .gitignore file line by line and compiles each line into a regular expression. Empty lines and
 comments (`#`) are ignored.

@@ -1,4 +1,4 @@
-package parser
+package tag
 
 import (
 	"bufio"
@@ -36,6 +36,8 @@ func FindTags(path string, re regexp.Regexp, fo TagOpener) ([]Tag, error) {
 	if err != nil {
 		return tags, err
 	}
+
+	fmt.Printf("Processing file: %s\n", fileInfo.Name())
 
 	defer file.Close()
 

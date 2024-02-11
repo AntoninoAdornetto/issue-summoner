@@ -1,4 +1,4 @@
-package parser_test
+package tag_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/parser"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
 	"github.com/stretchr/testify/require"
 )
 
@@ -53,7 +53,7 @@ func TestProcessIgnorePatterns(t *testing.T) {
 
 	mockIgnoreFileOpener := MockIgnoreFileOpener{File: tempFile}
 
-	regexpPatterns, err := parser.ProcessIgnorePatterns(
+	regexpPatterns, err := tag.ProcessIgnorePatterns(
 		tempFile.Name(),
 		mockIgnoreFileOpener,
 	)

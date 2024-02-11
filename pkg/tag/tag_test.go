@@ -1,11 +1,11 @@
-package parser_test
+package tag_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/parser"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,9 +33,9 @@ func TestFindTags(t *testing.T) {
 
 	mockIgnoreFileOpener := MockIgnoreFileOpener{File: file}
 
-	tags, err := parser.FindTags(
+	tags, err := tag.FindTags(
 		file.Name(),
-		parser.CompileTagRegexp("@TODO"),
+		tag.CompileTagRegexp("@TODO"),
 		mockIgnoreFileOpener,
 	)
 
