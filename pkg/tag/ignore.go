@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+const (
+	GitIgnoreFile string = ".gitignore"
+)
+
 type (
 	GitIgnorePattern = []regexp.Regexp
 )
