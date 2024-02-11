@@ -2,6 +2,7 @@ package tag
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -29,7 +30,11 @@ func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnore
 
 	file, err := fo.Open(gitIgnorePath)
 	if err != nil {
-		return patterns, nil
+		return patterns, fmt.Errorf(
+			"Error: failed to open git ignore file at path: %s. %w",
+			gitIgnorePath,
+			err,
+		)
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -44,7 +49,7 @@ func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnore
 	}
 
 	if err := scanner.Err(); err != nil {
-		return patterns, err
+		return patterns, fmt.Errorf("Error: failed to scan gitignore file. %w", err)
 	}
 
 	file.Close()
