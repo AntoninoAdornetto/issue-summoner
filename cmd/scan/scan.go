@@ -9,6 +9,7 @@ package scan
 
 import (
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -21,6 +22,10 @@ type ScanManager struct{}
 
 func (ScanManager) Open(fileName string) (*os.File, error) {
 	return os.Open(fileName)
+}
+
+func (ScanManager) WalkDir(root string, fn fs.WalkDirFunc) error {
+	return filepath.WalkDir(root, fn)
 }
 
 var ScanCmd = &cobra.Command{
@@ -43,6 +48,11 @@ var ScanCmd = &cobra.Command{
 			log.Fatalf("Failed to read 'mode' flag\n%s", err)
 		}
 
+		tagName, err := cmd.Flags().GetString("tag")
+		if err != nil {
+			log.Fatalf("Failed to read 'tag' flag\n%s", err)
+		}
+
 		if path == "" {
 			wd, err := os.Getwd()
 			if err != nil {
@@ -61,9 +71,31 @@ var ScanCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Println("mode: ", mode)
-		for _, p := range ignorePatterns {
-			fmt.Printf("Ignore Pattern: %s\n", p.String())
+		tagManager := tag.TagManager{
+			TagName: tagName,
+			Mode:    mode,
+		}
+
+		if err := tagManager.ValidateMode(mode); err != nil {
+			log.Fatalf("Unsupported mode %s provided\n%s", mode, err)
+		}
+
+		if mode == tag.PendingMode {
+			pendingTagManager := tag.PendedTagManager{TagManager: tagManager}
+			tags, err := tag.Walk(tag.WalkParams{
+				Root:           path,
+				TagManager:     &pendingTagManager,
+				FileOperator:   scanManager,
+				IgnorePatterns: ignorePatterns,
+			})
+
+			if err != nil {
+				log.Fatalf("Failed to scan your project.\n%s", err)
+			}
+
+			for _, t := range tags {
+				fmt.Printf("Tag Located in %s on Line number: %d\n", t.FileInfo.Name(), t.LineNum)
+			}
 		}
 	},
 }

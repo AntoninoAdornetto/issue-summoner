@@ -1,16 +1,16 @@
 package tag
 
 import (
-	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 type WalkTagManager interface {
-	FindTags(path string) ([]Tag, error)
+	FindTags(path string, fileOperator TagFileOperator) ([]Tag, error)
+	CompileSingleLineComment(fileInfo fs.FileInfo) regexp.Regexp
 }
 
 type WalkFileOperator interface {
@@ -18,18 +18,22 @@ type WalkFileOperator interface {
 	WalkDir(root string, fn fs.WalkDirFunc) error
 }
 
-func Walk(root string, tm WalkTagManager, wo WalkFileOperator) ([]Tag, error) {
-	tags := make([]Tag, 0)
-	ignorePatterns, err := ProcessIgnorePatterns(filepath.Join(root, GitIgnoreFile), wo)
-	if err != nil {
-		log.Fatal(err)
-	}
+type WalkParams struct {
+	Root           string
+	TagManager     WalkTagManager
+	FileOperator   WalkFileOperator
+	IgnorePatterns []GitIgnorePattern
+}
 
-	err = wo.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-		isGitDir := strings.Contains(d.Name(), ".git")
-		isValidPath := validatePath(fmt.Sprintf("%s/", path), &ignorePatterns)
+func Walk(arg WalkParams) ([]Tag, error) {
+	tags := make([]Tag, 0)
+
+	err := arg.FileOperator.WalkDir(arg.Root, func(path string, d fs.DirEntry, err error) error {
+		isValidPath := validatePath(path, arg.IgnorePatterns)
 
 		if d.IsDir() {
+			isGitDir := strings.Contains(d.Name(), ".git")
+
 			if isGitDir || !isValidPath {
 				return filepath.SkipDir
 			}
@@ -40,7 +44,7 @@ func Walk(root string, tm WalkTagManager, wo WalkFileOperator) ([]Tag, error) {
 			return nil
 		}
 
-		foundTags, err := tm.FindTags(path)
+		foundTags, err := arg.TagManager.FindTags(path, arg.FileOperator)
 		if err != nil {
 			return err
 		}
@@ -49,11 +53,12 @@ func Walk(root string, tm WalkTagManager, wo WalkFileOperator) ([]Tag, error) {
 
 		return err
 	})
-	return tags, nil
+
+	return tags, err
 }
 
-func validatePath(path string, ignorePatterns *GitIgnorePattern) bool {
-	for _, v := range *ignorePatterns {
+func validatePath(path string, ignorePatterns []GitIgnorePattern) bool {
+	for _, v := range ignorePatterns {
 		matched := v.Match([]byte(path))
 		if matched {
 			return false
