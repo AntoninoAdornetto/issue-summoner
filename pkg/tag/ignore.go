@@ -13,7 +13,7 @@ const (
 )
 
 type (
-	GitIgnorePattern = []regexp.Regexp
+	GitIgnorePattern = regexp.Regexp
 )
 
 type IgnoreFileOpener interface {
@@ -29,8 +29,8 @@ The file opener is an interface that allows the caller to provide a custom imple
 The function reads the .gitignore file line by line and compiles each line into a regular expression. Empty lines and
 comments (`#`) are ignored.
 */
-func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnorePattern, error) {
-	patterns := make(GitIgnorePattern, 0)
+func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) ([]GitIgnorePattern, error) {
+	patterns := make([]GitIgnorePattern, 0)
 
 	file, err := fo.Open(gitIgnorePath)
 	if err != nil {
@@ -67,7 +67,7 @@ func formatIgnore(pattern string) string {
 	res := strings.Builder{}
 
 	if strings.HasPrefix(pattern, "/") {
-		res.WriteString("^\\")
+		res.WriteString("\\")
 	}
 
 	for _, v := range pattern {
