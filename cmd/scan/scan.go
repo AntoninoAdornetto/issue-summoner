@@ -38,6 +38,11 @@ var ScanCmd = &cobra.Command{
 			log.Fatalf("Failed to read 'gitignorePath' flag\n%s", err)
 		}
 
+		mode, err := cmd.Flags().GetString("mode")
+		if err != nil {
+			log.Fatalf("Failed to read 'mode' flag\n%s", err)
+		}
+
 		if path == "" {
 			wd, err := os.Getwd()
 			if err != nil {
@@ -56,6 +61,7 @@ var ScanCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
+		fmt.Println("mode: ", mode)
 		for _, p := range ignorePatterns {
 			fmt.Printf("Ignore Pattern: %s\n", p.String())
 		}
