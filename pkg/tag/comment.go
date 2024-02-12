@@ -5,6 +5,7 @@ information about a `Tag` from a given file.
 */
 package tag
 
+// @TODO - Create a map to allow for easy lookup of comment syntax based on file extension.
 const (
 	FileExtAsm        = ".asm"
 	FileExtBash       = ".sh"
