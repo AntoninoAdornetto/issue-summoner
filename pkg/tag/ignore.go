@@ -35,7 +35,7 @@ func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnore
 	file, err := fo.Open(gitIgnorePath)
 	if err != nil {
 		return patterns, fmt.Errorf(
-			"Error: failed to open git ignore file at path: %s. %w",
+			"Error: failed to open git ignore file path: (%s)\n%w",
 			gitIgnorePath,
 			err,
 		)
