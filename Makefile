@@ -9,7 +9,7 @@ test:
 	go test -v ./...
 
 coverage:
-	go clean -testcache && go test -v -cover ./...
+	go clean -testcache && go test -coverprofile=coverage/coverage.out ./... && go tool cover -html=coverage/coverage.out -o=coverage/coverage.html
 
 
 .PHONY: clean build run test coverage
