@@ -85,7 +85,7 @@ func (pm *PendedTagManager) FindTags(path string, fileOperator TagFileOperator) 
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
-		singleLine := pm.CompileSingleLineComment(fileInfo)
+		singleLine := pm.CompileSingleLineComment()
 
 		if singleLine.Match(scanner.Bytes()) {
 			tags = append(tags, Tag{
@@ -103,7 +103,7 @@ func (pm *PendedTagManager) FindTags(path string, fileOperator TagFileOperator) 
 	return tags, nil
 }
 
-func (pm *PendedTagManager) CompileSingleLineComment(fileInfo fs.FileInfo) regexp.Regexp {
+func (pm *PendedTagManager) CompileSingleLineComment() regexp.Regexp {
 	// @TODO - Utilize the constants in comment.go to properly build an expression based on the file extension
 	return *regexp.MustCompile(fmt.Sprintf("^//(.*)%s(.*)$", pm.TagName))
 }

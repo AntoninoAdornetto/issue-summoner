@@ -10,7 +10,7 @@ import (
 
 type WalkTagManager interface {
 	FindTags(path string, fileOperator TagFileOperator) ([]Tag, error)
-	CompileSingleLineComment(fileInfo fs.FileInfo) regexp.Regexp
+	CompileSingleLineComment() regexp.Regexp
 }
 
 type WalkFileOperator interface {
