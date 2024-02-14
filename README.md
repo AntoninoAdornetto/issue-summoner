@@ -20,4 +20,4 @@ Scan source code files for actionable comments marked by user-defined tag annota
 
 ## Phase 3
 
-- `Advanced Tagging`: Expand the scanning engine to account for **reported** tag annotations and clean up source code files by removing the annotation and surround comments if the issue has been resolved.
+- `Advanced Tagging`: Expand the scanning engine to account for **reported** tag annotations and clean up source code files by removing the annotation and surrounding comments if the issue has been resolved.
