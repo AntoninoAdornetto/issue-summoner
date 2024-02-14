@@ -1,4 +1,4 @@
-package parser_test
+package tag_test
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/parser"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,11 +20,11 @@ func (m MockIgnoreFileOpener) Open(fileName string) (*os.File, error) {
 }
 
 func TestProcessIgnorePatterns(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "*.gitignore")
+	file, err := os.CreateTemp("", "*.gitignore")
 	require.NoError(t, err)
 
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer os.Remove(file.Name())
+	defer file.Close()
 
 	// Some example patterns that we can find in a .gitignore file
 	patterns := []string{
@@ -39,22 +39,22 @@ func TestProcessIgnorePatterns(t *testing.T) {
 	expectedLength := 4
 
 	expectedRegexpPatterns := []regexp.Regexp{
-		*regexp.MustCompile("^\\/tmp"),
+		*regexp.MustCompile("\\/tmp"),
 		*regexp.MustCompile(".pnp.js"),
 		*regexp.MustCompile(".*\\.log"),
 		*regexp.MustCompile("src/old-impl/test/"),
 	}
 
-	_, err = tempFile.WriteString(strings.Join(patterns, "\n"))
+	_, err = file.WriteString(strings.Join(patterns, "\n"))
 	require.NoError(t, err)
 
-	_, err = tempFile.Seek(0, 0)
+	_, err = file.Seek(0, 0)
 	require.NoError(t, err)
 
-	mockIgnoreFileOpener := MockIgnoreFileOpener{File: tempFile}
+	mockIgnoreFileOpener := MockIgnoreFileOpener{File: file}
 
-	regexpPatterns, err := parser.ProcessIgnorePatterns(
-		tempFile.Name(),
+	regexpPatterns, err := tag.ProcessIgnorePatterns(
+		file.Name(),
 		mockIgnoreFileOpener,
 	)
 

@@ -1,14 +1,19 @@
-package parser
+package tag
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
 )
 
+const (
+	GitIgnoreFile string = ".gitignore"
+)
+
 type (
-	GitIgnorePattern = []regexp.Regexp
+	GitIgnorePattern = regexp.Regexp
 )
 
 type IgnoreFileOpener interface {
@@ -19,17 +24,21 @@ type IgnoreFileOpener interface {
 Takes a path (`gitIgnorePath`) and a file opener (`fo`) as input and returns a slice of compiled regular expressions -
 that represent the patterns found in the .gitignore file.
 
-The file opener is an interface that allows the caller to provide a custom implementation for opening files.
+The file opener is an interface that allows the caller to provide a custom implementation for opening files. see `utils/os_file_opener.go`
 
 The function reads the .gitignore file line by line and compiles each line into a regular expression. Empty lines and
 comments (`#`) are ignored.
 */
-func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnorePattern, error) {
-	patterns := make(GitIgnorePattern, 0)
+func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) ([]GitIgnorePattern, error) {
+	patterns := make([]GitIgnorePattern, 0)
 
 	file, err := fo.Open(gitIgnorePath)
 	if err != nil {
-		return patterns, nil
+		return patterns, fmt.Errorf(
+			"Error: failed to open git ignore file path: (%s)\n%w",
+			gitIgnorePath,
+			err,
+		)
 	}
 
 	scanner := bufio.NewScanner(file)
@@ -44,7 +53,7 @@ func ProcessIgnorePatterns(gitIgnorePath string, fo IgnoreFileOpener) (GitIgnore
 	}
 
 	if err := scanner.Err(); err != nil {
-		return patterns, err
+		return patterns, fmt.Errorf("Error: failed to scan gitignore file. %w", err)
 	}
 
 	file.Close()
@@ -58,7 +67,7 @@ func formatIgnore(pattern string) string {
 	res := strings.Builder{}
 
 	if strings.HasPrefix(pattern, "/") {
-		res.WriteString("^\\")
+		res.WriteString("\\")
 	}
 
 	for _, v := range pattern {
