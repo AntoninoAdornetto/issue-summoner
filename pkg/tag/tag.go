@@ -105,7 +105,8 @@ func (pm *PendedTagManager) FindTags(path string, fileOperator TagFileOperator) 
 
 func (pm *PendedTagManager) CompileSingleLineComment() regexp.Regexp {
 	// @TODO - Utilize the constants in comment.go to properly build an expression based on the file extension
-	return *regexp.MustCompile(fmt.Sprintf("^//(.*)%s(.*)$", pm.TagName))
+	// This currently only works for C-style comments
+	return *regexp.MustCompile(fmt.Sprintf(`(.*?)(//)(\s+)(%s)`, pm.TagName))
 }
 
 /*
