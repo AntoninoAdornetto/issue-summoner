@@ -3,14 +3,15 @@ package tag
 import (
 	"bufio"
 	"fmt"
-	"io/fs"
 	"os"
-	"regexp"
+	"path/filepath"
+	"strings"
 )
 
 type Tag struct {
-	LineNum  uint64
-	FileInfo os.FileInfo
+	LineNumber  uint64
+	Description string
+	FileInfo    os.FileInfo
 }
 
 type TagManager struct {
@@ -23,21 +24,11 @@ type PendedTagManager struct {
 }
 
 type PendedTagParser interface {
-	FindTags(path string, fileOperator TagFileOperator) ([]Tag, error)
-	CompileSingleLineComment(fileInfo fs.FileInfo) regexp.Regexp
+	ScanForTags(ScanForTagsParams) ([]Tag, error)
 }
 
 type IssuedTagManager struct {
 	TagManager
-}
-
-// type IssuedTagParser interface {
-// 	FindTags(path string, fileOperator TagFileOperator) ([]Tag, error)
-// 	CompileSingleLineComment(fileInfo fs.FileInfo) regexp.Regexp // @TODO - Implement
-// }
-
-type TagFileOperator interface {
-	Open(fileName string) (*os.File, error)
 }
 
 const (
@@ -57,64 +48,48 @@ func (tm *TagManager) ValidateMode(mode string) error {
 	}
 }
 
-/*
-@TODO - Implement
-PendedTagManagers `FindTags` method will search for tags that have not been reported to a source code manager. The function will account for both
-single line & multi line comment syntax.
-*/
-func (pm *PendedTagManager) FindTags(path string, fileOperator TagFileOperator) ([]Tag, error) {
+type ScanForTagsParams struct {
+	Path     string
+	File     *os.File
+	FileInfo os.FileInfo
+}
+
+func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error) {
 	tags := make([]Tag, 0)
-
-	file, err := fileOperator.Open(path)
-	if err != nil {
-		return tags, fmt.Errorf("Error: failed to open file %s\n%s", path, err)
-	}
-
-	defer file.Close()
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return tags, fmt.Errorf(
-			"Error: failed to get file information for %s\n%s",
-			file.Name(),
-			err,
-		)
-	}
-
 	lineNum := uint64(0)
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(detail.File)
+	fileExtension := filepath.Ext(detail.File.Name())
 
 	for scanner.Scan() {
-		singleLine := pm.CompileSingleLineComment()
-
-		if singleLine.Match(scanner.Bytes()) {
+		tagDescription := extractAnnotationDetails(scanner, fileExtension, pm.TagName)
+		if tagDescription != "" {
 			tags = append(tags, Tag{
-				LineNum:  lineNum + 1,
-				FileInfo: fileInfo,
+				LineNumber:  lineNum + 1,
+				FileInfo:    detail.FileInfo,
+				Description: tagDescription,
 			})
 		}
 		lineNum++
 	}
 
 	if err := scanner.Err(); err != nil {
-		return tags, fmt.Errorf("Error: failed to scan file %s\n%s", file.Name(), err)
+		return nil, fmt.Errorf("error scanning file: %w", err)
 	}
 
 	return tags, nil
 }
 
-func (pm *PendedTagManager) CompileSingleLineComment() regexp.Regexp {
-	// @TODO - Utilize the constants in comment.go to properly build an expression based on the file extension
-	// This currently only works for C-style comments
-	return *regexp.MustCompile(fmt.Sprintf(`(.*?)(//)(\s+)(%s)`, pm.TagName))
-}
+func extractAnnotationDetails(scanner *bufio.Scanner, ext string, tag string) string {
+	builder := strings.Builder{}
+	text := scanner.Text()
+	trimmedText := strings.TrimSpace(text)
+	hasAnnotation := strings.Contains(trimmedText, tag)
+	commentSyntax := GetCommentSyntax(ext)
 
-/*
-@TODO - Implement
-IssuedTagManager `FindTags` method will search for tags that have been reported to a source code manager. The function will account for both
-single line & multi line comment syntax.
-*/
-// func (im *IssuedTagManager) FindTags(path string) ([]Tag, error) {
-// 	tags := make([]Tag, 0)
-// 	return tags, nil
-// }
+	if strings.HasPrefix(trimmedText, commentSyntax.SingleLineCommentSymbols) && hasAnnotation {
+		description := strings.Join(strings.SplitAfter(trimmedText, tag), "")
+		builder.WriteString(description)
+	}
+
+	return builder.String()
+}
