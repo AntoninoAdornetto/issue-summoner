@@ -4,13 +4,11 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
 type WalkTagManager interface {
-	FindTags(path string, fileOperator TagFileOperator) ([]Tag, error)
-	CompileSingleLineComment() regexp.Regexp
+	ScanForTags(ScanForTagsParams) ([]Tag, error)
 }
 
 type WalkFileOperator interface {
@@ -44,13 +42,28 @@ func Walk(arg WalkParams) ([]Tag, error) {
 			return nil
 		}
 
-		foundTags, err := arg.TagManager.FindTags(path, arg.FileOperator)
+		file, err := arg.FileOperator.Open(path)
+		if err != nil {
+			return err
+		}
+
+		fileInfo, err := d.Info()
+		if err != nil {
+			return err
+		}
+
+		foundTags, err := arg.TagManager.ScanForTags(ScanForTagsParams{
+			Path:     path,
+			File:     file,
+			FileInfo: fileInfo,
+		})
 		if err != nil {
 			return err
 		}
 
 		tags = append(tags, foundTags...)
 
+		err = file.Close()
 		return err
 	})
 

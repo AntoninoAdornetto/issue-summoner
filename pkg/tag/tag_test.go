@@ -8,39 +8,48 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFindPendingTags(t *testing.T) {
-	file, err := os.CreateTemp("", "*.gitignore")
+func TestFindPendingTags_SingleLineComment(t *testing.T) {
+	file, err := os.CreateTemp("", "*.go")
 	require.NoError(t, err)
 
 	defer os.Remove(file.Name())
 	defer file.Close()
 
-	// Line Number 9 is where the Tag is located
-	file.WriteString(`
+	// Will test more languages, starting with `Go` for now
+	_, err = file.WriteString(`
 		package main
 
 		import "fmt"
 
-		func main(){
+		func main() {
 			fmt.Printf("Hello World\n")
-			
+
 			// @TODO - Add Game Loop
 		}
 	`)
+	require.NoError(t, err)
+
+	err = file.Sync()
+	require.NoError(t, err)
 
 	_, err = file.Seek(0, 0)
+	require.NoError(t, err)
+
+	fileInfo, err := file.Stat()
 	require.NoError(t, err)
 
 	tagManager := tag.TagManager{
 		TagName: "@TODO",
 		Mode:    "P", // Pending
 	}
-
-	mockIgnoreFileOpener := MockIgnoreFileOpener{File: file}
 	pendedTagManager := tag.PendedTagManager{TagManager: tagManager}
 
-	pendedTags, err := pendedTagManager.FindTags(file.Name(), mockIgnoreFileOpener)
+	pendedTags, err := pendedTagManager.ScanForTags(tag.ScanForTagsParams{
+		Path:     file.Name(),
+		File:     file,
+		FileInfo: fileInfo,
+	})
 	require.NoError(t, err)
 	require.Len(t, pendedTags, 1)
-	require.Equal(t, uint64(9), pendedTags[0].LineNum)
+	require.Equal(t, uint64(9), pendedTags[0].LineNumber)
 }
