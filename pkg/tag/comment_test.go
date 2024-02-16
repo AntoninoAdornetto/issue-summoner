@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetCommentSyntax_CLanguages(t *testing.T) {
-	programmingLanguages := []string{
+	fileExtensions := []string{
 		".c",
 		".cpp",
 		".java",
@@ -26,8 +26,22 @@ func TestGetCommentSyntax_CLanguages(t *testing.T) {
 		".scala",
 	}
 
-	for _, lang := range programmingLanguages {
-		commentSyntax := tag.GetCommentSyntax(lang)
+	for _, ext := range fileExtensions {
+		commentSyntax := tag.GetCommentSyntax(ext)
 		require.Equal(t, tag.CommentSyntaxMap["c-derived"], commentSyntax)
+	}
+}
+
+func TestGetCommentSyntax_Default(t *testing.T) {
+	unrecognizedExtensions := []string{
+		".txt",
+		".gitignore",
+		"LICENSE",
+		"Makefile",
+	}
+
+	for _, ext := range unrecognizedExtensions {
+		commentSyntax := tag.GetCommentSyntax(ext)
+		require.Equal(t, tag.CommentSyntaxMap["default"], commentSyntax)
 	}
 }
