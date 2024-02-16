@@ -1,11 +1,57 @@
 /*
 This file contains the comment syntax for various programming languages and file extensions.
-The constants in this file are used alongside functions in the tag package to determine comment sytax and assist in parsing
-information about a `Tag` from a given file.
+The constants in this file are used to determine the comment syntax for a given file when parsing source code for tag annotations.
+This will help determine if the tag annotation is within a single line comment or a multi-line comment.
 */
 package tag
 
-// @TODO - Create a map to allow for easy lookup of comment syntax based on file extension.
+type LanguageCommentSyntax struct {
+	SingleLineCommentSymbols string
+	MultiLineCommentSymbols  MultiLineCommentSyntax
+}
+
+type MultiLineCommentSyntax struct {
+	CommentStartSymbol string
+	CommentEndSymbol   string
+}
+
+// @TODO - Increase programming language support. Python, Haskel, etc.
+var CommentSyntaxMap = map[string]LanguageCommentSyntax{
+	"c-derived": {
+		SingleLineCommentSymbols: CommentCSingle,
+		MultiLineCommentSymbols: MultiLineCommentSyntax{
+			CommentStartSymbol: CommentCMultiStart,
+			CommentEndSymbol:   CommentCMultiEnd,
+		},
+	},
+	"default": {
+		SingleLineCommentSymbols: "#",
+	},
+}
+
+func GetCommentSyntax(fileExtension string) LanguageCommentSyntax {
+	switch fileExtension {
+	case FileExtC,
+		FileExtCpp,
+		FileExtJava,
+		FileExtJavaScript,
+		FileExtJsx,
+		FileExtTypeScript,
+		FileExtTsx,
+		FileExtCS,
+		FileExtGo,
+		FileExtPhp,
+		FileExtSwift,
+		FileExtKotlin,
+		FileExtRust,
+		FileExtObjC,
+		FileExtScala:
+		return CommentSyntaxMap["c-derived"]
+	default:
+		return CommentSyntaxMap["default"]
+	}
+}
+
 const (
 	FileExtAsm        = ".asm"
 	FileExtBash       = ".sh"
@@ -19,6 +65,7 @@ const (
 	FileExtJai        = ".jai"
 	FileExtJava       = ".java"
 	FileExtJavaScript = ".js"
+	FileExtJsx        = ".jsx"
 	FileExtKotlin     = ".kt"
 	FileExtLisp       = ".lisp"
 	FileExtLua        = ".lua"
@@ -32,85 +79,22 @@ const (
 	FileExtScala      = ".scala"
 	FileExtSwift      = ".swift"
 	FileExtTypeScript = ".ts"
+	FileExtTsx        = ".tsx"
 	FileExtVim        = ".vim"
 	FileExtZig        = ".zig"
 )
 
 // Single Line comments
 const (
-	CommentAsmSingle        = ";"
-	CommentBashSingle       = "#"
-	CommentCppSingle        = "//"
-	CommentCSingle          = "//"
-	CommentCSSingle         = "//"
-	CommentGoSingle         = "//"
-	CommentHaskellSingle    = "--"
-	CommentJavaSingle       = "//"
-	CommentJaiSingle        = "//"
-	CommentJavaScriptSingle = "//"
-	CommentKotlinSingle     = "//"
-	CommentLispSingle       = ";"
-	CommentLuaSingle        = "--"
-	CommentObjCSingle       = "//"
-	CommentOcamlSingle      = "" // OCaml does not have a designated single-line comment syntax.
-	CommentPHPSingle        = "//"
-	CommentPythonSingle     = "#"
-	CommentRubySingle       = "#"
-	CommentRustSingle       = "//"
-	CommentRSingle          = "#"
-	CommentScalaSingle      = "//"
-	CommentSwiftSingle      = "//"
-	CommentTypeScriptSingle = "//"
-	CommentVimSingle        = "\""
-	CommentZigSingle        = "//"
+	CommentCSingle = "//"
 )
 
 // Multi-Line comments (start)
 const (
-	CommentCppMultiStart        = "/*"
-	CommentCMultiStart          = "/*"
-	CommentCSMultiStart         = "/*"
-	CommentGoMultiStart         = "/*"
-	CommentHaskellMultiStart    = "{-"
-	CommentHtmlMultiStart       = "<!--"
-	CommentJavaMultiStart       = "/*"
-	CommentJavaScriptMultiStart = "/*"
-	CommentKotlinMultiStart     = "/*"
-	CommentLispMultiStart       = "#|"
-	CommentLuaMultiStart        = "--[["
-	CommentObjCMultiStart       = "/*"
-	CommentOcamlMultiStart      = "(*"
-	CommentPhpMultiStart        = "/*"
-	CommentPythonMultiStart     = "'''"
-	CommentRubyMultiStart       = "=begin"
-	CommentRustMultiStart       = "/*"
-	CommentScalaMultiStart      = "/*"
-	CommentSwiftMultiStart      = "/*"
-	CommentTypeScriptMultiStart = "/*"
-	CommentZigMultiStart        = "/*"
+	CommentCMultiStart = "/*"
 )
 
 // Multi-Line comments (end)
 const (
-	CommentCppMultiEnd        = "*/"
-	CommentCMultiEnd          = "*/"
-	CommentCSMultiEnd         = "*/"
-	CommentGoMultiEnd         = "*/"
-	CommentHaskellMultiEnd    = "-}"
-	CommentHtmlMultiEnd       = "-->"
-	CommentJavaMultiEnd       = "*/"
-	CommentJavaScriptMultiEnd = "*/"
-	CommentKotlinMultiEnd     = "*/"
-	CommentLispMultiEnd       = "|#"
-	CommentLuaMultiEnd        = "--]]"
-	CommentObjCMultiEnd       = "*/"
-	CommentOcamlMultiEnd      = "*)"
-	CommentPhpMultiEnd        = "*/"
-	CommentPythonMultiEnd     = "'''"
-	CommentRubyMultiEnd       = "=end"
-	CommentRustMultiEnd       = "*/"
-	CommentScalaMultiEnd      = "*/"
-	CommentSwiftMultiEnd      = "*/"
-	CommentTypeScriptMultiEnd = "*/"
-	CommentZigMultiEnd        = "*/"
+	CommentCMultiEnd = "*/"
 )
