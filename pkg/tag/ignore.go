@@ -75,16 +75,13 @@ func formatIgnore(pattern string) string {
 		case '*':
 			res.WriteRune('.')
 			res.WriteRune('*')
-			break
 		case '.':
 			if strings.HasSuffix(res.String(), "*") {
 				res.WriteRune('\\')
 			}
 			res.WriteRune('.')
-			break
 		default:
 			res.WriteRune(v)
-			break
 		}
 	}
 
