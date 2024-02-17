@@ -13,7 +13,6 @@ type Tag struct {
 	StartLineNumber   uint64
 	EndLineNumber     uint64
 	AnnotationLineNum uint64
-	LineNumber        uint64
 	FileInfo          os.FileInfo
 }
 
@@ -67,9 +66,9 @@ func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error)
 		tagDescription := extractAnnotationDetails(scanner, fileExtension, pm.TagName)
 		if tagDescription != "" {
 			tags = append(tags, Tag{
-				LineNumber:  lineNum + 1,
-				FileInfo:    detail.FileInfo,
-				Description: tagDescription,
+				AnnotationLineNum: lineNum + 1,
+				FileInfo:          detail.FileInfo,
+				Description:       tagDescription,
 			})
 		}
 		lineNum++

@@ -97,7 +97,7 @@ var ScanCmd = &cobra.Command{
 				fmt.Printf(
 					"Tag Located in %s on Line number: %d. Description: %s\n",
 					t.FileInfo.Name(),
-					t.LineNumber,
+					t.AnnotationLineNum,
 					t.Description,
 				)
 			}

@@ -51,5 +51,5 @@ func TestFindPendingTags_SingleLineComment(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, pendedTags, 1)
-	require.Equal(t, uint64(9), pendedTags[0].LineNumber)
+	require.Equal(t, uint64(9), pendedTags[0].AnnotationLineNum)
 }
