@@ -39,9 +39,9 @@ func TestProcessIgnorePatterns(t *testing.T) {
 	expectedLength := 4
 
 	expectedRegexpPatterns := []regexp.Regexp{
-		*regexp.MustCompile("\\/tmp"),
+		*regexp.MustCompile(`\/tmp`),
 		*regexp.MustCompile(".pnp.js"),
-		*regexp.MustCompile(".*\\.log"),
+		*regexp.MustCompile(`.*\.log`),
 		*regexp.MustCompile("src/old-impl/test/"),
 	}
 
