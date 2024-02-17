@@ -57,7 +57,6 @@ type ScanForTagsParams struct {
 	FileInfo os.FileInfo
 }
 
-// @TODO - Action Annotation test for development
 func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error) {
 	tags := make([]Tag, 0)
 	lineNum := uint64(0)
