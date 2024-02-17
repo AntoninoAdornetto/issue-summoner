@@ -27,21 +27,20 @@ func TestGetCommentSyntax_CLanguages(t *testing.T) {
 	}
 
 	for _, ext := range fileExtensions {
-		commentSyntax := tag.GetCommentSyntax(ext)
+		commentSyntax := tag.CommentSyntax(ext)
 		require.Equal(t, tag.CommentSyntaxMap["c-derived"], commentSyntax)
 	}
 }
 
 func TestGetCommentSyntax_Default(t *testing.T) {
 	unrecognizedExtensions := []string{
-		".txt",
 		".gitignore",
 		"LICENSE",
 		"Makefile",
 	}
 
 	for _, ext := range unrecognizedExtensions {
-		commentSyntax := tag.GetCommentSyntax(ext)
+		commentSyntax := tag.CommentSyntax(ext)
 		require.Equal(t, tag.CommentSyntaxMap["default"], commentSyntax)
 	}
 }

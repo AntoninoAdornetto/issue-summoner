@@ -84,7 +84,7 @@ func extractAnnotationDetails(scanner *bufio.Scanner, ext string, tag string) st
 	text := scanner.Text()
 	trimmedText := strings.TrimSpace(text)
 	hasAnnotation := strings.Contains(trimmedText, tag)
-	commentSyntax := GetCommentSyntax(ext)
+	commentSyntax := CommentSyntax(ext)
 
 	if strings.HasPrefix(trimmedText, commentSyntax.SingleLineCommentSymbols) && hasAnnotation {
 		description := strings.Join(strings.SplitAfter(trimmedText, tag), "")
