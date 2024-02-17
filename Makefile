@@ -1,3 +1,6 @@
+all:
+	make clean build test
+
 clean:
 	rm -rf ./bin
 
@@ -12,4 +15,4 @@ coverage:
 	go clean -testcache && go test -coverprofile=coverage/coverage.out ./... && go tool cover -html=coverage/coverage.out -o=coverage/coverage.html
 
 
-.PHONY: clean build run test coverage
+.PHONY: all clean build test coverage
