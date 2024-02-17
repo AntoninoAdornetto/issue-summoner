@@ -9,9 +9,12 @@ import (
 )
 
 type Tag struct {
-	LineNumber  uint64
-	Description string
-	FileInfo    os.FileInfo
+	Description       string
+	StartLineNumber   uint64
+	EndLineNumber     uint64
+	AnnotationLineNum uint64
+	LineNumber        uint64
+	FileInfo          os.FileInfo
 }
 
 type TagManager struct {
