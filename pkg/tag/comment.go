@@ -27,6 +27,10 @@ var CommentSyntaxMap = map[string]CommentLangSyntax{
 	},
 	"default": {
 		SingleLineCommentSymbols: "#",
+		MultiLineCommentSymbols: MultiLineCommentSyntax{
+			CommentStartSymbol: "#",
+			CommentEndSymbol:   "#",
+		},
 	},
 }
 
