@@ -26,9 +26,7 @@ func TestScanForTags_SingleLineCommentEmpty(t *testing.T) {
 
 	ptm := tag.PendedTagManager{TagManager: tm}
 
-	tags, err := ptm.ScanForTags(
-		tag.ScanForTagsParams{Path: file.Name(), File: file, FileInfo: fileInfo},
-	)
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
 
 	require.NoError(t, err)
 	require.Empty(t, tags)
@@ -55,16 +53,15 @@ func TestScanForTags_SingleLineCommentOne(t *testing.T) {
 
 	ptm := tag.PendedTagManager{TagManager: tm}
 
-	tags, err := ptm.ScanForTags(
-		tag.ScanForTagsParams{Path: file.Name(), File: file, FileInfo: fileInfo},
-	)
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
 
 	tag := tags[0]
 
 	require.NoError(t, err)
 	require.Len(t, tags, 1)
 	require.Equal(t, tag.FileInfo, fileInfo)
-	require.Equal(t, tag.Description, "Add Game Loop")
+	require.Equal(t, tag.Title, "Add Game Loop")
+	require.Equal(t, tag.Description, "")
 	require.Equal(t, tag.StartLineNumber, uint64(6))
 	require.Equal(t, tag.EndLineNumber, uint64(6))
 	require.Equal(t, tag.AnnotationLineNum, uint64(6))
@@ -96,23 +93,23 @@ func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
 
 	ptm := tag.PendedTagManager{TagManager: tm}
 
-	tags, err := ptm.ScanForTags(
-		tag.ScanForTagsParams{Path: file.Name(), File: file, FileInfo: fileInfo},
-	)
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
 
 	expected := []tag.Tag{
 		{
 			AnnotationLineNum: uint64(6),
 			StartLineNumber:   uint64(6),
 			EndLineNumber:     uint64(7),
-			Description:       "Add feature X\nFeature X is ...",
+			Title:             "Add feature X",
+			Description:       "Feature X is ...",
 			FileInfo:          fileInfo,
 		},
 		{
 			AnnotationLineNum: uint64(10),
 			StartLineNumber:   uint64(10),
 			EndLineNumber:     uint64(11),
-			Description:       "Add feature Y\nFeature Y is ...",
+			Title:             "Add feature Y",
+			Description:       "Feature Y is ...",
 			FileInfo:          fileInfo,
 		},
 	}
