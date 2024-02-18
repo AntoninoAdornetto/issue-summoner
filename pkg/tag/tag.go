@@ -47,10 +47,7 @@ func (tm *TagManager) ValidateMode(mode string) error {
 	case IssueMode, PendingMode:
 		return nil
 	default:
-		return fmt.Errorf(
-			"Error: mode %s is invalid\nI (Issue Mode) & P (Pending Mode) are the available options",
-			mode,
-		)
+		return fmt.Errorf("Invalid mode %s. See issue-summoner --help for more information", mode)
 	}
 }
 
@@ -60,7 +57,11 @@ type ScanForTagsParams struct {
 	FileInfo os.FileInfo
 }
 
-func (pm *PendedTagManager) ScanForTags(path string, file *os.File, info os.FileInfo) ([]Tag, error) {
+func (pm *PendedTagManager) ScanForTags(
+	path string,
+	file *os.File,
+	info os.FileInfo,
+) ([]Tag, error) {
 	tags := make([]Tag, 0)
 	lineNum := uint64(0)
 	scanner := bufio.NewScanner(file)
@@ -75,7 +76,12 @@ func (pm *PendedTagManager) ScanForTags(path string, file *os.File, info os.File
 		}
 
 		if isSingleLineComment(text, commentSyntax) {
-			tag, linesScanned := pm.parseSingleLineCommentBlock(scanner, text, lineNum, commentSyntax)
+			tag, linesScanned := pm.parseSingleLineCommentBlock(
+				scanner,
+				text,
+				lineNum,
+				commentSyntax,
+			)
 			if tag != nil {
 				tag.FileInfo = info
 				tags = append(tags, *tag)
@@ -105,7 +111,8 @@ func (pm *PendedTagManager) parseSingleLineCommentBlock(
 	linesScanned := uint64(0)
 
 	for {
-		if annotated := hasTagAnnotation(text, pm.TagName); annotated && tag.AnnotationLineNum == 0 {
+		if annotated := hasTagAnnotation(text, pm.TagName); annotated &&
+			tag.AnnotationLineNum == 0 {
 			tag.AnnotationLineNum = lineNum
 			tag.Title = strings.TrimSpace(strings.SplitN(text, pm.TagName, 2)[1])
 			tag.IsSingleLine = true
@@ -148,7 +155,8 @@ func (pm *PendedTagManager) parseMultiLineCommentBlock(
 	linesScanned := uint64(0)
 
 	for {
-		if annotated := hasTagAnnotation(text, pm.TagName); annotated && tag.AnnotationLineNum == 0 {
+		if annotated := hasTagAnnotation(text, pm.TagName); annotated &&
+			tag.AnnotationLineNum == 0 {
 			tag.AnnotationLineNum = lineNum
 			tag.Title = strings.TrimSpace(strings.SplitN(text, pm.TagName, 2)[1])
 			tag.IsMultiLine = true
