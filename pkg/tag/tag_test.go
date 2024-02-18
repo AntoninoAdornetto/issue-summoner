@@ -20,7 +20,7 @@ func TestScanForTags_SingleLineCommentEmpty(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
@@ -39,7 +39,7 @@ func TestScanForTags_SingleLineCommentOne(t *testing.T) {
 		import "fmt"
 
 		func main() {
-			// @TODO Add Game Loop
+			// @UNITTESTANNOTATION Add Game Loop
 			return 0
 		}`,
 	)
@@ -47,7 +47,7 @@ func TestScanForTags_SingleLineCommentOne(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
@@ -75,11 +75,11 @@ func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
 		import "fmt"
 
 		func main() {
-			// @TODO Add feature X
+			// @UNITTESTANNOTATION Add feature X
 			// Feature X is ...
 
 
-			// @TODO Add feature Y
+			// @UNITTESTANNOTATION Add feature Y
 			// Feature Y is ...
 			return 0
 		}`,
@@ -88,7 +88,7 @@ func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
@@ -138,7 +138,7 @@ func TestScanForTags_MultiLineCommentEmpty(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
@@ -154,7 +154,7 @@ func TestScanForTags_MultiLineCommentOne(t *testing.T) {
 	file, fileInfo := setup(t,
 		`func main(){
 		/*
-		@TODO Add feature X
+		@UNITTESTANNOTATION Add feature X
 		This is a multi line comment with a single annotation.
 		And some additional information
 		*/
@@ -165,7 +165,7 @@ func TestScanForTags_MultiLineCommentOne(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
@@ -195,13 +195,13 @@ func TestScanForTags_MultiLineCommentMany(t *testing.T) {
 		`
 		/*
 		@Author Antonino Adornetto
-		@TODO Add feature Y
+		@UNITTESTANNOTATION Add feature Y
 		Feature Y is ...
 		*/
 
 		func main(){
 		/*
-		@TODO Add feature X
+		@UNITTESTANNOTATION Add feature X
 		This is a multi line comment with a single annotation.
 		And some additional information
 		*/
@@ -212,7 +212,7 @@ func TestScanForTags_MultiLineCommentMany(t *testing.T) {
 	defer tearDown(file)
 
 	tm := tag.TagManager{
-		TagName: "@TODO",
+		TagName: "@UNITTESTANNOTATION",
 		Mode:    "P", // Pending
 	}
 
