@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 type Tag struct {
@@ -61,17 +62,64 @@ func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error)
 	lineNum := uint64(0)
 	scanner := bufio.NewScanner(detail.File)
 	fileExtension := filepath.Ext(detail.File.Name())
+	commentSyntaxMp := CommentSyntax(fileExtension)
 
 	for scanner.Scan() {
-		tagDescription := extractAnnotationDetails(scanner, fileExtension, pm.TagName)
-		if tagDescription != "" {
-			tags = append(tags, Tag{
-				AnnotationLineNum: lineNum + 1,
-				FileInfo:          detail.FileInfo,
-				Description:       tagDescription,
-			})
-		}
+		tag := Tag{}
+		builder := strings.Builder{}
+		text := scanner.Text()
 		lineNum++
+
+		if len(text) == 0 || isAlphaNumeric(rune(text[0])) {
+			continue
+		}
+
+		currentLine := strings.TrimLeftFunc(text, func(r rune) bool {
+			return unicode.IsSpace(r)
+		})
+
+		hasAnnotation := hasTagAnnotation(currentLine, pm.TagName)
+
+		if isSingleLineComment(currentLine, commentSyntaxMp) {
+			tag.StartLineNumber = lineNum
+			if hasAnnotation {
+				tag.AnnotationLineNum = lineNum
+				builder.WriteString(
+					strings.Join(strings.SplitAfter(currentLine, pm.TagName)[1:], ""),
+				)
+			}
+
+			for scanner.Scan() {
+				currentLine = strings.TrimLeftFunc(scanner.Text(), func(r rune) bool {
+					return unicode.IsSpace(r)
+				})
+
+				if !isSingleLineComment(currentLine, commentSyntaxMp) {
+					break
+				}
+
+				if !hasAnnotation {
+					hasAnnotation = hasTagAnnotation(currentLine, pm.TagName)
+				}
+
+				builder.WriteString("\n")
+				nextLineDescription := strings.Join(
+					strings.SplitAfter(currentLine, commentSyntaxMp.SingleLineCommentSymbols)[1:],
+					"",
+				)
+
+				builder.WriteString(strings.TrimSpace(nextLineDescription))
+				lineNum++
+			}
+
+			tag.EndLineNumber = lineNum
+			tag.FileInfo = detail.FileInfo
+			tag.Description = strings.TrimSpace(builder.String())
+			if hasAnnotation {
+				tags = append(tags, tag)
+				lineNum++
+			}
+		}
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -79,6 +127,22 @@ func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error)
 	}
 
 	return tags, nil
+}
+
+func isAlphaNumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsNumber(r)
+}
+
+func trimWhiteSpace(s string) string {
+	return strings.TrimLeft(s, " ")
+}
+
+func isSingleLineComment(line string, commentSyntaxMap CommentLangSyntax) bool {
+	return strings.HasPrefix(line, commentSyntaxMap.SingleLineCommentSymbols)
+}
+
+func hasTagAnnotation(line string, annotation string) bool {
+	return strings.Contains(line, annotation)
 }
 
 func extractAnnotationDetails(scanner *bufio.Scanner, ext string, tag string) string {
