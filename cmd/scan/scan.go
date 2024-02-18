@@ -95,9 +95,10 @@ var ScanCmd = &cobra.Command{
 
 			for _, t := range tags {
 				fmt.Printf(
-					"Tag Located in %s on Line number: %d. Description: %s\n",
+					"Tag Located in %s on Line number: %d. Title: %s Description: %s\n",
 					t.FileInfo.Name(),
-					t.LineNumber,
+					t.AnnotationLineNum,
+					t.Title,
 					t.Description,
 				)
 			}

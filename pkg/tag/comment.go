@@ -2,10 +2,12 @@
 This file contains the comment syntax for various programming languages and file extensions.
 The constants in this file are used to determine the comment syntax for a given file when parsing source code for tag annotations.
 This will help determine if the tag annotation is within a single line comment or a multi-line comment.
+
+@TODO - Increase programming language support. Python, Haskel, etc.
 */
 package tag
 
-type LanguageCommentSyntax struct {
+type CommentLangSyntax struct {
 	SingleLineCommentSymbols string
 	MultiLineCommentSymbols  MultiLineCommentSyntax
 }
@@ -15,8 +17,7 @@ type MultiLineCommentSyntax struct {
 	CommentEndSymbol   string
 }
 
-// @TODO - Increase programming language support. Python, Haskel, etc.
-var CommentSyntaxMap = map[string]LanguageCommentSyntax{
+var CommentSyntaxMap = map[string]CommentLangSyntax{
 	"c-derived": {
 		SingleLineCommentSymbols: CommentCSingle,
 		MultiLineCommentSymbols: MultiLineCommentSyntax{
@@ -29,7 +30,7 @@ var CommentSyntaxMap = map[string]LanguageCommentSyntax{
 	},
 }
 
-func GetCommentSyntax(fileExtension string) LanguageCommentSyntax {
+func CommentSyntax(fileExtension string) CommentLangSyntax {
 	switch fileExtension {
 	case FileExtC,
 		FileExtCpp,

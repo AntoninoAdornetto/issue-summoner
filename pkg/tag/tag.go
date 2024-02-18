@@ -6,12 +6,16 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 type Tag struct {
-	LineNumber  uint64
-	Description string
-	FileInfo    os.FileInfo
+	Title             string
+	Description       string
+	StartLineNumber   uint64
+	EndLineNumber     uint64
+	AnnotationLineNum uint64
+	FileInfo          os.FileInfo
 }
 
 type TagManager struct {
@@ -54,42 +58,88 @@ type ScanForTagsParams struct {
 	FileInfo os.FileInfo
 }
 
-func (pm *PendedTagManager) ScanForTags(detail ScanForTagsParams) ([]Tag, error) {
+func (pm *PendedTagManager) ScanForTags(path string, file *os.File, info os.FileInfo) ([]Tag, error) {
 	tags := make([]Tag, 0)
 	lineNum := uint64(0)
-	scanner := bufio.NewScanner(detail.File)
-	fileExtension := filepath.Ext(detail.File.Name())
+	scanner := bufio.NewScanner(file)
+	commentSyntax := CommentSyntax(filepath.Ext(file.Name()))
 
 	for scanner.Scan() {
-		tagDescription := extractAnnotationDetails(scanner, fileExtension, pm.TagName)
-		if tagDescription != "" {
-			tags = append(tags, Tag{
-				LineNumber:  lineNum + 1,
-				FileInfo:    detail.FileInfo,
-				Description: tagDescription,
-			})
-		}
+		text := scanner.Text()
 		lineNum++
+
+		if shouldSkip(text) {
+			continue
+		}
+
+		if isSingleLineComment(text, commentSyntax) {
+			tag, linesScanned := pm.parseSingleLineCommentBlock(scanner, text, lineNum, commentSyntax)
+			if tag != nil {
+				tag.FileInfo = info
+				tags = append(tags, *tag)
+			}
+			lineNum += linesScanned
+		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error scanning file: %w", err)
-	}
-
-	return tags, nil
+	return tags, scanner.Err()
 }
 
-func extractAnnotationDetails(scanner *bufio.Scanner, ext string, tag string) string {
-	builder := strings.Builder{}
-	text := scanner.Text()
-	trimmedText := strings.TrimSpace(text)
-	hasAnnotation := strings.Contains(trimmedText, tag)
-	commentSyntax := GetCommentSyntax(ext)
+func (pm *PendedTagManager) parseSingleLineCommentBlock(
+	scanner *bufio.Scanner,
+	text string,
+	lineNum uint64,
+	cs CommentLangSyntax,
+) (*Tag, uint64) {
+	tag := &Tag{StartLineNumber: lineNum}
+	var description strings.Builder
+	linesScanned := uint64(0)
 
-	if strings.HasPrefix(trimmedText, commentSyntax.SingleLineCommentSymbols) && hasAnnotation {
-		description := strings.Join(strings.SplitAfter(trimmedText, tag), "")
-		builder.WriteString(description)
+	for {
+		if annotated := hasTagAnnotation(text, pm.TagName); annotated && tag.AnnotationLineNum == 0 {
+			tag.AnnotationLineNum = lineNum
+			tag.Title = strings.TrimSpace(strings.SplitN(text, pm.TagName, 2)[1])
+		} else if tag.AnnotationLineNum > 0 {
+			nextDescription := strings.Join(strings.SplitAfter(text, cs.SingleLineCommentSymbols)[1:], "")
+			description.WriteString(nextDescription)
+		}
+
+		if !scanner.Scan() {
+			tag.EndLineNumber = lineNum
+			break
+		}
+
+		text = scanner.Text()
+		lineNum++
+		linesScanned++
+
+		if !isSingleLineComment(text, cs) {
+			tag.EndLineNumber = lineNum - 1
+			break
+		}
 	}
 
-	return builder.String()
+	if tag.AnnotationLineNum > 0 {
+		tag.Description = strings.TrimSpace(description.String())
+		return tag, linesScanned
+	}
+
+	return nil, linesScanned
+}
+
+func shouldSkip(line string) bool {
+	return len(line) == 0 || isAlphaNumeric(rune(line[0]))
+}
+
+func isAlphaNumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsNumber(r)
+}
+
+func isSingleLineComment(line string, commentSyntax CommentLangSyntax) bool {
+	trimmed := strings.TrimLeftFunc(line, unicode.IsSpace)
+	return strings.HasPrefix(trimmed, commentSyntax.SingleLineCommentSymbols)
+}
+
+func hasTagAnnotation(line string, annotation string) bool {
+	return strings.Contains(line, annotation)
 }

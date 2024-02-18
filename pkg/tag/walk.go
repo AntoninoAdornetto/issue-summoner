@@ -8,7 +8,7 @@ import (
 )
 
 type WalkTagManager interface {
-	ScanForTags(ScanForTagsParams) ([]Tag, error)
+	ScanForTags(path string, file *os.File, info os.FileInfo) ([]Tag, error)
 }
 
 type WalkFileOperator interface {
@@ -26,7 +26,7 @@ type WalkParams struct {
 func Walk(arg WalkParams) ([]Tag, error) {
 	tags := make([]Tag, 0)
 
-	err := arg.FileOperator.WalkDir(arg.Root, func(path string, d fs.DirEntry, err error) error {
+	err := arg.FileOperator.WalkDir(arg.Root, func(path string, d fs.DirEntry, wErr error) error {
 		isValidPath := validatePath(path, arg.IgnorePatterns)
 
 		if d.IsDir() {
@@ -52,19 +52,18 @@ func Walk(arg WalkParams) ([]Tag, error) {
 			return err
 		}
 
-		foundTags, err := arg.TagManager.ScanForTags(ScanForTagsParams{
-			Path:     path,
-			File:     file,
-			FileInfo: fileInfo,
-		})
+		foundTags, err := arg.TagManager.ScanForTags(path, file, fileInfo)
 		if err != nil {
 			return err
 		}
 
 		tags = append(tags, foundTags...)
 
-		err = file.Close()
-		return err
+		if closeErr := file.Close(); closeErr != nil {
+			return closeErr
+		}
+
+		return wErr
 	})
 
 	return tags, err
