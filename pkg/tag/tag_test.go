@@ -59,12 +59,13 @@ func TestScanForTags_SingleLineCommentOne(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, tags, 1)
-	require.Equal(t, tag.FileInfo, fileInfo)
-	require.Equal(t, tag.Title, "Add Game Loop")
-	require.Equal(t, tag.Description, "")
-	require.Equal(t, tag.StartLineNumber, uint64(6))
-	require.Equal(t, tag.EndLineNumber, uint64(6))
-	require.Equal(t, tag.AnnotationLineNum, uint64(6))
+	require.Equal(t, fileInfo, tag.FileInfo)
+	require.Equal(t, "Add Game Loop", tag.Title)
+	require.Equal(t, "", tag.Description)
+	require.Equal(t, uint64(6), tag.StartLineNumber)
+	require.Equal(t, uint64(6), tag.EndLineNumber)
+	require.Equal(t, uint64(6), tag.AnnotationLineNum)
+	require.True(t, tag.IsSingleLine)
 }
 
 func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
@@ -103,6 +104,8 @@ func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
 			Title:             "Add feature X",
 			Description:       "Feature X is ...",
 			FileInfo:          fileInfo,
+			IsSingleLine:      true,
+			IsMultiLine:       false,
 		},
 		{
 			AnnotationLineNum: uint64(10),
@@ -111,6 +114,132 @@ func TestScanForTags_SingleLineCommentMultiple(t *testing.T) {
 			Title:             "Add feature Y",
 			Description:       "Feature Y is ...",
 			FileInfo:          fileInfo,
+			IsSingleLine:      true,
+			IsMultiLine:       false,
+		},
+	}
+
+	require.NoError(t, err)
+	require.Len(t, tags, 2)
+	require.Equal(t, expected, tags)
+}
+
+func TestScanForTags_MultiLineCommentEmpty(t *testing.T) {
+	file, fileInfo := setup(t,
+		`func main(){
+		/*
+		This is a multi line comment with no annotation.
+		Thus, there should not be a tag struct returned
+		*/
+		return 0
+		}`,
+	)
+
+	defer tearDown(file)
+
+	tm := tag.TagManager{
+		TagName: "@TODO",
+		Mode:    "P", // Pending
+	}
+
+	ptm := tag.PendedTagManager{TagManager: tm}
+
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
+
+	require.NoError(t, err)
+	require.Empty(t, tags)
+}
+
+func TestScanForTags_MultiLineCommentOne(t *testing.T) {
+	file, fileInfo := setup(t,
+		`func main(){
+		/*
+		@TODO Add feature X
+		This is a multi line comment with a single annotation.
+		And some additional information
+		*/
+		return 0
+		}`,
+	)
+
+	defer tearDown(file)
+
+	tm := tag.TagManager{
+		TagName: "@TODO",
+		Mode:    "P", // Pending
+	}
+
+	ptm := tag.PendedTagManager{TagManager: tm}
+
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
+
+	tag := tags[0]
+
+	require.NoError(t, err)
+	require.Len(t, tags, 1)
+	require.Equal(t, fileInfo, tag.FileInfo)
+	require.Equal(t, "Add feature X", tag.Title)
+	require.Equal(t,
+		"This is a multi line comment with a single annotation. And some additional information",
+		tag.Description,
+	)
+	require.Equal(t, uint64(2), tag.StartLineNumber)
+	require.Equal(t, uint64(6), tag.EndLineNumber)
+	require.Equal(t, uint64(3), tag.AnnotationLineNum)
+	require.True(t, tag.IsMultiLine)
+	require.False(t, tag.IsSingleLine)
+}
+
+func TestScanForTags_MultiLineCommentMany(t *testing.T) {
+	file, fileInfo := setup(t,
+		`
+		/*
+		@Author Antonino Adornetto
+		@TODO Add feature Y
+		Feature Y is ...
+		*/
+
+		func main(){
+		/*
+		@TODO Add feature X
+		This is a multi line comment with a single annotation.
+		And some additional information
+		*/
+		return 0
+		}`,
+	)
+
+	defer tearDown(file)
+
+	tm := tag.TagManager{
+		TagName: "@TODO",
+		Mode:    "P", // Pending
+	}
+
+	ptm := tag.PendedTagManager{TagManager: tm}
+
+	tags, err := ptm.ScanForTags(file.Name(), file, fileInfo)
+
+	expected := []tag.Tag{
+		{
+			AnnotationLineNum: uint64(4),
+			StartLineNumber:   uint64(2),
+			EndLineNumber:     uint64(6),
+			Title:             "Add feature Y",
+			Description:       "@Author Antonino Adornetto Feature Y is ...",
+			FileInfo:          fileInfo,
+			IsSingleLine:      false,
+			IsMultiLine:       true,
+		},
+		{
+			AnnotationLineNum: uint64(10),
+			StartLineNumber:   uint64(9),
+			EndLineNumber:     uint64(13),
+			Title:             "Add feature X",
+			Description:       "This is a multi line comment with a single annotation. And some additional information",
+			FileInfo:          fileInfo,
+			IsSingleLine:      false,
+			IsMultiLine:       true,
 		},
 	}
 
