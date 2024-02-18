@@ -3,7 +3,7 @@ This file contains the comment syntax for various programming languages and file
 The constants in this file are used to determine the comment syntax for a given file when parsing source code for tag annotations.
 This will help determine if the tag annotation is within a single line comment or a multi-line comment.
 
-@TODO - Increase programming language support. Python, Haskel, etc.
+@TODO Increase programming language support. Python, Haskel, etc.
 */
 package tag
 
