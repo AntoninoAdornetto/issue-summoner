@@ -15,6 +15,8 @@ type Tag struct {
 	StartLineNumber   uint64
 	EndLineNumber     uint64
 	AnnotationLineNum uint64
+	IsSingleLine      bool
+	IsMultiLine       bool
 	FileInfo          os.FileInfo
 }
 
@@ -79,6 +81,13 @@ func (pm *PendedTagManager) ScanForTags(path string, file *os.File, info os.File
 				tags = append(tags, *tag)
 			}
 			lineNum += linesScanned
+		} else if isMultiLineCommentStart(text, commentSyntax) {
+			tag, linesScanned := pm.parseMultiLineCommentBlock(scanner, text, lineNum, commentSyntax)
+			if tag != nil {
+				tag.FileInfo = info
+				tags = append(tags, *tag)
+			}
+			lineNum += linesScanned
 		}
 	}
 
@@ -99,6 +108,7 @@ func (pm *PendedTagManager) parseSingleLineCommentBlock(
 		if annotated := hasTagAnnotation(text, pm.TagName); annotated && tag.AnnotationLineNum == 0 {
 			tag.AnnotationLineNum = lineNum
 			tag.Title = strings.TrimSpace(strings.SplitN(text, pm.TagName, 2)[1])
+			tag.IsSingleLine = true
 		} else if tag.AnnotationLineNum > 0 {
 			nextDescription := strings.Join(strings.SplitAfter(text, cs.SingleLineCommentSymbols)[1:], "")
 			description.WriteString(nextDescription)
@@ -127,6 +137,50 @@ func (pm *PendedTagManager) parseSingleLineCommentBlock(
 	return nil, linesScanned
 }
 
+func (pm *PendedTagManager) parseMultiLineCommentBlock(
+	scanner *bufio.Scanner,
+	text string,
+	lineNum uint64,
+	cs CommentLangSyntax,
+) (*Tag, uint64) {
+	tag := &Tag{StartLineNumber: lineNum}
+	var description strings.Builder
+	linesScanned := uint64(0)
+
+	for {
+		if annotated := hasTagAnnotation(text, pm.TagName); annotated && tag.AnnotationLineNum == 0 {
+			tag.AnnotationLineNum = lineNum
+			tag.Title = strings.TrimSpace(strings.SplitN(text, pm.TagName, 2)[1])
+			tag.IsMultiLine = true
+		} else {
+			trimmedText := strings.TrimSpace(text)
+			newDescription := strings.TrimPrefix(trimmedText, cs.MultiLineCommentSymbols.CommentStartSymbol)
+			description.WriteString(fmt.Sprintf(" %s", strings.TrimSpace(newDescription)))
+		}
+
+		if !scanner.Scan() {
+			tag.EndLineNumber = lineNum
+			break
+		}
+
+		text = scanner.Text()
+		lineNum++
+		linesScanned++
+
+		if isMultiLineCommentEnd(text, cs) {
+			tag.EndLineNumber = lineNum
+			break
+		}
+	}
+
+	if tag.AnnotationLineNum > 0 {
+		tag.Description = strings.TrimSpace(description.String())
+		return tag, linesScanned
+	}
+
+	return nil, linesScanned
+}
+
 func shouldSkip(line string) bool {
 	return len(line) == 0 || isAlphaNumeric(rune(line[0]))
 }
@@ -138,6 +192,16 @@ func isAlphaNumeric(r rune) bool {
 func isSingleLineComment(line string, commentSyntax CommentLangSyntax) bool {
 	trimmed := strings.TrimLeftFunc(line, unicode.IsSpace)
 	return strings.HasPrefix(trimmed, commentSyntax.SingleLineCommentSymbols)
+}
+
+func isMultiLineCommentStart(line string, commentSyntax CommentLangSyntax) bool {
+	trimmed := strings.TrimLeftFunc(line, unicode.IsSpace)
+	return strings.HasPrefix(trimmed, commentSyntax.MultiLineCommentSymbols.CommentStartSymbol)
+}
+
+func isMultiLineCommentEnd(line string, commentSyntax CommentLangSyntax) bool {
+	trimmed := strings.TrimLeftFunc(line, unicode.IsSpace)
+	return strings.HasSuffix(trimmed, commentSyntax.MultiLineCommentSymbols.CommentEndSymbol)
 }
 
 func hasTagAnnotation(line string, annotation string) bool {
