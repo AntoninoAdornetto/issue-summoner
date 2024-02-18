@@ -8,7 +8,7 @@ import (
 )
 
 type WalkTagManager interface {
-	ScanForTags(ScanForTagsParams) ([]Tag, error)
+	ScanForTags(path string, file *os.File, info os.FileInfo) ([]Tag, error)
 }
 
 type WalkFileOperator interface {
@@ -52,11 +52,7 @@ func Walk(arg WalkParams) ([]Tag, error) {
 			return err
 		}
 
-		foundTags, err := arg.TagManager.ScanForTags(ScanForTagsParams{
-			Path:     path,
-			File:     file,
-			FileInfo: fileInfo,
-		})
+		foundTags, err := arg.TagManager.ScanForTags(path, file, fileInfo)
 		if err != nil {
 			return err
 		}
