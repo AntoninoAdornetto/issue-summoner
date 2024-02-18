@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/AntoninoAdornetto/issue-summoner/cmd/scan"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -21,10 +21,6 @@ const Logo = `
          \/     \/            \/          \/            \/      \/            \/     \/       
 
 `
-
-var (
-	logoStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true)
-)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -65,5 +61,5 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	subCommands()
-	fmt.Print(logoStyle.Render(Logo))
+	fmt.Println(ui.AccentTextStyle.Render(Logo))
 }

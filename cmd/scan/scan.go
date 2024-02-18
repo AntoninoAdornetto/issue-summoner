@@ -10,24 +10,12 @@ package scan
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
-)
-
-var (
-	tagKeyTextStyle = lipgloss.NewStyle().
-			PaddingLeft(1).
-			Foreground(lipgloss.Color("170")).
-			Bold(true)
-	tagValTextStyle = lipgloss.NewStyle().
-			PaddingLeft(1).
-			Foreground(lipgloss.Color("190")).
-			Italic(true)
 )
 
 type ScanManager struct{}
@@ -47,28 +35,33 @@ var ScanCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, _ []string) {
 		path, err := cmd.Flags().GetString("path")
 		if err != nil {
-			log.Fatalf("Failed to read 'path' flag: %s", err)
+			ui.LogFatal(fmt.Errorf("Failed to read 'path' flag\n%s", err).Error())
 		}
 
 		gitIgnorePath, err := cmd.Flags().GetString("gitignorePath")
 		if err != nil {
-			log.Fatalf("Failed to read 'gitignorePath' flag\n%s", err)
+			ui.LogFatal(fmt.Errorf("Failed to read 'gitignorePath' flag\n%s", err).Error())
 		}
 
 		mode, err := cmd.Flags().GetString("mode")
 		if err != nil {
-			log.Fatalf("Failed to read 'mode' flag\n%s", err)
+			ui.LogFatal(fmt.Errorf("Failed to read 'mode' flag\n%s", err).Error())
+		}
+
+		verbose, err := cmd.Flags().GetBool("verbose")
+		if err != nil {
+			ui.LogFatal(fmt.Errorf("Failed to read 'verbose' flag\n%s", err).Error())
 		}
 
 		tagName, err := cmd.Flags().GetString("tag")
 		if err != nil {
-			log.Fatalf("Failed to read 'tag' flag\n%s", err)
+			ui.LogFatal(fmt.Errorf("Failed to read 'tag' flag\n%s", err).Error())
 		}
 
 		if path == "" {
 			wd, err := os.Getwd()
 			if err != nil {
-				log.Fatalf("Failed to get working directory\n%s", err)
+				ui.LogFatal(fmt.Errorf("Failed to get working directory\n%s", err).Error())
 			}
 			path = wd
 		}
@@ -80,7 +73,7 @@ var ScanCmd = &cobra.Command{
 		scanManager := ScanManager{}
 		ignorePatterns, err := tag.ProcessIgnorePatterns(gitIgnorePath, scanManager)
 		if err != nil {
-			log.Fatal(err)
+			ui.LogFatal(err.Error())
 		}
 
 		tagManager := tag.TagManager{
@@ -89,7 +82,7 @@ var ScanCmd = &cobra.Command{
 		}
 
 		if err := tagManager.ValidateMode(mode); err != nil {
-			log.Fatalf("Unsupported mode %s provided\n%s", mode, err)
+			ui.LogFatal(err.Error())
 		}
 
 		if mode == tag.PendingMode {
@@ -102,46 +95,33 @@ var ScanCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				log.Fatalf("Failed to scan your project.\n%s", err)
+				ui.LogFatal(fmt.Errorf("Failed to scan your project.\n%s", err).Error())
 			}
 
-			fmt.Println(tagValTextStyle.Render(fmt.Sprintf("%d Tags Found", len(tags))))
+			if verbose {
+				tag.PrintTagResults(tags, ui.DimTextStyle, ui.PrimaryTextStyle)
+			}
 
-			for _, t := range tags {
-				fmt.Printf("\n\n")
+			if len(tags) > 0 {
 				fmt.Println(
-					tagKeyTextStyle.Render("Filename: "),
-					tagValTextStyle.Render(t.FileInfo.Name()),
+					ui.SuccessTextStyle.Render(
+						fmt.Sprintf(
+							"\nScan complete, found %d tags in your project that are using the annotation %s. See report command for submiting as issues to SCM \n",
+							len(tags),
+							tagName,
+						),
+					),
 				)
-				fmt.Println(tagKeyTextStyle.Render("Title: "), tagValTextStyle.Render(t.Title))
-				fmt.Println(
-					tagKeyTextStyle.Render("Description: "),
-					tagValTextStyle.Render(t.Description),
-				)
-				fmt.Println(
-					tagKeyTextStyle.Render("Start Line number: "),
-					tagValTextStyle.Render(fmt.Sprintf("%d", t.StartLineNumber)),
-				)
-
-				fmt.Println(
-					tagKeyTextStyle.Render("End Line number: "),
-					tagValTextStyle.Render(fmt.Sprintf("%d", t.EndLineNumber)),
-				)
-
-				fmt.Println(
-					tagKeyTextStyle.Render("Annotation Line number: "),
-					tagValTextStyle.Render(fmt.Sprintf("%d", t.AnnotationLineNum)),
-				)
-
-				fmt.Println(
-					tagKeyTextStyle.Render("Multi line comment: "),
-					tagValTextStyle.Render(fmt.Sprintf("%t", t.IsMultiLine)),
-				)
-
-				fmt.Println(
-					tagKeyTextStyle.Render("Single line comment: "),
-					tagValTextStyle.Render(fmt.Sprintf("%t", t.IsSingleLine)),
-				)
+				if !verbose {
+					fmt.Println(
+						ui.SecondaryTextStyle.Render(
+							"Pass -v (verbose) flag for more details about the annotations found",
+						),
+					)
+				}
+			} else {
+				fmt.Println(ui.SecondaryTextStyle.Render(fmt.Sprintf("\nNo tags were located in your project using the annotation %s", tagName)))
+				fmt.Println(ui.NoteTextStyle.Render("\nRun issue-summoner scan --help to see usuage"))
 			}
 		}
 	},
@@ -152,4 +132,6 @@ func init() {
 	ScanCmd.Flags().StringP("tag", "t", "@TODO", "Actionable comment tag to search for.")
 	ScanCmd.Flags().StringP("mode", "m", "P", "Mode: 'I' (Issued) or 'P' (Pending).")
 	ScanCmd.Flags().StringP("gitignorePath", "g", "", "Path to .gitignore file.")
+	ScanCmd.Flags().
+		BoolP("verbose", "v", false, "Displays all information for each Tag annotation that is located")
 }
