@@ -15,7 +15,19 @@ import (
 	"path/filepath"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+)
+
+var (
+	tagKeyTextStyle = lipgloss.NewStyle().
+			PaddingLeft(1).
+			Foreground(lipgloss.Color("170")).
+			Bold(true)
+	tagValTextStyle = lipgloss.NewStyle().
+			PaddingLeft(1).
+			Foreground(lipgloss.Color("190")).
+			Italic(true)
 )
 
 type ScanManager struct{}
@@ -93,13 +105,42 @@ var ScanCmd = &cobra.Command{
 				log.Fatalf("Failed to scan your project.\n%s", err)
 			}
 
+			fmt.Println(tagValTextStyle.Render(fmt.Sprintf("%d Tags Found", len(tags))))
+
 			for _, t := range tags {
-				fmt.Printf(
-					"Tag Located in %s on Line number: %d. Title: %s Description: %s\n",
-					t.FileInfo.Name(),
-					t.AnnotationLineNum,
-					t.Title,
-					t.Description,
+				fmt.Printf("\n\n")
+				fmt.Println(
+					tagKeyTextStyle.Render("Filename: "),
+					tagValTextStyle.Render(t.FileInfo.Name()),
+				)
+				fmt.Println(tagKeyTextStyle.Render("Title: "), tagValTextStyle.Render(t.Title))
+				fmt.Println(
+					tagKeyTextStyle.Render("Description: "),
+					tagValTextStyle.Render(t.Description),
+				)
+				fmt.Println(
+					tagKeyTextStyle.Render("Start Line number: "),
+					tagValTextStyle.Render(fmt.Sprintf("%d", t.StartLineNumber)),
+				)
+
+				fmt.Println(
+					tagKeyTextStyle.Render("End Line number: "),
+					tagValTextStyle.Render(fmt.Sprintf("%d", t.EndLineNumber)),
+				)
+
+				fmt.Println(
+					tagKeyTextStyle.Render("Annotation Line number: "),
+					tagValTextStyle.Render(fmt.Sprintf("%d", t.AnnotationLineNum)),
+				)
+
+				fmt.Println(
+					tagKeyTextStyle.Render("Multi line comment: "),
+					tagValTextStyle.Render(fmt.Sprintf("%t", t.IsMultiLine)),
+				)
+
+				fmt.Println(
+					tagKeyTextStyle.Render("Single line comment: "),
+					tagValTextStyle.Render(fmt.Sprintf("%t", t.IsSingleLine)),
 				)
 			}
 		}

@@ -4,10 +4,26 @@ Copyright © 2024 Antonino Adornetto
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/AntoninoAdornetto/issue-summoner/cmd/scan"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
+)
+
+const Logo = `
+.___                                _________                                                 
+|   | ______ ________ __   ____    /   _____/__ __  _____   _____   ____   ____   ___________ 
+|   |/  ___//  ___/  |  \_/ __ \   \_____  \|  |  \/     \ /     \ /  _ \ /    \_/ __ \_  __ \
+|   |\___ \ \___ \|  |  /\  ___/   /        \  |  /  Y Y  \  Y Y  (  <_> )   |  \  ___/|  | \/
+|___/____  >____  >____/  \___  > /_______  /____/|__|_|  /__|_|  /\____/|___|  /\___  >__|   
+         \/     \/            \/          \/            \/      \/            \/     \/       
+
+`
+
+var (
+	logoStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#01FAC6")).Bold(true)
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -48,6 +64,6 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
 	subCommands()
+	fmt.Print(logoStyle.Render(Logo))
 }
