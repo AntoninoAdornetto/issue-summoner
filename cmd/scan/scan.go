@@ -106,7 +106,7 @@ var ScanCmd = &cobra.Command{
 				fmt.Println(
 					ui.SuccessTextStyle.Render(
 						fmt.Sprintf(
-							"\nScan complete, found %d tags in your project that are using the annotation %s. See report command for submiting as issues to SCM \n",
+							"\nFound %d (%s) tag annotations in your project.",
 							len(tags),
 							tagName,
 						),
@@ -115,13 +115,12 @@ var ScanCmd = &cobra.Command{
 				if !verbose {
 					fmt.Println(
 						ui.SecondaryTextStyle.Render(
-							"Pass -v (verbose) flag for more details about the annotations found",
+							"Tip: run issue-summoner scan -v (verbose) for more details about the tag annotations that were found",
 						),
 					)
 				}
 			} else {
 				fmt.Println(ui.SecondaryTextStyle.Render(fmt.Sprintf("\nNo tags were located in your project using the annotation %s", tagName)))
-				fmt.Println(ui.NoteTextStyle.Render("\nRun issue-summoner scan --help to see usuage"))
 			}
 		}
 	},
