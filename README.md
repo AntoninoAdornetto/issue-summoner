@@ -1,4 +1,4 @@
-![issue-summoner-scan](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e9073e64-d160-4857-9dae-bf470d2e50f9)
+![issue-summoner-ascii](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/ccf65400-f43d-4b5b-91ac-46694ccf7d08)
 
 # Go Issue Summoner
 
