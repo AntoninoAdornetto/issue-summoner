@@ -12,7 +12,7 @@ var (
 
 	SecondaryTextStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#FFA658")). // Orange (Carbon Fox's orange)
-				Bold(true)
+				Italic(true)
 
 	AccentTextStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#3B82F6")). // (Carbon Fox's blue)
