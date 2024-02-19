@@ -19,7 +19,6 @@ const Logo = `
 |   |\___ \ \___ \|  |  /\  ___/   /        \  |  /  Y Y  \  Y Y  (  <_> )   |  \  ___/|  | \/
 |___/____  >____  >____/  \___  > /_______  /____/|__|_|  /__|_|  /\____/|___|  /\___  >__|   
          \/     \/            \/          \/            \/      \/            \/     \/       
-
 `
 
 // rootCmd represents the base command when called without any subcommands
