@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AntoninoAdornetto/issue-summoner/cmd/report"
 	"github.com/AntoninoAdornetto/issue-summoner/cmd/scan"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
@@ -48,6 +49,7 @@ func Execute() {
 
 func subCommands() {
 	rootCmd.AddCommand(scan.ScanCmd)
+	rootCmd.AddCommand(report.ReportCmd)
 }
 
 func init() {
