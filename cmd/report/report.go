@@ -25,13 +25,12 @@ func (ReportManager) WalkDir(root string, fn fs.WalkDirFunc) error {
 	return filepath.WalkDir(root, fn)
 }
 
-// reportCmd represents the report command
 var ReportCmd = &cobra.Command{
 	Use:   "report",
 	Short: "report issues to a source code management system",
 	Long: `Scans source code files for Tag annotations and reports them
 	to a source code managment system of your choosing`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		path, err := cmd.Flags().GetString("path")
 		if err != nil {
 			ui.LogFatal(fmt.Errorf("Failed to read 'path' flag\n%s", err).Error())
@@ -84,7 +83,7 @@ var ReportCmd = &cobra.Command{
 		err = gc.User()
 		if err != nil {
 			ui.LogFatal(
-				fmt.Errorf("Failed to retrieve user.name from your global git config. See `git config global --help`", err).
+				fmt.Errorf("Failed to retrieve user.name from your global git config. See `git config global --help` %s", err).
 					Error(),
 			)
 		}
