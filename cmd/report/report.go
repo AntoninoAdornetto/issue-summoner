@@ -12,6 +12,7 @@ import (
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/tag"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +74,7 @@ var ReportCmd = &cobra.Command{
 		tagManager := tag.TagManager{TagName: tagName}
 
 		pendingTagManager := tag.PendedTagManager{TagManager: tagManager}
-		_, err = tag.Walk(tag.WalkParams{
+		tags, err := tag.Walk(tag.WalkParams{
 			Root:           path,
 			TagManager:     &pendingTagManager,
 			FileOperator:   scanManager,
@@ -82,6 +83,35 @@ var ReportCmd = &cobra.Command{
 
 		if err != nil {
 			ui.LogFatal(fmt.Errorf("Failed to scan your project.\n%s", err).Error())
+		}
+
+		selection := ui.Selection{
+			Options: make(map[string]bool),
+		}
+
+		tagOptions := make([]ui.Item, len(tags))
+		for i, t := range tags {
+			tagOptions[i] = ui.Item{
+				Title: t.Title,
+				Desc:  t.Description,
+			}
+		}
+
+		// @TODO  Review ui.InitialModelMultiSelect params
+		// Do we really need to pass a bolean pointer to the model? Look into this.
+		ok := err != nil
+
+		teaProgram := tea.NewProgram(
+			ui.InitialModelMultiSelect(
+				tagOptions,
+				&selection,
+				"Select all the tags you want to report as issues.",
+				&ok,
+			),
+		)
+
+		if _, err := teaProgram.Run(); err != nil {
+			cobra.CheckErr(ui.ErrorTextStyle.Render(err.Error()))
 		}
 
 		gc := scm.GitConfig{}
@@ -102,10 +132,4 @@ var ReportCmd = &cobra.Command{
 			)
 		}
 	},
-}
-
-func init() {
-	ReportCmd.Flags().StringP("path", "p", "", "Path to your local git project.")
-	ReportCmd.Flags().StringP("tag", "t", "@TODO", "Actionable comment tag to search for.")
-	ReportCmd.Flags().StringP("gitignorePath", "g", "", "Path to .gitignore file.")
 }
