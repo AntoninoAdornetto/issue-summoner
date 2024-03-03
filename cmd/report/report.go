@@ -28,8 +28,8 @@ func (ReportManager) WalkDir(root string, fn fs.WalkDirFunc) error {
 var ReportCmd = &cobra.Command{
 	Use:   "report",
 	Short: "report issues to a source code management system",
-	Long: `Scans source code files for Tag annotations and reports them
-	to a source code managment system of your choosing`,
+	Long: `Scans source code files for Tag annotations and reports them, as trackable issues,
+	to a source code managment system of your choosing.`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		path, err := cmd.Flags().GetString("path")
 		if err != nil {
