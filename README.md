@@ -12,14 +12,14 @@ Scan source code files for actionable comments marked by user-defined tag annota
 
 ## Phase 1
 
-- `Comment/Tag-Annotation Scanning Engine`: Develop the core engine that scans source code files for user defined tag annotations, such as `@TODO` for to-do items. It can recognize the file's extension and appropriately handle language specific syntax for both single and multi-line comments.
+- [x] `Comment/Tag-Annotation Scanning Engine`: Develop the core engine that scans source code files for user defined tag annotations, such as `@TODO` for to-do items. It can recognize the file's extension and appropriately handle language specific syntax for both single and multi-line comments.
 
-- `SCM Adapter`: Implement a basic adapter for GitHub to demonstrate issue reporting functionality.
+- [ ] `SCM Adapter`: Implement a basic adapter for GitHub to demonstrate issue reporting functionality.
 
 ## Phase 2
 
-- `Expand SCM Support`: Develop and integrate additional adapters for other popular SCMs. Such as GitLab, BitBucket, etc.
+- [ ] `Expand SCM Support`: Develop and integrate additional adapters for other popular SCMs. Such as GitLab, BitBucket, etc.
 
 ## Phase 3
 
-- `Advanced Tagging`: Expand the scanning engine to account for **reported** tag annotations and clean up source code files by removing the annotation and surrounding comments if the issue has been resolved.
+- [ ] `Advanced Tagging`: Expand the scanning engine to account for **reported** tag annotations and clean up source code files by removing the annotation and surrounding comments if the issue has been resolved.
