@@ -18,6 +18,15 @@ var ReportCmd = &cobra.Command{
 	Long: `Scans source code files for Tag annotations and reports them
 	to a source code managment system of your choosing`,
 	Run: func(cmd *cobra.Command, args []string) {
+		gc := scm.GitConfig{}
+
+		err := gc.User()
+		if err != nil {
+			ui.LogFatal(
+				fmt.Errorf("Failed to retrieve user.name from your global git config. See `git config global --help`", err).
+					Error(),
+			)
+		}
 	},
 }
 
