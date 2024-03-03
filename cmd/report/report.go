@@ -20,13 +20,22 @@ var ReportCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		gc := scm.GitConfig{}
 
-		err := gc.User()
+		err = gc.User()
 		if err != nil {
 			ui.LogFatal(
 				fmt.Errorf("Failed to retrieve user.name from your global git config. See `git config global --help`", err).
 					Error(),
 			)
 		}
+
+		err = gc.RepoName()
+		if err != nil {
+			ui.LogFatal(
+				fmt.Errorf("Failed to retrieve git remote origin url. %s", err).
+					Error(),
+			)
+		}
+
 	},
 }
 
