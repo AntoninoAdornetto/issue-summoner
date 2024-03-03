@@ -15,6 +15,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	ReportCmd.Flags().StringP("path", "p", "", "Path to your local git project.")
+	ReportCmd.Flags().StringP("tag", "t", "@TODO", "Actionable comment tag to search for.")
+	ReportCmd.Flags().StringP("gitignorePath", "g", "", "Path to .gitignore file.")
+}
+
 type ReportManager struct{}
 
 func (ReportManager) Open(fileName string) (*os.File, error) {
