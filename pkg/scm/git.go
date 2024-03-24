@@ -1,6 +1,7 @@
 package scm
 
 import (
+	"errors"
 	"os/exec"
 	"strings"
 )
@@ -11,7 +12,10 @@ type GitConfig struct {
 	Token          string
 }
 
-func (gc *GitConfig) User() error {
+// GlobalUserName uses the **git config** command to retrieve the global
+// configuration options. Specifically, the user.name option. The userName is
+// read and set onto the reciever's (GitConfig) UserName property. This will be used
+func (gc *GitConfig) GlobalUserName() error {
 	var out strings.Builder
 	cmd := exec.Command("git", "config", "--global", "user.name")
 	cmd.Stdout = &out
@@ -21,7 +25,12 @@ func (gc *GitConfig) User() error {
 		return err
 	}
 
-	gc.UserName = out.String()
+	userName := out.String()
+	if userName == "" {
+		return errors.New("global userName option not set. See man git config for more details")
+	}
+
+	gc.UserName = userName
 	return nil
 }
 
