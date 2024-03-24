@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+// @TODO can GlobalUserName and RepoName functions be deleted?
+// We are now using the device flow and the mentioned functions could be useless since
+// we are creating an access token for the user after they authorize the application.
+
 type GitConfig struct {
 	UserName       string
 	RepositoryName string
