@@ -1,8 +1,12 @@
 package scm
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
 
@@ -38,6 +42,52 @@ func GetGitConfig(scm string) GitConfigManager {
 	default:
 		return &GitHubManager{}
 	}
+}
+
+type ScmTokenConfig struct {
+	AccessToken string
+}
+
+type IssueSummonerConfig = map[string]ScmTokenConfig
+
+// WriteToken accepts an access token and the source code management platform
+// (GitHub, GitLab etc...) and will write the token to a configuration file.
+// This will be used to authorize future requests for reporting issues.
+func WriteToken(token string, scm string) error {
+	config := make(map[string]ScmTokenConfig)
+
+	usr, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	home := usr.HomeDir
+	configFile := filepath.Join(home, ".config", "issue-summoner", "config.json")
+
+	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	switch scm {
+	default:
+		config["GitHub"] = ScmTokenConfig{
+			AccessToken: token,
+		}
+	}
+
+	data, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	if _, err := file.Write(data); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GlobalUserName uses the **git config** command to retrieve the global
