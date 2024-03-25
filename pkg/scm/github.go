@@ -21,6 +21,58 @@ const (
 	ACCEPT_HEADER = "application/json"
 )
 
+
+type createTokenResponse struct {
+	AccessToken string `json:"access_token"`
+	TokenType   string `json:"token_type"` // bearer
+	Scope       string `json:"scope"`      // "repo, gist, ..."
+}
+
+func createToken(deviceCode string) (createTokenResponse, error) {
+	var res createTokenResponse
+	paths := []string{"login", "oauth", "access_token"}
+	params := map[string]string{
+		"client_id":   CLIENT_ID,
+		"device_code": deviceCode,
+		"grant_type":  GRANT_TYPE,
+	}
+
+	url, err := utils.BuildURL(BASE_URL, paths, params)
+	if err != nil {
+		return res, err
+	}
+
+	headers := http.Header{}
+	headers.Add("Accept", ACCEPT_HEADER)
+
+	resp, err := utils.SubmitPostRequest(url, nil, headers)
+	if err != nil {
+		return res, err
+	}
+
+	tokenErr := handleCreateTokenErr(resp)
+	if tokenErr.Error != "" {
+		return res, errors.New(tokenErr.ErrorDesc)
+	}
+
+	return res, nil
+}
+
+type createTokenError struct {
+	Error     string `json:"error"`
+	ErrorDesc string `json:"error_description"`
+}
+
+func handleCreateTokenErr(data []byte) createTokenError {
+	var tokenErr createTokenError
+	err := json.Unmarshal(data, &tokenErr)
+	if err != nil {
+		tokenErr.Error = err.Error()
+		return tokenErr
+	}
+	return tokenErr
+}
+
 type verifyDeviceResponse struct {
 	DeviceCode      string `json:"device_code"`      // device verification code used to verify the device
 	UserCode        string `json:"user_code"`        // displayed on the device, user will enter code into browser (verificationUri)
