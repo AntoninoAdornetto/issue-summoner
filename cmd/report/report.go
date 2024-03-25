@@ -73,6 +73,19 @@ var ReportCmd = &cobra.Command{
 		}
 
 		gc := scm.GetGitConfig(sourceCodeManager)
+		if ok := gc.IsAuthorized(); !ok {
+			fmt.Println(
+				ui.SecondaryTextStyle.Render(
+					"You have not authorized the app to submit issues. Let's do that now",
+				),
+			)
+
+			err := gc.Authorize()
+			if err != nil {
+				ui.LogFatal(fmt.Errorf("Failed to authorize. %s", err).Error())
+			}
+		}
+
 		scanManager := ReportManager{}
 		ignorePatterns, err := tag.ProcessIgnorePatterns(gitIgnorePath, scanManager)
 		if err != nil {
@@ -122,5 +135,11 @@ var ReportCmd = &cobra.Command{
 			cobra.CheckErr(ui.ErrorTextStyle.Render(err.Error()))
 		}
 
+		// gc := scm.GetGitConfig(sourceCodeManager)
+		// if ok := gc.IsAuthorized(); !ok {
+		// 	ui.SecondaryTextStyle.Render(
+		// 		"You have not authorized the app to submit issues. Let's get you configured",
+		// 	)
+		// }
 	},
 }
