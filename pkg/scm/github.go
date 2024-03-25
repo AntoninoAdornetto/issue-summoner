@@ -28,13 +28,13 @@ type GitHubManager struct {
 }
 
 // Authorize satisfies the GitManager interface. Each source code management
-// platform will have their own version of how to authorize a user so that
+// platform will have their own version of how to authorize so that
 // the program can submit issues on the users behalf. This implementation
-// uses GitHubs device oauth flow.
-// First, a user code is created and a browser opens for where we request the code.
+// uses GitHubs device oauth flow. See their docs for more detailed information.
+// First, a user code is created and a browser opens to GitHubs verification url.
 // While the program is waiting for the user to enter the code, we poll an endpoint
 // and check if the user has authorized the app. Once they have done so, an access token
-// is returned from the service and then is written to ~/.config/issue-summoner/config.json
+// is returned from the service and is then written to ~/.config/issue-summoner/config.json
 func (gh *GitHubManager) Authorize() error {
 	var once sync.Once
 	deviceChan := make(chan verifyDeviceResponse)
@@ -78,11 +78,11 @@ func initDeviceFlow(vd chan verifyDeviceResponse, ec chan error) {
 	vd <- resp
 }
 
-// pollTokenService will make http POST requests to check if the user has successfully
+// pollTokenService will make an http POST request to check if the user has successfully
 // authorized the app by entering the user_code into the browser. The function will not
 // poll the endpoint at a higher frequency than the frequency indicated by **interval**
-// in the **verifyDeviceResponse** struct. GitHub will response with a 200 status code and
-// an error response query parameter
+// in the **verifyDeviceResponse** struct. GitHub will respond with a 200 status code and
+// an error response
 func pollTokenService(
 	tc chan createTokenResponse,
 	device verifyDeviceResponse,
