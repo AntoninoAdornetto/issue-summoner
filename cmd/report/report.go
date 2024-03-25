@@ -20,6 +20,8 @@ func init() {
 	ReportCmd.Flags().StringP("path", "p", "", "Path to your local git project.")
 	ReportCmd.Flags().StringP("tag", "t", "@TODO", "Actionable comment tag to search for.")
 	ReportCmd.Flags().StringP("gitignorePath", "g", "", "Path to .gitignore file.")
+	ReportCmd.Flags().
+		StringP("scm", "s", scm.GH, "What service do you use for managing source code? GitHub, GitLab...")
 }
 
 type ReportManager struct{}
@@ -53,6 +55,11 @@ var ReportCmd = &cobra.Command{
 			ui.LogFatal(fmt.Errorf("Failed to read 'tag' flag\n%s", err).Error())
 		}
 
+		sourceCodeManager, err := cmd.Flags().GetString("scm")
+		if err != nil {
+			ui.LogFatal(fmt.Errorf("Failed to read 'scm' flag\n%s", err).Error())
+		}
+
 		if path == "" {
 			wd, err := os.Getwd()
 			if err != nil {
@@ -65,6 +72,7 @@ var ReportCmd = &cobra.Command{
 			gitIgnorePath = filepath.Join(path, tag.GitIgnoreFile)
 		}
 
+		gc := scm.GetGitConfig(sourceCodeManager)
 		scanManager := ReportManager{}
 		ignorePatterns, err := tag.ProcessIgnorePatterns(gitIgnorePath, scanManager)
 		if err != nil {
@@ -114,22 +122,5 @@ var ReportCmd = &cobra.Command{
 			cobra.CheckErr(ui.ErrorTextStyle.Render(err.Error()))
 		}
 
-		gc := scm.GitConfig{}
-
-		err = gc.User()
-		if err != nil {
-			ui.LogFatal(
-				fmt.Errorf("Failed to retrieve user.name from your global git config. See `git config global --help` %s", err).
-					Error(),
-			)
-		}
-
-		err = gc.RepoName()
-		if err != nil {
-			ui.LogFatal(
-				fmt.Errorf("Failed to retrieve git remote origin url. %s", err).
-					Error(),
-			)
-		}
 	},
 }
