@@ -1,17 +1,99 @@
 package scm
 
 import (
+	"encoding/json"
+	"errors"
+	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
+
+const (
+	GH = "GitHub"
+	GL = "GitLab"
+	BB = "BitBucket"
+)
+
+// @TODO can GlobalUserName and RepoName functions be deleted?
+// We are now using the device flow and the mentioned functions could be useless since
+// we are creating an access token for the user after they authorize the application.
 
 type GitConfig struct {
 	UserName       string
 	RepositoryName string
 	Token          string
+	Scm            string // GitHub || GitLab || BitBucket ...
 }
 
-func (gc *GitConfig) User() error {
+// GitConfigManager interface allows us to have different adapters for each
+// source code management system that we would like to use. We can have different
+// implementations for GitHub, GitLab, BitBucket and so on.
+// Authorize creates an access token with scopes that will allow us to read/write issues
+// ReadToken checks if there is an access token in ~/.config/issue-summoner/config.json
+type GitConfigManager interface {
+	Authorize() error
+	IsAuthorized() bool
+}
+
+func GetGitConfig(scm string) GitConfigManager {
+	switch scm {
+	default:
+		return &GitHubManager{}
+	}
+}
+
+type ScmTokenConfig struct {
+	AccessToken string
+}
+
+type IssueSummonerConfig = map[string]ScmTokenConfig
+
+// WriteToken accepts an access token and the source code management platform
+// (GitHub, GitLab etc...) and will write the token to a configuration file.
+// This will be used to authorize future requests for reporting issues.
+func WriteToken(token string, scm string) error {
+	config := make(map[string]ScmTokenConfig)
+
+	usr, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	home := usr.HomeDir
+	configFile := filepath.Join(home, ".config", "issue-summoner", "config.json")
+
+	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	switch scm {
+	default:
+		config["GitHub"] = ScmTokenConfig{
+			AccessToken: token,
+		}
+	}
+
+	data, err := json.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	if _, err := file.Write(data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GlobalUserName uses the **git config** command to retrieve the global
+// configuration options. Specifically, the user.name option. The userName is
+// read and set onto the reciever's (GitConfig) UserName property. This will be used
+func (gc *GitConfig) GlobalUserName() error {
 	var out strings.Builder
 	cmd := exec.Command("git", "config", "--global", "user.name")
 	cmd.Stdout = &out
@@ -21,7 +103,12 @@ func (gc *GitConfig) User() error {
 		return err
 	}
 
-	gc.UserName = out.String()
+	userName := out.String()
+	if userName == "" {
+		return errors.New("global userName option not set. See man git config for more details")
+	}
+
+	gc.UserName = userName
 	return nil
 }
 
