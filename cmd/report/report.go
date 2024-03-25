@@ -134,12 +134,5 @@ var ReportCmd = &cobra.Command{
 		if _, err := teaProgram.Run(); err != nil {
 			cobra.CheckErr(ui.ErrorTextStyle.Render(err.Error()))
 		}
-
-		// gc := scm.GetGitConfig(sourceCodeManager)
-		// if ok := gc.IsAuthorized(); !ok {
-		// 	ui.SecondaryTextStyle.Render(
-		// 		"You have not authorized the app to submit issues. Let's get you configured",
-		// 	)
-		// }
 	},
 }
