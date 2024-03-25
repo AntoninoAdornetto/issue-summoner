@@ -6,6 +6,12 @@ import (
 	"strings"
 )
 
+const (
+	GH = "GitHub"
+	GL = "GitLab"
+	BB = "BitBucket"
+)
+
 // @TODO can GlobalUserName and RepoName functions be deleted?
 // We are now using the device flow and the mentioned functions could be useless since
 // we are creating an access token for the user after they authorize the application.
@@ -14,6 +20,24 @@ type GitConfig struct {
 	UserName       string
 	RepositoryName string
 	Token          string
+	Scm            string // GitHub || GitLab || BitBucket ...
+}
+
+// GitConfigManager interface allows us to have different adapters for each
+// source code management system that we would like to use. We can have different
+// implementations for GitHub, GitLab, BitBucket and so on.
+// Authorize creates an access token with scopes that will allow us to read/write issues
+// ReadToken checks if there is an access token in ~/.config/issue-summoner/config.json
+type GitConfigManager interface {
+	Authorize() error
+	IsAuthorized() bool
+}
+
+func GetGitConfig(scm string) GitConfigManager {
+	switch scm {
+	default:
+		return &GitHubManager{}
+	}
 }
 
 // GlobalUserName uses the **git config** command to retrieve the global
