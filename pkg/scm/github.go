@@ -88,8 +88,7 @@ func pollTokenService(
 	ec chan error,
 	once *sync.Once,
 ) {
-	// expireTime := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
-	expireTime := time.Now().Add(time.Duration(10) * time.Second)
+	expireTime := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
 	ticker := time.NewTicker(time.Duration(device.Interval+1) * time.Second)
 
 	defer ticker.Stop()
