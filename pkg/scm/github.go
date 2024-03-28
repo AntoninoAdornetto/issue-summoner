@@ -47,8 +47,7 @@ func (gh *GitHubManager) Authorize() error {
 
 	select {
 	case token := <-tokenChan:
-		WriteToken(token.AccessToken, GH)
-		return nil
+		return WriteToken(token.TokenType, GH)
 	case err := <-errChan:
 		return err
 	}
@@ -89,8 +88,7 @@ func pollTokenService(
 	ec chan error,
 	once *sync.Once,
 ) {
-	// expireTime := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
-	expireTime := time.Now().Add(time.Duration(10) * time.Second)
+	expireTime := time.Now().Add(time.Duration(device.ExpiresIn) * time.Second)
 	ticker := time.NewTicker(time.Duration(device.Interval+1) * time.Second)
 
 	defer ticker.Stop()
@@ -104,14 +102,12 @@ func pollTokenService(
 			break
 		}
 
-		select {
-		case <-ticker.C:
-			resp, err := createToken(device.DeviceCode)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				tc <- resp
-			}
+		<-ticker.C
+		resp, err := createToken(device.DeviceCode)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			tc <- resp
 		}
 	}
 }
