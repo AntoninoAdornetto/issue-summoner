@@ -47,8 +47,7 @@ func (gh *GitHubManager) Authorize() error {
 
 	select {
 	case token := <-tokenChan:
-		WriteToken(token.AccessToken, GH)
-		return nil
+		return WriteToken(token.TokenType, GH)
 	case err := <-errChan:
 		return err
 	}
