@@ -102,14 +102,12 @@ func pollTokenService(
 			break
 		}
 
-		select {
-		case <-ticker.C:
-			resp, err := createToken(device.DeviceCode)
-			if err != nil {
-				fmt.Println(err)
-			} else {
-				tc <- resp
-			}
+		<-ticker.C
+		resp, err := createToken(device.DeviceCode)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			tc <- resp
 		}
 	}
 }
