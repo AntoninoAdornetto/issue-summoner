@@ -16,6 +16,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	UNAUTHORIZED_ERROR = "Please run `issue-summoner authorize` and complete the authorization process. This will allow us to submit issues on your behalf."
+)
+
 func init() {
 	ReportCmd.Flags().StringP("path", "p", "", "Path to your local git project.")
 	ReportCmd.Flags().StringP("tag", "t", "@TODO", "Actionable comment tag to search for.")
@@ -60,6 +64,19 @@ var ReportCmd = &cobra.Command{
 			ui.LogFatal(fmt.Errorf("Failed to read 'scm' flag\n%s", err).Error())
 		}
 
+		isAuthorized, err := scm.CheckForAccess(sourceCodeManager)
+		if err != nil {
+			if os.IsNotExist(err) {
+				ui.LogFatal(UNAUTHORIZED_ERROR)
+			} else {
+				ui.LogFatal(err.Error())
+			}
+		}
+
+		if !isAuthorized {
+			ui.LogFatal(UNAUTHORIZED_ERROR)
+		}
+
 		if path == "" {
 			wd, err := os.Getwd()
 			if err != nil {
@@ -70,20 +87,6 @@ var ReportCmd = &cobra.Command{
 
 		if gitIgnorePath == "" {
 			gitIgnorePath = filepath.Join(path, tag.GitIgnoreFile)
-		}
-
-		gc := scm.GetGitConfig(sourceCodeManager)
-		if ok := gc.IsAuthorized(); !ok {
-			fmt.Println(
-				ui.SecondaryTextStyle.Render(
-					"You have not authorized the app to submit issues. Let's do that now",
-				),
-			)
-
-			err := gc.Authorize()
-			if err != nil {
-				ui.LogFatal(fmt.Errorf("Failed to authorize. %s", err).Error())
-			}
 		}
 
 		scanManager := ReportManager{}

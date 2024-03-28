@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/AntoninoAdornetto/issue-summoner/cmd/authorize"
 	"github.com/AntoninoAdornetto/issue-summoner/cmd/report"
 	"github.com/AntoninoAdornetto/issue-summoner/cmd/scan"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
@@ -49,6 +50,7 @@ func Execute() {
 func subCommands() {
 	rootCmd.AddCommand(scan.ScanCmd)
 	rootCmd.AddCommand(report.ReportCmd)
+	rootCmd.AddCommand(authorize.AuthorizeCmd)
 }
 
 func init() {

@@ -105,7 +105,7 @@ func pollTokenService(
 		<-ticker.C
 		resp, err := createToken(device.DeviceCode)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("%s User Code: %s\n", err.Error(), device.UserCode)
 		} else {
 			tc <- resp
 		}
