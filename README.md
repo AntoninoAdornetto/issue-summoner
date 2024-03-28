@@ -41,11 +41,11 @@ Break down of what has been implemented and what is to come in the near future.
 
 ### GitHub
 
-We use the device flow to authorize a user. This allows us to Automate issue creation on both public and private repos. Here is an overview of the Authorization process:
+We use the oauth device flow to authorize a user that wishes to use GitHub as their adapter. This allows us to Automate issue creation on both public and private repos. Here is an overview of the Authorization process:
 
-1. App requests device and user verification codes and gets a URL will the user will be prompted to enter the user verification code.
+1. App requests device and user verification codes and gets a URL where the user will be prompted to enter the user verification code.
 
-2. App opens a new browser (your OS default browser) and prompts the user to enter the verification code at [https://github.com/login/device](https://github.com/login/device)
+2. App opens a new browser (using your default browser) and prompts the user to enter the verification code at [https://github.com/login/device](https://github.com/login/device)
 
 3. App polls for the user authentication status. Once the user has authorized the device, the app will make an HTTP request to get the new access token.
 
