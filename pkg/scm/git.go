@@ -90,6 +90,41 @@ func WriteToken(token string, scm string) error {
 	return nil
 }
 
+// @TODO refactor WriteToken & CheckForAccess functions.
+// There is some DRY code in the two functions that I would like to refactor.
+// Specifically for getting the current directory, home dir and joining the paths
+// for the configuration file.
+func CheckForAccess(scm string) (bool, error) {
+	config := make(map[string]ScmTokenConfig)
+	authorized := false
+
+	usr, err := user.Current()
+	if err != nil {
+		return authorized, err
+	}
+
+	home := usr.HomeDir
+	configFile := filepath.Join(home, ".config", "issue-summoner", "config.json")
+
+	file, err := os.OpenFile(configFile, os.O_RDONLY, 0666)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return authorized, err
+		} else {
+			return authorized, errors.New("Error opening file")
+		}
+	}
+
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&config); err != nil {
+		return authorized, errors.New("Error decoding config file")
+	}
+
+	return config[scm].AccessToken != "", nil
+}
+
 // GlobalUserName uses the **git config** command to retrieve the global
 // configuration options. Specifically, the user.name option. The userName is
 // read and set onto the reciever's (GitConfig) UserName property. This will be used
