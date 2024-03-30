@@ -5,7 +5,7 @@ The scan command processes each source file individually and searches for specif
 It respects the `.gitignore` settings and ensures that any files designated as ignored are not scanned.
 Finally, a detailed report is presented to the user about the tags that were found during the scan.
 */
-package scan
+package cmd
 
 import (
 	"fmt"

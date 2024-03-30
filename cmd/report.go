@@ -1,7 +1,7 @@
 /*
 Copyright © 2024 AntoninoAdornetto
 */
-package report
+package cmd
 
 import (
 	"fmt"
