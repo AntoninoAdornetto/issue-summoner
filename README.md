@@ -57,6 +57,10 @@
   </ol>
 </details>
 
+## Development Status 🚧
+
+This repo is under active development. I am in the early stages of building out the core features. As such, some parts of the program may be missing and change significantly.
+
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
