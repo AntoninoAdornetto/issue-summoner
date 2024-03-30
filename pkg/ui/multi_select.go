@@ -18,7 +18,7 @@ type Step struct {
 }
 
 type Item struct {
-	Flag, Title, Desc string
+	ID, Title, Desc string
 }
 
 func (s *Selection) OnSelect(option string, value bool) {
@@ -77,7 +77,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "y":
 			for selectedKey := range m.selected {
-				m.choices.OnSelect(m.options[selectedKey].Flag, true)
+				m.choices.OnSelect(m.options[selectedKey].ID, true)
 				m.cursor = selectedKey
 			}
 			return m, tea.Quit
