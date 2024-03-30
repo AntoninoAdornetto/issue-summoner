@@ -62,9 +62,15 @@ func WriteToken(token string, scm string) error {
 	}
 
 	home := usr.HomeDir
-	configFile := filepath.Join(home, ".config", "issue-summoner", "config.json")
+	path := filepath.Join(home, ".config", "issue-summoner")
 
-	file, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	err = os.MkdirAll(path, 0755)
+	if err != nil {
+		return err
+	}
+
+	configFile := filepath.Join(path, "config.json")
+	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
