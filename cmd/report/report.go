@@ -129,7 +129,7 @@ var ReportCmd = &cobra.Command{
 			ui.InitialModelMultiSelect(
 				tagOptions,
 				&selection,
-				"Select all the tags you want to report as issues.",
+				"Select all items that you want to report as issues.",
 				&ok,
 			),
 		)
