@@ -13,10 +13,10 @@ import (
 
 const (
 	BASE_URL      = "https://github.com"
-	CLIENT_ID     = "Iv1.587a6b18c40684ba"
+	CLIENT_ID     = "ca711ca70149e4948032"
 	GRANT_TYPE    = "urn:ietf:params:oauth:grant-type:device_code"
 	ACCESS_TOKEN  = "/access_token"
-	REPO_SCOPE    = "repo"
+	SCOPES        = "repo"
 	ACCEPT_HEADER = "application/json"
 )
 
@@ -182,7 +182,7 @@ type verifyDeviceResponse struct {
 func verifyDevice() (verifyDeviceResponse, error) {
 	var res verifyDeviceResponse
 	paths := []string{"login", "device", "code"}
-	params := map[string]string{"client_id": CLIENT_ID, "scope": REPO_SCOPE}
+	params := map[string]string{"client_id": CLIENT_ID, "scope": SCOPES}
 
 	url, err := utils.BuildURL(BASE_URL, paths, params)
 	if err != nil {
