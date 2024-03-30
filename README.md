@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73">
-    <img src="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73" alt="Logo" width="500" height="500">
+    <img src="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73" alt="Logo" width="300" height="300">
   </a>
 
 <h3 align="center">Go Issue Summoner</h3>
