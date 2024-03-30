@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73">
-    <img src="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73" alt="Logo" width="500" height="500">
+    <img src="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73" alt="Logo" width="300" height="300">
   </a>
 
 <h3 align="center">Go Issue Summoner</h3>
@@ -56,6 +56,10 @@
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
+
+## Development Status 🚧
+
+This repo is under active development. I am in the early stages of building out the core features. As such, some parts of the program may be missing and change significantly.
 
 <!-- ABOUT THE PROJECT -->
 
