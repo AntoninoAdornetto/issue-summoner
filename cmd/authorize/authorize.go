@@ -15,7 +15,7 @@ import (
 )
 
 // We only support GitHub, at the moment, but eventually I want to support all that are contained
-// in the below slice.
+// in the `allowedPlatforms` slice.
 var allowedPlatforms = []string{scm.GH, scm.GL, scm.BB}
 
 func init() {
