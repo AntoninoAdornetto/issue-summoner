@@ -10,6 +10,7 @@ import (
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -80,19 +81,36 @@ var AuthorizeCmd = &cobra.Command{
 			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
 			proceed := scanner.Text()
+			fmt.Printf("\n\n")
 			if proceed != "y" {
 				ui.LogFatal("Authorization process aborted")
 			}
 		}
 
+		spinner := &tea.Program{}
+		go func() {
+			spinner = tea.NewProgram(ui.InitialModelNew("Pending Authorization..."))
+			if _, err := spinner.Run(); err != nil {
+				ui.LogFatal(err.Error())
+			}
+		}()
+
 		err = gitManager.Authorize()
 		if err != nil {
+			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
+				ui.ErrorTextStyle.Render("Error releasing terminal\n%s", releaseErr.Error())
+			}
 			ui.LogFatal(fmt.Errorf("Authorization failed.\n%s", err).Error())
+		}
+
+		err = spinner.ReleaseTerminal()
+		if err != nil {
+			ui.LogFatal(err.Error())
 		}
 
 		fmt.Println(
 			ui.SuccessTextStyle.Render(
-				fmt.Sprintf("\nAuthorization for %s succeeded!\n", sourceCodeManager),
+				fmt.Sprintf("Authorization for %s succeeded!", sourceCodeManager),
 			),
 		)
 	},
