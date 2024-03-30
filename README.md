@@ -19,7 +19,7 @@
 <h3 align="center">Go Issue Summoner</h3>
 
   <p align="center">
-    Transform your todo comments into trackable issues that are reported to a source code management system of your choosing.
+    Turn your comments into trackable issues that are reported to your favorite source code management system. 
     <br />
     <!-- @TODO Uncomment 'explore docs' section once we have added documentation. -->
     <!-- <a href="https://github.com/AntoninoAdornetto/go-issue-summoner"><strong>Explore the docs »</strong></a> -->
@@ -175,7 +175,7 @@ Running the above command will provide a multi select option where you can choos
 - [x] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
 
   - [x] GitHub Device Flow
-  - [ ] GitLabl
+  - [ ] GitLab
   - [ ] BitBucket
         <br></br>
 
