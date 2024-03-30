@@ -20,12 +20,7 @@ const (
 	ACCEPT_HEADER = "application/json"
 )
 
-type GitHubManager struct {
-	AccessToken     string
-	RefreshToken    string
-	ExpiresAt       string
-	IsAuthenticated bool
-}
+type GitHubManager struct{}
 
 // Authorize satisfies the GitManager interface. Each source code management
 // platform will have their own version of how to authorize so that
@@ -47,14 +42,15 @@ func (gh *GitHubManager) Authorize() error {
 
 	select {
 	case token := <-tokenChan:
-		return WriteToken(token.TokenType, GH)
+		return WriteToken(token.AccessToken, GH)
 	case err := <-errChan:
 		return err
 	}
 }
 
-// @TODO implement IsAuthorized
-// read config file and check for access token presence
+// @TODO do we still need the IsAuthorized func?
+// there is a check in git.go that validates if the user
+// has an access token
 func (gh *GitHubManager) IsAuthorized() bool {
 	return false
 }
@@ -66,7 +62,12 @@ func initDeviceFlow(vd chan verifyDeviceResponse, ec chan error) {
 		return
 	}
 
-	fmt.Printf("User Code: %s\n", resp.UserCode)
+	fmt.Printf(
+		"User Code: %s - Please visit %s if you have any isues",
+		resp.UserCode,
+		resp.VerificationUri,
+	)
+
 	err = utils.OpenBrowser(resp.VerificationUri)
 	if err != nil {
 		fmt.Printf(
@@ -104,9 +105,7 @@ func pollTokenService(
 
 		<-ticker.C
 		resp, err := createToken(device.DeviceCode)
-		if err != nil {
-			fmt.Printf("%s User Code: %s\n", err.Error(), device.UserCode)
-		} else {
+		if err == nil {
 			tc <- resp
 		}
 	}
