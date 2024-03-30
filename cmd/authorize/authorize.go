@@ -7,7 +7,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
@@ -65,7 +64,7 @@ var AuthorizeCmd = &cobra.Command{
 
 		if hasAccess {
 			fmt.Println(
-				ui.NoteTextStyle.Render(
+				ui.PrimaryTextStyle.Render(
 					fmt.Sprintf(
 						"Looks like you are authorized for %s's platform already. Do you want to create a new access token?",
 						sourceCodeManager,
@@ -74,27 +73,17 @@ var AuthorizeCmd = &cobra.Command{
 			)
 
 			fmt.Print(
-				ui.NoteTextStyle.Italic(true).Render("Type y to continue or n to cancel: "),
+				ui.PrimaryTextStyle.Italic(true).
+					Render("Type 'y' to continue or type 'n' to cancel the request: "),
 			)
 
 			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
 			proceed := scanner.Text()
 			if proceed != "y" {
-				ui.LogFatal("Aborted")
+				ui.LogFatal("Authorization process aborted")
 			}
 		}
-
-		fmt.Println(
-			ui.SecondaryTextStyle.Render(
-				fmt.Sprintf(
-					"\nYou will be prompted to complete a few steps to authorize Issue Summoner for %s's platform.\nThis will allow us to open issues on your behalf",
-					sourceCodeManager,
-				),
-			),
-		)
-
-		time.Sleep(time.Second * 2)
 
 		err = gitManager.Authorize()
 		if err != nil {
@@ -103,7 +92,7 @@ var AuthorizeCmd = &cobra.Command{
 
 		fmt.Println(
 			ui.SuccessTextStyle.Render(
-				fmt.Sprintf("Authorization for %s succeeded!\n", sourceCodeManager),
+				fmt.Sprintf("\nAuthorization for %s succeeded!\n", sourceCodeManager),
 			),
 		)
 	},
