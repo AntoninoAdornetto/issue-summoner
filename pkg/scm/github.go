@@ -32,7 +32,7 @@ type GitHubManager struct{}
 // is returned from the service and is then written to ~/.config/issue-summoner/config.json
 func (gh *GitHubManager) Authorize() error {
 	var once sync.Once
-	deviceChan := make(chan verifyDeviceResponse)
+	deviceChan := make(chan requestDeviceVerificationResponse)
 	tokenChan := make(chan createTokenResponse)
 	errChan := make(chan error)
 
@@ -55,8 +55,8 @@ func (gh *GitHubManager) IsAuthorized() bool {
 	return false
 }
 
-func initDeviceFlow(vd chan verifyDeviceResponse, ec chan error) {
-	resp, err := verifyDevice()
+func initDeviceFlow(vd chan requestDeviceVerificationResponse, ec chan error) {
+	resp, err := requestDeviceVerification()
 	if err != nil {
 		ec <- err
 		return
@@ -81,11 +81,11 @@ func initDeviceFlow(vd chan verifyDeviceResponse, ec chan error) {
 // pollTokenService will make an http POST request to check if the user has successfully
 // authorized the app by entering the user_code into the browser. The function will not
 // poll the endpoint at a higher frequency than the frequency indicated by **interval**
-// in the **verifyDeviceResponse** struct. GitHub will respond with a 200 status code and
+// in the **requestDeviceVerificationResponse** struct. GitHub will respond with a 200 status code and
 // an error response
 func pollTokenService(
 	tc chan createTokenResponse,
-	device verifyDeviceResponse,
+	device requestDeviceVerificationResponse,
 	ec chan error,
 	once *sync.Once,
 ) {
@@ -167,7 +167,7 @@ func handleCreateTokenErr(data []byte) createTokenError {
 	return tokenErr
 }
 
-type verifyDeviceResponse struct {
+type requestDeviceVerificationResponse struct {
 	DeviceCode      string `json:"device_code"`      // device verification code used to verify the device
 	UserCode        string `json:"user_code"`        // displayed on the device, user will enter code into browser (verificationUri)
 	VerificationUri string `json:"verification_uri"` // the url where the user needs to enter the user_code
@@ -175,12 +175,12 @@ type verifyDeviceResponse struct {
 	Interval        int    `json:"interval"`         // min num of seconds that must pass before we make a new access token req
 }
 
-// verifyDevice will make a POST request to GitHubs device and user verification
+// requestDeviceVerification will make a POST request to GitHubs device and user verification
 // code service. It returns a struct containing information that is needed
 // to create an access token. This is step 1 of the device flow.
 // See -> https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow
-func verifyDevice() (verifyDeviceResponse, error) {
-	var res verifyDeviceResponse
+func requestDeviceVerification() (requestDeviceVerificationResponse, error) {
+	var res requestDeviceVerificationResponse
 	paths := []string{"login", "device", "code"}
 	params := map[string]string{"client_id": CLIENT_ID, "scope": REPO_SCOPE}
 
