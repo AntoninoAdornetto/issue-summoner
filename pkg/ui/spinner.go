@@ -55,7 +55,7 @@ func (m spinnerModel) View() string {
 	if m.err != nil {
 		return m.err.Error()
 	}
-	str := fmt.Sprintf("%s %s", m.spinner.View(), AccentTextStyle.Render(m.msg))
+	str := fmt.Sprintf("%s %s\n\n", m.spinner.View(), m.msg)
 	if m.exit {
 		return str + "\n"
 	}
