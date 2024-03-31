@@ -1,6 +1,7 @@
 package scm
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,15 +13,101 @@ import (
 )
 
 const (
-	BASE_URL      = "https://github.com"
-	CLIENT_ID     = "ca711ca70149e4948032"
-	GRANT_TYPE    = "urn:ietf:params:oauth:grant-type:device_code"
-	ACCESS_TOKEN  = "/access_token"
-	SCOPES        = "repo"
-	ACCEPT_HEADER = "application/json"
+	BASE_URL           = "https://github.com"
+	GITHUB_BASE_URL    = "https://api.github.com"
+	CLIENT_ID          = "ca711ca70149e4948032"
+	GRANT_TYPE         = "urn:ietf:params:oauth:grant-type:device_code"
+	ACCESS_TOKEN       = "/access_token"
+	SCOPES             = "repo"
+	ACCEPT_JSON        = "application/json"
+	ACCEPT_VDN         = "application/vnd.github+json"
+	GITHUB_API_VERSION = "2022-11-28"
 )
 
 type GitHubManager struct{}
+
+func (gh *GitHubManager) Report(issues []Issue, scm string) error {
+	wg := sync.WaitGroup{}
+	issueChan := make(chan createIssueResponse, len(issues))
+	errChan := make(chan error)
+
+	accessToken, err := ReadAccessToken(scm)
+	if err != nil {
+		return err
+	}
+
+	for _, is := range issues {
+		wg.Add(1)
+		go func(issue Issue) {
+			defer wg.Done()
+			resp, err := createIssue(issue, accessToken)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			issueChan <- resp
+		}(is)
+	}
+
+	wg.Wait()
+
+	return nil
+}
+
+type createIssueResponse struct {
+	URL           string `json:"url"`
+	RepositoryURL string `json:"repository_url"`
+	LabelsURL     string `json:"labels_url"` // Note that this is a template string, you'll need to replace {name} with the label name in use.
+	CommentsURL   string `json:"comments_url"`
+	EventsURL     string `json:"events_url"`
+	HTMLURL       string `json:"html_url"`
+	ID            int64  `json:"id"`
+	NodeID        string `json:"node_id"`
+	Number        int    `json:"number"`
+	Title         string `json:"title"`
+}
+
+func createIssue(issue Issue, accessToken string) (createIssueResponse, error) {
+	var res createIssueResponse
+
+	repoName, err := RepoName()
+	if err != nil {
+		return res, err
+	}
+
+	userName, err := GlobalUserName()
+	if err != nil {
+		return res, err
+	}
+
+	paths := []string{"repos", userName, repoName, "issues"}
+	url, err := utils.BuildURL(GITHUB_BASE_URL, paths, nil)
+	if err != nil {
+		return res, err
+	}
+
+	body, err := json.Marshal(issue)
+	if err != nil {
+		return res, err
+	}
+
+	headers := http.Header{}
+	headers.Add("Accept", ACCEPT_VDN)
+	headers.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	headers.Add("X-GitHub-Api-Version", GITHUB_API_VERSION)
+
+	resp, err := utils.SubmitPostRequest(url, bytes.NewReader(body), headers)
+	if err != nil {
+		return res, err
+	}
+
+	err = json.Unmarshal(resp, &res)
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
+}
 
 // Authorize satisfies the GitManager interface. Each source code management
 // platform will have their own version of how to authorize so that
@@ -51,8 +138,8 @@ func (gh *GitHubManager) Authorize() error {
 // @TODO do we still need the IsAuthorized func?
 // there is a check in git.go that validates if the user
 // has an access token
-func (gh *GitHubManager) IsAuthorized() bool {
-	return false
+func (gh *GitHubManager) IsAuthorized() (bool, error) {
+	return CheckForAccess(GH)
 }
 
 func initDeviceFlow(vd chan requestDeviceVerificationResponse, ec chan error) {
@@ -132,7 +219,7 @@ func createToken(deviceCode string) (createTokenResponse, error) {
 	}
 
 	headers := http.Header{}
-	headers.Add("Accept", ACCEPT_HEADER)
+	headers.Add("Accept", ACCEPT_JSON)
 
 	resp, err := utils.SubmitPostRequest(url, nil, headers)
 	if err != nil {
@@ -190,7 +277,7 @@ func requestDeviceVerification() (requestDeviceVerificationResponse, error) {
 	}
 
 	headers := http.Header{}
-	headers.Add("Accept", ACCEPT_HEADER)
+	headers.Add("Accept", ACCEPT_JSON)
 
 	resp, err := utils.SubmitPostRequest(url, nil, headers)
 	if err != nil {
