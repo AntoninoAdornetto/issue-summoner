@@ -39,16 +39,25 @@ type Issue struct {
 	IsMultiLine          bool
 }
 
+// IssueManager is responsible for defining the methods
+// we will use for parsing single and multi line comments.
 type IssueManager interface {
 	Scan() ([]Issue, error)
 }
 
+// GetIssueManager takes an issue type as input and returns
+// a new struct that satisfies the IssueManager interface.
+// The PendingIssue struct is in charge of issues that have not
+// been reported to a source code management platform yet.
+// ProcessedIssue struct is in charge of issues that have
+// already been reported. An error is returned if an unsupported
+// issueType is passed into the function
 func GetIssueManager(issueType string) (IssueManager, error) {
 	switch issueType {
 	case PENDING_ISSUE:
-		return &PendingIssue{}, nil
+		return &PendingIssue{Issues: make([]Issue, 0)}, nil
 	case PROCESSED_ISSUE:
-		return &ProcessedIssue{}, nil
+		return &ProcessedIssue{Issues: make([]Issue, 0)}, nil
 	default:
 		return nil, errors.New("Unsupported issue type. Please use pending or processed")
 	}
