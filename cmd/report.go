@@ -148,6 +148,9 @@ var ReportCmd = &cobra.Command{
 			}
 		}
 
-		gm.Report(toReport, sourceCodeManager)
+		err = gm.Report(toReport, sourceCodeManager)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
 	},
 }
