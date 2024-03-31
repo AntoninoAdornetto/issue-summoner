@@ -134,37 +134,40 @@ func CheckForAccess(scm string) (bool, error) {
 // GlobalUserName uses the **git config** command to retrieve the global
 // configuration options. Specifically, the user.name option. The userName is
 // read and set onto the reciever's (GitConfig) UserName property. This will be used
-func (gc *GitConfig) GlobalUserName() error {
+func GlobalUserName() (string, error) {
 	var out strings.Builder
 	cmd := exec.Command("git", "config", "--global", "user.name")
 	cmd.Stdout = &out
 
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	userName := out.String()
+	userName := strings.TrimSpace(out.String())
 	if userName == "" {
-		return errors.New("global userName option not set. See man git config for more details")
+		return "", errors.New("global userName option not set. See man git config for more details")
 	}
 
-	gc.UserName = userName
-	return nil
+	return userName, nil
 }
 
-func (gc *GitConfig) RepoName() error {
+func RepoName() (string, error) {
 	var out strings.Builder
 	cmd := exec.Command("git", "remote", "-v")
 	cmd.Stdout = &out
 
 	err := cmd.Run()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	gc.RepositoryName = extractRepoName(out.String())
-	return nil
+	repoName := extractRepoName(out.String())
+	if repoName == "" {
+		return "", errors.New("Failed to get repo name")
+	}
+
+	return repoName, nil
 }
 
 // extractRepoName takes the output from the `git remote -v` command as input (origins) and outputs the repository name.
