@@ -137,6 +137,41 @@ func CheckForAccess(scm string) (bool, error) {
 	return config[scm].AccessToken != "", nil
 }
 
+func ReadAccessToken(scm string) (string, error) {
+	config := make(map[string]ScmTokenConfig)
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	home := usr.HomeDir
+	configFile := filepath.Join(home, ".config", "issue-summoner", "config.json")
+
+	file, err := os.OpenFile(configFile, os.O_RDONLY, 0666)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", err
+		} else {
+			return "", errors.New("Error opening file")
+		}
+	}
+
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&config); err != nil {
+		return "", errors.New("Error decoding config file")
+	}
+
+	accessToken := config[scm].AccessToken
+	if accessToken == "" {
+		return "", errors.New("Access token does not exist")
+	}
+
+	return accessToken, nil
+}
+
 // GlobalUserName uses the **git config** command to retrieve the global
 // configuration options. Specifically, the user.name option. The userName is
 // read and set onto the reciever's (GitConfig) UserName property. This will be used
