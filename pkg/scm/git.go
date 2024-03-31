@@ -27,6 +27,11 @@ type GitConfig struct {
 	Scm            string // GitHub || GitLab || BitBucket ...
 }
 
+type Issue struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
 // GitConfigManager interface allows us to have different adapters for each
 // source code management system that we would like to use. We can have different
 // implementations for GitHub, GitLab, BitBucket and so on.
@@ -34,7 +39,8 @@ type GitConfig struct {
 // ReadToken checks if there is an access token in ~/.config/issue-summoner/config.json
 type GitConfigManager interface {
 	Authorize() error
-	IsAuthorized() bool
+	Report(issues []Issue, scm string) error
+	IsAuthorized() (bool, error)
 }
 
 func GetGitConfig(scm string) GitConfigManager {
