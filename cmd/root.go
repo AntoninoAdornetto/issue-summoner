@@ -48,6 +48,7 @@ func subCommands() {
 	rootCmd.AddCommand(ScanCmd)
 	rootCmd.AddCommand(ReportCmd)
 	rootCmd.AddCommand(AuthorizeCmd)
+	rootCmd.AddCommand(IssueCmd)
 }
 
 func init() {
