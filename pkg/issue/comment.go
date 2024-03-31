@@ -1,3 +1,9 @@
+/*
+comment.go is responsible for determining the style of comments (single-line, multi-line, or both) that may reside in the files
+we are scanning. The file extension of a particular file is used to determine the symbols for both single/multi line comments.
+
+Comments are important because actionable annotations (if they exist) will reside within comment blocks.
+*/
 package issue
 
 const (
@@ -50,6 +56,11 @@ type MultiLineComment struct {
 type CommentManager struct {
 	SingleLineSymbols SingleLineComment
 	MultiLineSymbols  MultiLineComment
+// Comment contains symbols that are used to denote
+// single-line and multi-line comments.
+// Some languages, such as python, may offer more than 1
+// way to indicate a multi line comment.
+// For this reason, a string slice is used.
 }
 
 var CommentSyntaxMap = map[string]CommentManager{
