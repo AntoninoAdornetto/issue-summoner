@@ -28,8 +28,8 @@ type GitConfig struct {
 }
 
 type Issue struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Title string `json:"title"`
+	Body  string `json:"body"`
 }
 
 // GitConfigManager interface allows us to have different adapters for each

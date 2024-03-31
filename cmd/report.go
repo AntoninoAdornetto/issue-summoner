@@ -144,7 +144,7 @@ var ReportCmd = &cobra.Command{
 
 		for _, t := range tags {
 			if selection.Options[t.Title] {
-				toReport = append(toReport, scm.Issue{Title: t.Title, Description: t.Description})
+				toReport = append(toReport, scm.Issue{Title: t.Title, Body: t.Description})
 			}
 		}
 
