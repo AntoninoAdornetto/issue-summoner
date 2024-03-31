@@ -6,6 +6,11 @@ Comments are important because actionable annotations (if they exist) will resid
 */
 package issue
 
+import (
+	"strings"
+	"unicode"
+)
+
 const (
 	fileExtAsm        = ".asm"
 	fileExtBash       = ".sh"
@@ -48,6 +53,10 @@ type Comment struct {
 	SingleLineSymbols     []string
 	MultiLineStartSymbols []string
 	MultiLineEndSymbols   []string
+}
+
+type CommentStack struct {
+	Items []string
 }
 
 var CommentSymbols = map[string]Comment{
@@ -97,4 +106,35 @@ func GetCommentSymbols(ext string) Comment {
 	default:
 		return CommentSymbols["default"]
 	}
+}
+
+func (c Comment) ParseCommentContents(
+	line string,
+	builder *strings.Builder,
+	stack CommentStack,
+) (strings.Builder, error) {
+	if single, singleSyntax := c.isSingle(line); single {
+		// remove single-line comment syntax found from isSingle
+		nonCommentLine := strings.SplitAfter(line, singleSyntax)[1]
+		builder.WriteString(strings.TrimFunc(nonCommentLine, unicode.IsSpace))
+	}
+	return *builder, nil
+}
+
+// isSingle uses the Comment struct as a receiver to
+// determine if the line (from a source code file) is
+// a single line comment.
+func (c Comment) isSingle(line string) (bool, string) {
+	if len(c.SingleLineSymbols) == 0 {
+		return false, ""
+	}
+
+	for _, s := range c.SingleLineSymbols {
+		single := strings.HasPrefix(line, s)
+		if single {
+			return true, s
+		}
+	}
+
+	return false, ""
 }
