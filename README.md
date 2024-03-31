@@ -172,7 +172,7 @@ Running the above command will provide a multi select option where you can choos
 
 - [x] `Comment/Tag-Annotation Scanning Engine`: Develop the core engine that scans source code files for user defined tag annotations, such as @TODO for to-do items. It can recognize the file's extension and appropriately handle language specific syntax for both single and multi-line comments.
 
-- [x] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
+- [ ] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
 
   - [x] GitHub Device Flow
   - [ ] GitLab
@@ -181,7 +181,7 @@ Running the above command will provide a multi select option where you can choos
 
 - [ ] `SCM Adapter`: Implement a basic adapter for issue reporting functionality.
 
-  - [ ] GitHub Adapter
+  - [x] GitHub Adapter
   - [ ] GitLab Adapater
   - [ ] BitBucket Adapater
 

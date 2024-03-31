@@ -118,6 +118,7 @@ var ReportCmd = &cobra.Command{
 			tagOptions[i] = ui.Item{
 				Title: t.Title,
 				Desc:  t.Description,
+				ID:    t.Title,
 			}
 		}
 
@@ -136,6 +137,20 @@ var ReportCmd = &cobra.Command{
 
 		if _, err := teaProgram.Run(); err != nil {
 			cobra.CheckErr(ui.ErrorTextStyle.Render(err.Error()))
+		}
+
+		gm := scm.GetGitConfig(sourceCodeManager)
+		toReport := make([]scm.Issue, 0)
+
+		for _, t := range tags {
+			if selection.Options[t.Title] {
+				toReport = append(toReport, scm.Issue{Title: t.Title, Description: t.Description})
+			}
+		}
+
+		err = gm.Report(toReport, sourceCodeManager)
+		if err != nil {
+			ui.LogFatal(err.Error())
 		}
 	},
 }
