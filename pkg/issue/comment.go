@@ -39,92 +39,62 @@ const (
 	fileExtZig        = ".zig"
 )
 
-type SingleLineComment = string
-
-type MultiLineComment struct {
-	StartSymbols string
-	EndSymbols   string
-}
-
-type CommentManager struct {
-	SingleLineSymbols SingleLineComment
-	MultiLineSymbols  MultiLineComment
 // Comment contains symbols that are used to denote
 // single-line and multi-line comments.
 // Some languages, such as python, may offer more than 1
 // way to indicate a multi line comment.
 // For this reason, a string slice is used.
+type Comment struct {
+	SingleLineSymbols     []string
+	MultiLineStartSymbols []string
+	MultiLineEndSymbols   []string
 }
 
-var CommentSyntaxMap = map[string]CommentManager{
-	FileExtC: {
-		SingleLineSymbols: SingleLineC,
-		MultiLineSymbols: MultiLineComment{
-			StartSymbols: MultiLineStartC,
-			EndSymbols:   MultiLineEndC,
-		},
+var CommentSymbols = map[string]Comment{
+	fileExtC: {
+		SingleLineSymbols:     []string{"//"},
+		MultiLineStartSymbols: []string{"/*"},
+		MultiLineEndSymbols:   []string{"*/"},
 	},
-	FileExtMarkdown: {
-		SingleLineSymbols: "",
-		MultiLineSymbols: MultiLineComment{
-			StartSymbols: MultiLineStartMd,
-			EndSymbols:   MultiLineEndMd,
-		},
+	fileExtPython: {
+		SingleLineSymbols:     []string{"#"},
+		MultiLineStartSymbols: []string{"\"\"\"", "'''"},
+		MultiLineEndSymbols:   []string{"\"\"\"", "'''"},
+	},
+	fileExtMarkdown: {
+		MultiLineStartSymbols: []string{"<!--"},
+		MultiLineEndSymbols:   []string{"-->"},
+	},
+	"default": {
+		SingleLineSymbols:     []string{"#"},
+		MultiLineStartSymbols: []string{"#"},
+		MultiLineEndSymbols:   []string{"#"},
 	},
 }
 
-// var CommentSyntaxMap = map[string]CommentLangSyntax{
-// 	"c-derived": {
-// 		SingleLineCommentSymbols: CommentCSingle,
-// 		MultiLineCommentSymbols: MultiLineCommentSyntax{
-// 			CommentStartSymbol: CommentCMultiStart,
-// 			CommentEndSymbol:   CommentCMultiEnd,
-// 		},
-// 	},
-// 	"default": {
-// 		SingleLineCommentSymbols: "#",
-// 		MultiLineCommentSymbols: MultiLineCommentSyntax{
-// 			CommentStartSymbol: "#",
-// 			CommentEndSymbol:   "#",
-// 		},
-// 	},
-// }
-//
-// func CommentSyntax(fileExtension string) CommentLangSyntax {
-// 	switch fileExtension {
-// 	case FileExtC,
-// 		FileExtCpp,
-// 		FileExtJava,
-// 		FileExtJavaScript,
-// 		FileExtJsx,
-// 		FileExtTypeScript,
-// 		FileExtTsx,
-// 		FileExtCS,
-// 		FileExtGo,
-// 		FileExtPhp,
-// 		FileExtSwift,
-// 		FileExtKotlin,
-// 		FileExtRust,
-// 		FileExtObjC,
-// 		FileExtScala:
-// 		return CommentSyntaxMap["c-derived"]
-// 	default:
-// 		return CommentSyntaxMap["default"]
-// 	}
-// }
-//
-//
-// // Single Line comments
-// const (
-// 	CommentCSingle = "//"
-// )
-//
-// // Multi-Line comments (start)
-// const (
-// 	CommentCMultiStart = "/*"
-// )
-//
-// // Multi-Line comments (end)
-// const (
-// 	CommentCMultiEnd = "*/"
-// )
+func GetCommentSymbols(ext string) Comment {
+	switch ext {
+	case fileExtC,
+		fileExtCpp,
+		fileExtJava,
+		fileExtJavaScript,
+		fileExtJsx,
+		fileExtTypeScript,
+		fileExtTsx,
+		fileExtCS,
+		fileExtGo,
+		fileExtPhp,
+		fileExtSwift,
+		fileExtKotlin,
+		fileExtRust,
+		fileExtObjC,
+		fileExtScala:
+		return CommentSymbols[fileExtC]
+	case fileExtPython:
+		return CommentSymbols[fileExtPython]
+	case fileExtMarkdown:
+		return CommentSymbols[fileExtMarkdown]
+	default:
+		return CommentSymbols["default"]
+	}
+}
