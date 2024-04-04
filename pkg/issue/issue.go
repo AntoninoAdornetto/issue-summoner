@@ -63,6 +63,7 @@ func GetIssueManager(issueType string) (IssueManager, error) {
 		return nil, errors.New("Unsupported issue type. Please use pending or processed")
 	}
 }
+
 // Skip evaluates if we should proceed with parsing a line that is
 // read from a buffer and provided as input. The line input will
 // aid the Scan function in determining if we should continue with the
