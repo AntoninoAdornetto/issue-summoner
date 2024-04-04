@@ -68,7 +68,11 @@ to quickly create a Cobra application.`,
 			path = wd
 		}
 
-		issueManager, err := issue.GetIssueManager(mode)
+		issueManager, err := issue.GetIssueManager(mode, tagName)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}
