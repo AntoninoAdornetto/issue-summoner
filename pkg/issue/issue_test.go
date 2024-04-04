@@ -25,42 +25,58 @@ func TestGetIssueManager_UnknownIssueType(t *testing.T) {
 	require.Nil(t, issueManager)
 }
 
-func TestSkip_SingleLineTrueGo(t *testing.T) {
+func TestEvalSourceLine_SrcCodeGo(t *testing.T) {
 	line := "func main(){ fmt.Printf('Hello World\n')}"
-	require.True(t, issue.Skip(line, issue.GetCommentSymbols(".go")))
+	expected := issue.LINE_TYPE_SRC_CODE
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	require.Equal(t, expected, actual)
 }
 
-func TestSkip_SingleLineFalseGo(t *testing.T) {
+func TestEvalSourceLine_SingleLineGo(t *testing.T) {
 	line := "// single line comment"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".go")))
+	expected := issue.LINE_TYPE_SINGLE
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	require.Equal(t, expected, actual)
 }
 
-func TestSkip_SingleLineTruePy(t *testing.T) {
+func TestEvalSourceLine_MultiLineStartGo(t *testing.T) {
+	line := "/* Start multi line comment"
+	expected := issue.LINE_TYPE_MULTI
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	require.Equal(t, expected, actual)
+}
+
+func TestEvalSourceLine_MultiLineEndGo(t *testing.T) {
+	line := "*/"
+	expected := issue.LINE_TYPE_MULTI
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	require.Equal(t, expected, actual)
+}
+
+func TestEvalSourceLine_SrcCodePy(t *testing.T) {
 	line := "def sum(a: int, b: int):"
-	require.True(t, issue.Skip(line, issue.GetCommentSymbols(".py")))
+	expected := issue.LINE_TYPE_SRC_CODE
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	require.Equal(t, expected, actual)
 }
 
-func TestSkip_SingleLineFalsePy(t *testing.T) {
+func TestEvalSourceLine_SingleLinePy(t *testing.T) {
 	line := "# single line comment"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".py")))
+	expected := issue.LINE_TYPE_SINGLE
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	require.Equal(t, expected, actual)
 }
 
-func TestSkip_MultiLineStartFalseGo(t *testing.T) {
-	line := "/* begin multi line comment"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".go")))
+func TestEvalSourceLine_MultiLineStartPy(t *testing.T) {
+	line := "''' Start multi line comment"
+	expected := issue.LINE_TYPE_MULTI
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	require.Equal(t, expected, actual)
 }
 
-func TestSkip_MultiLineEndFalseGo(t *testing.T) {
-	line := "End Multi line comment*/"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".go")))
-}
-
-func TestSkip_MultiLineStartFalsePy(t *testing.T) {
-	line := "''' Start Multi line"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".py")))
-}
-
-func TestSkip_MultiLineEndFalsePy(t *testing.T) {
-	line := "End Multi line comment'''"
-	require.False(t, issue.Skip(line, issue.GetCommentSymbols(".py")))
+func TestEvalSourceLine_MultiLineEndPy(t *testing.T) {
+	line := "End multi line comment'''"
+	expected := issue.LINE_TYPE_MULTI
+	actual := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	require.Equal(t, expected, actual)
 }
