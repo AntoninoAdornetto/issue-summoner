@@ -20,6 +20,7 @@ package issue
 import (
 	"errors"
 	"os"
+	"strings"
 )
 
 const (
