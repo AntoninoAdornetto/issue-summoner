@@ -24,8 +24,11 @@ import (
 )
 
 const (
-	PENDING_ISSUE   = "pending"
-	PROCESSED_ISSUE = "processed"
+	PENDING_ISSUE      = "pending"
+	PROCESSED_ISSUE    = "processed"
+	LINE_TYPE_SRC_CODE = "code"
+	LINE_TYPE_SINGLE   = "single"
+	LINE_TYPE_MULTI    = "multi"
 )
 
 type Issue struct {
@@ -62,6 +65,30 @@ func GetIssueManager(issueType string) (IssueManager, error) {
 	default:
 		return nil, errors.New("Unsupported issue type. Please use pending or processed")
 	}
+}
+
+// EvalSourceLine evaluates the line (read from a bufio scanner) input
+// and determines if the line is a single line comment **(LINE_TYPE_SINGLE)**,
+// a multi line comment **(LINE_TYPE_MULTI)** or sorce code **(LINE_TYPE_SRC_CODE)**
+// In addition, this function is used within the Scan implementations of the
+// PendingIssue & ProcessedIssue structs to determine if we should proceed
+// with the parsing of a single/multi comment line or skip the process entirely.
+func EvalSourceLine(line string, c Comment) string {
+	for _, s := range c.SingleLineSymbols {
+		if strings.HasPrefix(line, s) {
+			return LINE_TYPE_SINGLE
+		}
+	}
+
+	for i := range c.MultiLineStartSymbols {
+		isMultiStart := strings.HasPrefix(line, c.MultiLineStartSymbols[i])
+		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndSymbols[i])
+		if isMultiStart || isMultiEnd {
+			return LINE_TYPE_MULTI
+		}
+	}
+
+	return LINE_TYPE_SRC_CODE
 }
 
 // Skip evaluates if we should proceed with parsing a line that is
