@@ -56,10 +56,10 @@ type IssueManager interface {
 // ProcessedIssue struct is in charge of issues that have
 // already been reported. An error is returned if an unsupported
 // issueType is passed into the function
-func GetIssueManager(issueType string) (IssueManager, error) {
+func GetIssueManager(issueType string, annotation string) (IssueManager, error) {
 	switch issueType {
 	case PENDING_ISSUE:
-		return &PendingIssue{Issues: make([]Issue, 0)}, nil
+		return &PendingIssue{Issues: make([]Issue, 0), Annotation: annotation}, nil
 	case PROCESSED_ISSUE:
 		return &ProcessedIssue{Issues: make([]Issue, 0)}, nil
 	default:
