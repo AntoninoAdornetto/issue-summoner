@@ -18,6 +18,7 @@ source code management platform returned after making an http request to create 
 package issue
 
 import (
+	"bufio"
 	"errors"
 	"os"
 	"strings"
@@ -46,7 +47,16 @@ type Issue struct {
 // IssueManager is responsible for defining the methods
 // we will use for parsing single and multi line comments.
 type IssueManager interface {
-	Scan(file *os.File, ext string) error
+	Scan(file *os.File) ([]Issue, error)
+	ParseComment(ParseCommentParams) error
+}
+
+type ParseCommentParams struct {
+	LineText string
+	LineNum  uint64
+	LineType string
+	Scanner  *bufio.Scanner
+	Comment  Comment
 }
 
 // GetIssueManager takes an issue type as input and returns
