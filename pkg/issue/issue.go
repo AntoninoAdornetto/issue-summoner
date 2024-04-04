@@ -42,7 +42,7 @@ type Issue struct {
 // IssueManager is responsible for defining the methods
 // we will use for parsing single and multi line comments.
 type IssueManager interface {
-	Scan() ([]Issue, error)
+	Scan(file *os.File, ext string) error
 }
 
 // GetIssueManager takes an issue type as input and returns
