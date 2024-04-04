@@ -62,3 +62,25 @@ func GetIssueManager(issueType string) (IssueManager, error) {
 		return nil, errors.New("Unsupported issue type. Please use pending or processed")
 	}
 }
+// Skip evaluates if we should proceed with parsing a line that is
+// read from a buffer and provided as input. The line input will
+// aid the Scan function in determining if we should continue with the
+// line parsing or if we should skip that process entirely. We shouldn't
+// parse lines of source code that do not need to be.
+func Skip(line string, c Comment) bool {
+	for _, s := range c.SingleLineSymbols {
+		if strings.HasPrefix(line, s) {
+			return false
+		}
+	}
+
+	for i := range c.MultiLineStartSymbols {
+		isMultiStart := strings.HasPrefix(line, c.MultiLineStartSymbols[i])
+		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndSymbols[i])
+		if isMultiStart || isMultiEnd {
+			return false
+		}
+	}
+
+	return true
+}
