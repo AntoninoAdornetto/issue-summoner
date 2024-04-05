@@ -1,6 +1,7 @@
 package issue_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,9 +10,12 @@ import (
 )
 
 func TestScan_SingleLine1Item(t *testing.T) {
-	file, _ := setup(
+	file, fileInfo := setup(
 		t,
-		"func main() {\n\t// @TEST_TODO Test Me\n\t// Write test cases that bring up the code coverage\n}\n",
+		`func main(){
+			// @TEST_TODO Test Me
+			// Write test cases that bring up the code coverage
+		}`,
 	)
 
 	defer tearDown(file)
@@ -19,8 +23,9 @@ func TestScan_SingleLine1Item(t *testing.T) {
 	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
 	require.NoError(t, err)
 
-	actual, err := pi.Scan(file)
+	err = pi.Scan(file)
 	require.NoError(t, err)
+	actual := pi.GetIssues()
 
 	expected := []issue.Issue{
 		{
@@ -31,11 +36,98 @@ func TestScan_SingleLine1Item(t *testing.T) {
 			Description:          "Write test cases that bring up the code coverage",
 			IsSingleLine:         true,
 			IsMultiLine:          false,
+			FileInfo:             fileInfo,
+			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
 		},
 	}
 
 	require.Equal(t, expected, actual)
 }
+
+func TestScan_SingleLineMultipleItems(t *testing.T) {
+	file, fileInfo := setup(
+		t,
+		`func main() {
+		// @TEST_TODO Test Me
+
+		fmt.Printf("hello world\n")
+		// @TEST_TODO Test Me as well
+		}`,
+	)
+
+	defer tearDown(file)
+
+	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
+	require.NoError(t, err)
+
+	err = pi.Scan(file)
+	require.NoError(t, err)
+	actual := pi.GetIssues()
+
+	expected := []issue.Issue{
+		{
+			AnnotationLineNumber: 2,
+			StartLineNumber:      2,
+			EndLineNumber:        2,
+			Title:                "Test Me",
+			Description:          "",
+			IsSingleLine:         true,
+			IsMultiLine:          false,
+			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
+			FileInfo:             fileInfo,
+		},
+		{
+			AnnotationLineNumber: 5,
+			StartLineNumber:      5,
+			EndLineNumber:        5,
+			Title:                "Test Me as well",
+			Description:          "",
+			IsSingleLine:         true,
+			IsMultiLine:          false,
+			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 5),
+			FileInfo:             fileInfo,
+		},
+	}
+
+	require.Equal(t, expected, actual)
+}
+
+// @TODO uncomment multi line comment test once refactor is finished
+// func TestScan_MultipleLine1Item(t *testing.T) {
+// 	file, fileInfo := setup(
+// 		t,
+// 		`func main(){
+// 			/* @TEST_TODO Test Me
+// 				 Write test cases that bring up the code coverage
+// 			*/
+// 		}`,
+// 	)
+//
+// 	defer tearDown(file)
+//
+// 	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
+// 	require.NoError(t, err)
+//
+// 	err = pi.Scan(file)
+// 	require.NoError(t, err)
+// 	actual := pi.GetIssues()
+//
+// 	expected := []issue.Issue{
+// 		{
+// 			AnnotationLineNumber: 2,
+// 			StartLineNumber:      2,
+// 			EndLineNumber:        4,
+// 			Title:                "Test Me",
+// 			Description:          "Write test cases that bring up the code coverage",
+// 			IsSingleLine:         false,
+// 			IsMultiLine:          true,
+// 			FileInfo:             fileInfo,
+// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
+// 		},
+// 	}
+//
+// 	require.Equal(t, expected, actual)
+// }
 
 func setup(t *testing.T, text string) (*os.File, os.FileInfo) {
 	file, err := os.CreateTemp("", "*.go")
