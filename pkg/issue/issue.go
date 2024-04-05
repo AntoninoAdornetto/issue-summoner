@@ -86,20 +86,24 @@ func GetIssueManager(issueType string, annotation string) (IssueManager, error) 
 // In addition, this function is used within the Scan implementations of the
 // PendingIssue & ProcessedIssue structs to determine if we should proceed
 // with the parsing of a single/multi comment line or skip the process entirely.
-func EvalSourceLine(line string, c Comment) string {
+func EvalSourceLine(line string, c Comment) (string, string) {
 	for _, s := range c.SingleLineSymbols {
 		if strings.HasPrefix(line, s) {
-			return LINE_TYPE_SINGLE
+			return LINE_TYPE_SINGLE, s
 		}
 	}
 
 	for i := range c.MultiLineStartSymbols {
 		isMultiStart := strings.HasPrefix(line, c.MultiLineStartSymbols[i])
 		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndSymbols[i])
+		if isMultiStart {
+			return LINE_TYPE_MULTI, c.MultiLineStartSymbols[i]
+		}
+
 		if isMultiStart || isMultiEnd {
-			return LINE_TYPE_MULTI
+			return LINE_TYPE_MULTI, c.MultiLineEndSymbols[i]
 		}
 	}
 
-	return LINE_TYPE_SRC_CODE
+	return LINE_TYPE_SRC_CODE, ""
 }
