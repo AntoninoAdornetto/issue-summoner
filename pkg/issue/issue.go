@@ -47,16 +47,19 @@ type Issue struct {
 // IssueManager is responsible for defining the methods
 // we will use for parsing single and multi line comments.
 type IssueManager interface {
-	Scan(file *os.File) ([]Issue, error)
+	GetIssues() []Issue
+	Scan(file *os.File) error
 	ParseComment(ParseCommentParams) error
 }
 
 type ParseCommentParams struct {
-	LineText string
-	LineNum  uint64
-	LineType string
-	Scanner  *bufio.Scanner
-	Comment  Comment
+	LineText      string
+	LineType      string
+	LineNum       *uint64
+	Scanner       *bufio.Scanner
+	Comment       Comment
+	CommentSymbol string
+	FileInfo      os.FileInfo
 }
 
 // GetIssueManager takes an issue type as input and returns
