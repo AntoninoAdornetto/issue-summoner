@@ -25,11 +25,12 @@ import (
 )
 
 const (
-	PENDING_ISSUE      = "pending"
-	PROCESSED_ISSUE    = "processed"
-	LINE_TYPE_SRC_CODE = "code"
-	LINE_TYPE_SINGLE   = "single"
-	LINE_TYPE_MULTI    = "multi"
+	PENDING_ISSUE         = "pending"
+	PROCESSED_ISSUE       = "processed"
+	LINE_TYPE_SRC_CODE    = "c"
+	LINE_TYPE_SINGLE      = "single"
+	LINE_TYPE_MULTI_START = "multi-start"
+	LINE_TYPE_MULTI_END   = "multi-end"
 )
 
 type Issue struct {
@@ -58,7 +59,7 @@ type ParseCommentParams struct {
 	LineNum       *uint64
 	Scanner       *bufio.Scanner
 	Comment       Comment
-	CommentSymbol string
+	CommentPrefix string
 	FileInfo      os.FileInfo
 }
 
@@ -87,21 +88,22 @@ func GetIssueManager(issueType string, annotation string) (IssueManager, error) 
 // PendingIssue & ProcessedIssue structs to determine if we should proceed
 // with the parsing of a single/multi comment line or skip the process entirely.
 func EvalSourceLine(line string, c Comment) (string, string) {
-	for _, s := range c.SingleLineSymbols {
+	for _, s := range c.SingleLinePrefix {
 		if strings.HasPrefix(line, s) {
 			return LINE_TYPE_SINGLE, s
 		}
 	}
 
-	for i := range c.MultiLineStartSymbols {
-		isMultiStart := strings.HasPrefix(line, c.MultiLineStartSymbols[i])
-		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndSymbols[i])
+	for i := range c.MultiLineStartPrefix {
+		isMultiStart := strings.HasPrefix(line, c.MultiLineStartPrefix[i])
+		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndPrefix[i])
+
 		if isMultiStart {
-			return LINE_TYPE_MULTI, c.MultiLineStartSymbols[i]
+			return LINE_TYPE_MULTI_START, c.MultiLineStartPrefix[i]
 		}
 
-		if isMultiStart || isMultiEnd {
-			return LINE_TYPE_MULTI, c.MultiLineEndSymbols[i]
+		if isMultiEnd {
+			return LINE_TYPE_MULTI_END, c.MultiLineEndPrefix[i]
 		}
 	}
 
