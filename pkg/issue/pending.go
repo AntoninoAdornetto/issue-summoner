@@ -32,7 +32,7 @@ func (pi *PendingIssue) Scan(file *os.File) error {
 	for scanner.Scan() {
 		lineNum++
 		currentLine := scanner.Text()
-		lineType, symbol := EvalSourceLine(
+		lineType, prefix := EvalSourceLine(
 			strings.TrimLeftFunc(currentLine, unicode.IsSpace),
 			comment,
 		)
@@ -47,7 +47,7 @@ func (pi *PendingIssue) Scan(file *os.File) error {
 			LineNum:       &lineNum,
 			Scanner:       scanner,
 			Comment:       comment,
-			CommentSymbol: symbol,
+			CommentPrefix: prefix,
 			FileInfo:      fileInfo,
 		}
 
@@ -72,7 +72,7 @@ func (pi *PendingIssue) ParseComment(arg ParseCommentParams) error {
 		if annotated && issue.AnnotationLineNumber == 0 {
 			pi.processAnnotationMetaData(arg.LineText, arg.LineType, arg.LineNum, &issue)
 		} else if issue.AnnotationLineNumber > 0 {
-			descriptionText, err := buildDescription(arg.LineText, arg.LineType, arg.CommentSymbol)
+			descriptionText, err := buildDescription(arg.LineText, arg.LineType, arg.CommentPrefix)
 			if err != nil {
 				return err
 			}
@@ -116,20 +116,20 @@ func (pi *PendingIssue) processAnnotationMetaData(
 	remainingText := strings.SplitAfter(line, pi.Annotation)[1]
 	issue.Title = strings.TrimLeftFunc(remainingText, unicode.IsSpace)
 	issue.AnnotationLineNumber = *lineNum
-	issue.IsMultiLine = lineType == LINE_TYPE_MULTI
+	issue.IsMultiLine = lineType == LINE_TYPE_MULTI_START || lineType == LINE_TYPE_MULTI_END
 	issue.IsSingleLine = lineType == LINE_TYPE_SINGLE
 }
 
-func buildDescription(line string, lineType string, symbol string) (string, error) {
+func buildDescription(line string, lineType string, prefix string) (string, error) {
 	if lineType == LINE_TYPE_SRC_CODE {
 		return "", errors.New("line type should be single or multi")
 	}
-	return processCommentDescription(line, symbol), nil
+	return processCommentDescription(line, prefix), nil
 }
 
-// processCommentDescription returns all text after the comment symbol
-func processCommentDescription(line string, symbol string) string {
-	remainingText := strings.SplitAfter(line, symbol)[1]
+// processCommentDescription returns all text after the comment prefix
+func processCommentDescription(line string, prefix string) string {
+	remainingText := strings.SplitAfter(line, prefix)[1]
 	return strings.TrimLeftFunc(remainingText, unicode.IsSpace)
 }
 

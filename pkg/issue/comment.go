@@ -44,15 +44,14 @@ const (
 	fileExtZig        = ".zig"
 )
 
-// Comment contains symbols that are used to denote
+// Comment contains prefixes that are used to denote
 // single-line and multi-line comments.
-// Some languages, such as python, may offer more than 1
-// way to indicate a multi line comment.
-// For this reason, a string slice is used.
+// Some languages, such as Python, may offer more than one
+// way to indicate a multi-line comment.
 type Comment struct {
-	SingleLineSymbols     []string
-	MultiLineStartSymbols []string
-	MultiLineEndSymbols   []string
+	SingleLinePrefix     []string // Prefixes for single-line comments.
+	MultiLineStartPrefix []string // Prefixes for starting a multi-line comment.
+	MultiLineEndPrefix   []string // Prefixes for ending a multi-line comment.
 }
 
 type CommentStack struct {
@@ -61,23 +60,23 @@ type CommentStack struct {
 
 var CommentSymbols = map[string]Comment{
 	fileExtC: {
-		SingleLineSymbols:     []string{"//"},
-		MultiLineStartSymbols: []string{"/*"},
-		MultiLineEndSymbols:   []string{"*/"},
+		SingleLinePrefix:     []string{"//"},
+		MultiLineStartPrefix: []string{"/*"},
+		MultiLineEndPrefix:   []string{"*/"},
 	},
 	fileExtPython: {
-		SingleLineSymbols:     []string{"#"},
-		MultiLineStartSymbols: []string{"\"\"\"", "'''"},
-		MultiLineEndSymbols:   []string{"\"\"\"", "'''"},
+		SingleLinePrefix:     []string{"#"},
+		MultiLineStartPrefix: []string{"\"\"\"", "'''"},
+		MultiLineEndPrefix:   []string{"\"\"\"", "'''"},
 	},
 	fileExtMarkdown: {
-		MultiLineStartSymbols: []string{"<!--"},
-		MultiLineEndSymbols:   []string{"-->"},
+		MultiLineStartPrefix: []string{"<!--"},
+		MultiLineEndPrefix:   []string{"-->"},
 	},
 	"default": {
-		SingleLineSymbols:     []string{"#"},
-		MultiLineStartSymbols: []string{"#"},
-		MultiLineEndSymbols:   []string{"#"},
+		SingleLinePrefix:     []string{"#"},
+		MultiLineStartPrefix: []string{"#"},
+		MultiLineEndPrefix:   []string{"#"},
 	},
 }
 
@@ -108,6 +107,7 @@ func GetCommentSymbols(ext string) Comment {
 	}
 }
 
+// @TODO remove ParseCommentContents func. The same logic has been moved to issue.go
 func (c Comment) ParseCommentContents(
 	line string,
 	builder *strings.Builder,
@@ -124,12 +124,13 @@ func (c Comment) ParseCommentContents(
 // isSingle uses the Comment struct as a receiver to
 // determine if the line (from a source code file) is
 // a single line comment.
+// @TODO remove isSingle func. The same logic has been moved to issue.go
 func (c Comment) isSingle(line string) (bool, string) {
-	if len(c.SingleLineSymbols) == 0 {
+	if len(c.SingleLinePrefix) == 0 {
 		return false, ""
 	}
 
-	for _, s := range c.SingleLineSymbols {
+	for _, s := range c.SingleLinePrefix {
 		single := strings.HasPrefix(line, s)
 		if single {
 			return true, s
