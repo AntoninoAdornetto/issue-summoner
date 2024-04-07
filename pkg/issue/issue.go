@@ -26,12 +26,8 @@ import (
 )
 
 const (
-	PENDING_ISSUE         = "pending"
-	PROCESSED_ISSUE       = "processed"
-	LINE_TYPE_SRC_CODE    = "c"
-	LINE_TYPE_SINGLE      = "single"
-	LINE_TYPE_MULTI_START = "multi-start"
-	LINE_TYPE_MULTI_END   = "multi-end"
+	PENDING_ISSUE   = "pending"
+	PROCESSED_ISSUE = "processed"
 )
 
 type Issue struct {
