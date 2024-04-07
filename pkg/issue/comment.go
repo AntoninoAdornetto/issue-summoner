@@ -6,10 +6,7 @@ Comments are important because actionable annotations (if they exist) will resid
 */
 package issue
 
-import (
-	"strings"
-	"unicode"
-)
+import "strings"
 
 const (
 	fileExtAsm        = ".asm"
@@ -42,6 +39,11 @@ const (
 	fileExtTsx        = ".tsx"
 	fileExtVim        = ".vim"
 	fileExtZig        = ".zig"
+
+	LINE_TYPE_SRC_CODE    = "c"
+	LINE_TYPE_SINGLE      = "single"
+	LINE_TYPE_MULTI_START = "multi-start"
+	LINE_TYPE_MULTI_END   = "multi-end"
 )
 
 // Comment contains prefixes that are used to denote
@@ -51,7 +53,9 @@ const (
 type Comment struct {
 	SingleLinePrefix     []string // Prefixes for single-line comments.
 	MultiLineStartPrefix []string // Prefixes for starting a multi-line comment.
-	MultiLineEndPrefix   []string // Prefixes for ending a multi-line comment.
+	MultiLineEndPrefix   []string // Prefixes or Suffix for ending a multi-line comment.
+	CurrentPrefix        string
+	CurrentLineType      string
 }
 
 type CommentStack struct {
@@ -107,35 +111,75 @@ func CommentPrefixes(ext string) Comment {
 	}
 }
 
-// @TODO remove ParseCommentContents func. The same logic has been moved to issue.go
-func (c Comment) ParseCommentContents(
-	line string,
-	builder *strings.Builder,
-	stack CommentStack,
-) (strings.Builder, error) {
-	if single, singleSyntax := c.isSingle(line); single {
-		// remove single-line comment syntax found from isSingle
-		nonCommentLine := strings.SplitAfter(line, singleSyntax)[1]
-		builder.WriteString(strings.TrimFunc(nonCommentLine, unicode.IsSpace))
+func (c *Comment) ParseLineComment(line string, annotation string) (string, bool) {
+	fields := strings.Fields(line)
+	evalComment(c, strings.Join(fields, " "))
+
+	if c.CurrentLineType == LINE_TYPE_MULTI_END {
+		return trimCommentEnd(fields, annotation, c.CurrentPrefix)
 	}
-	return *builder, nil
+
+	return trimCommentStart(fields, annotation, c.CurrentPrefix)
 }
 
-// isSingle uses the Comment struct as a receiver to
-// determine if the line (from a source code file) is
-// a single line comment.
-// @TODO remove isSingle func. The same logic has been moved to issue.go
-func (c Comment) isSingle(line string) (bool, string) {
-	if len(c.SingleLinePrefix) == 0 {
-		return false, ""
+func trimCommentStart(fields []string, annotation string, prefix string) (string, bool) {
+	start := 0
+
+	if len(fields) == 0 {
+		return "", false
 	}
 
-	for _, s := range c.SingleLinePrefix {
-		single := strings.HasPrefix(line, s)
-		if single {
-			return true, s
+	for i, s := range fields {
+		if s == prefix {
+			start = i + 1
+		}
+
+		if s == annotation {
+			return strings.Join(fields[i+1:], " "), true
 		}
 	}
 
-	return false, ""
+	return strings.Join(fields[start:], " "), false
+}
+
+func trimCommentEnd(fields []string, annotation string, prefix string) (string, bool) {
+	if len(fields) == 0 {
+		return "", false
+	}
+
+	if fields[len(fields)-1] == prefix {
+		fields = fields[:len(fields)-1]
+	}
+
+	return trimCommentStart(fields, annotation, prefix)
+}
+
+func evalComment(c *Comment, line string) {
+	if c.CurrentPrefix != "" {
+		if strings.HasPrefix(line, c.CurrentPrefix) || strings.HasSuffix(line, c.CurrentPrefix) {
+			return
+		}
+	}
+
+	for _, s := range c.SingleLinePrefix {
+		if strings.HasPrefix(line, s) {
+			c.CurrentLineType = LINE_TYPE_SINGLE
+			c.CurrentPrefix = s
+		}
+	}
+
+	for i := range c.MultiLineStartPrefix {
+		isMultiStart := strings.HasPrefix(line, c.MultiLineStartPrefix[i])
+		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndPrefix[i])
+
+		if isMultiStart {
+			c.CurrentLineType = LINE_TYPE_MULTI_START
+			c.CurrentPrefix = c.MultiLineStartPrefix[i]
+		}
+
+		if isMultiEnd {
+			c.CurrentLineType = LINE_TYPE_MULTI_END
+			c.CurrentPrefix = c.MultiLineEndPrefix[i]
+		}
+	}
 }
