@@ -1,6 +1,7 @@
 package issue_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
@@ -87,4 +88,48 @@ func TestEvalSourceLine_MultiLineEndPy(t *testing.T) {
 	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "'''", prefix)
+}
+
+// should remove the single line comment prefix, and the annotation (@TEST_TODO) then return all text after the annotation
+func TestParseSingleLineCommentWithAnnotationGo(t *testing.T) {
+	prefix := "//"
+	annotation := "@TEST_TODO"
+	expected := "This is a single line comment with an annotation prepended to it"
+	line := fmt.Sprintf("%s %s %s", prefix, annotation, expected)
+	actual, isAnnotated := issue.ParseSingleLineComment(line, annotation, prefix)
+	require.Equal(t, expected, actual)
+	require.True(t, isAnnotated)
+}
+
+// should remove the single line comment prefix, and then return all text after the prefix
+func TestParseSingleLineCommentWithOutAnnotationGo(t *testing.T) {
+	prefix := "//"
+	annotation := "@TEST_TODO"
+	expected := "This is a single line comment without an annotation"
+	line := fmt.Sprintf("%s %s", prefix, expected)
+	actual, isAnnotated := issue.ParseSingleLineComment(line, annotation, prefix)
+	require.Equal(t, expected, actual)
+	require.False(t, isAnnotated)
+}
+
+// should remove the single line comment prefix, and the annotation (@TEST_TODO) then return all text after the annotation
+func TestParseSingleLineCommentWithAnnotationPython(t *testing.T) {
+	prefix := "#"
+	annotation := "@TEST_TODO"
+	expected := "This is a single line comment with an annotation prepended to it"
+	line := fmt.Sprintf("%s %s %s", prefix, annotation, expected)
+	actual, isAnnotated := issue.ParseSingleLineComment(line, annotation, prefix)
+	require.Equal(t, expected, actual)
+	require.True(t, isAnnotated)
+}
+
+// should remove the single line comment prefix, and then return all text after the prefix
+func TestParseSingleLineCommentWithOutAnnotationPython(t *testing.T) {
+	prefix := "#"
+	annotation := "@TEST_TODO"
+	expected := "This is a single line comment without an annotation"
+	line := fmt.Sprintf("%s %s", prefix, expected)
+	actual, isAnnotated := issue.ParseSingleLineComment(line, annotation, prefix)
+	require.Equal(t, expected, actual)
+	require.False(t, isAnnotated)
 }
