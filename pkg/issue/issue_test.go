@@ -29,7 +29,7 @@ func TestGetIssueManager_UnknownIssueType(t *testing.T) {
 func TestEvalSourceLine_SrcCodeGo(t *testing.T) {
 	line := "func main(){ fmt.Printf('Hello World\n')}"
 	expected := issue.LINE_TYPE_SRC_CODE
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".go"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "", prefix)
 }
@@ -37,7 +37,7 @@ func TestEvalSourceLine_SrcCodeGo(t *testing.T) {
 func TestEvalSourceLine_SingleLineGo(t *testing.T) {
 	line := "// single line comment"
 	expected := issue.LINE_TYPE_SINGLE
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".go"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "//", prefix)
 }
@@ -45,7 +45,7 @@ func TestEvalSourceLine_SingleLineGo(t *testing.T) {
 func TestEvalSourceLine_MultiLineStartGo(t *testing.T) {
 	line := "/* Start multi line comment"
 	expected := issue.LINE_TYPE_MULTI_START
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".go"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "/*", prefix)
 }
@@ -53,7 +53,7 @@ func TestEvalSourceLine_MultiLineStartGo(t *testing.T) {
 func TestEvalSourceLine_MultiLineEndGo(t *testing.T) {
 	line := "*/"
 	expected := issue.LINE_TYPE_MULTI_END
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".go"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".go"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "*/", prefix)
 }
@@ -61,7 +61,7 @@ func TestEvalSourceLine_MultiLineEndGo(t *testing.T) {
 func TestEvalSourceLine_SrcCodePy(t *testing.T) {
 	line := "def sum(a: int, b: int):"
 	expected := issue.LINE_TYPE_SRC_CODE
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".py"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "", prefix)
 }
@@ -69,7 +69,7 @@ func TestEvalSourceLine_SrcCodePy(t *testing.T) {
 func TestEvalSourceLine_SingleLinePy(t *testing.T) {
 	line := "# single line comment"
 	expected := issue.LINE_TYPE_SINGLE
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".py"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "#", prefix)
 }
@@ -77,7 +77,7 @@ func TestEvalSourceLine_SingleLinePy(t *testing.T) {
 func TestEvalSourceLine_MultiLineStartPy(t *testing.T) {
 	line := "''' Start multi line comment"
 	expected := issue.LINE_TYPE_MULTI_START
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".py"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "'''", prefix)
 }
@@ -85,7 +85,7 @@ func TestEvalSourceLine_MultiLineStartPy(t *testing.T) {
 func TestEvalSourceLine_MultiLineEndPy(t *testing.T) {
 	line := "End multi line comment'''"
 	expected := issue.LINE_TYPE_MULTI_END
-	actual, prefix := issue.EvalSourceLine(line, issue.GetCommentSymbols(".py"))
+	actual, prefix := issue.EvalSourceLine(line, issue.CommentPrefixes(".py"))
 	require.Equal(t, expected, actual)
 	require.Equal(t, "'''", prefix)
 }
