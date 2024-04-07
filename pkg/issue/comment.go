@@ -80,7 +80,7 @@ var CommentSymbols = map[string]Comment{
 	},
 }
 
-func GetCommentSymbols(ext string) Comment {
+func CommentPrefixes(ext string) Comment {
 	switch ext {
 	case fileExtC,
 		fileExtCpp,

@@ -8,7 +8,7 @@ import (
 )
 
 func TestCommentSymbols_C(t *testing.T) {
-	m := issue.GetCommentSymbols(".c")
+	m := issue.CommentPrefixes(".c")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -18,7 +18,7 @@ func TestCommentSymbols_C(t *testing.T) {
 }
 
 func TestCommentSymbols_GO(t *testing.T) {
-	m := issue.GetCommentSymbols(".go")
+	m := issue.CommentPrefixes(".go")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -28,7 +28,7 @@ func TestCommentSymbols_GO(t *testing.T) {
 }
 
 func TestCommentSymbols_JS(t *testing.T) {
-	m := issue.GetCommentSymbols(".js")
+	m := issue.CommentPrefixes(".js")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -38,7 +38,7 @@ func TestCommentSymbols_JS(t *testing.T) {
 }
 
 func TestCommentSymbols_TS(t *testing.T) {
-	m := issue.GetCommentSymbols(".ts")
+	m := issue.CommentPrefixes(".ts")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -48,7 +48,7 @@ func TestCommentSymbols_TS(t *testing.T) {
 }
 
 func TestCommentSymbols_TSX(t *testing.T) {
-	m := issue.GetCommentSymbols(".tsx")
+	m := issue.CommentPrefixes(".tsx")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -58,7 +58,7 @@ func TestCommentSymbols_TSX(t *testing.T) {
 }
 
 func TestCommentSymbols_JSX(t *testing.T) {
-	m := issue.GetCommentSymbols(".jsx")
+	m := issue.CommentPrefixes(".jsx")
 	expectedSingleLinePrefix := []string{"//"}
 	expectedMultiLineStartPrefix := []string{"/*"}
 	expectedMultiLineEndPrefix := []string{"*/"}
@@ -68,7 +68,7 @@ func TestCommentSymbols_JSX(t *testing.T) {
 }
 
 func TestCommentSymbols_PYTHON(t *testing.T) {
-	m := issue.GetCommentSymbols(".py")
+	m := issue.CommentPrefixes(".py")
 	expectedSingleLinePrefix := []string{"#"}
 	expectedMultiLineStartPrefix := []string{"\"\"\"", "'''"}
 	expectedMultiLineEndPrefix := []string{"\"\"\"", "'''"}
@@ -78,7 +78,7 @@ func TestCommentSymbols_PYTHON(t *testing.T) {
 }
 
 func TestCommentSymbols_MARKDOWN(t *testing.T) {
-	m := issue.GetCommentSymbols(".md")
+	m := issue.CommentPrefixes(".md")
 	expectedMultiLineStartPrefix := []string{"<!--"}
 	expectedMultiLineEndPrefix := []string{"-->"}
 	require.Empty(t, m.SingleLinePrefix)
