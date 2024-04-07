@@ -154,6 +154,9 @@ func trimCommentEnd(fields []string, annotation string, prefix string) (string, 
 	return trimCommentStart(fields, annotation, prefix)
 }
 
+// @TODO associate this method with the Comment struct.
+// it will help with unneccesary parsing of source code line types
+// that we use in the Scan function of a pending issue
 func evalComment(c *Comment, line string) {
 	if c.CurrentPrefix != "" {
 		if strings.HasPrefix(line, c.CurrentPrefix) || strings.HasSuffix(line, c.CurrentPrefix) {
