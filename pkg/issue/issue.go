@@ -82,18 +82,19 @@ func GetIssueManager(issueType string, annotation string) (IssueManager, error) 
 }
 
 func ParseSingleLineComment(line string, annotation string, prefix string) (string, bool) {
-	index := 1
+	start := 1
 	isAnnotated := false
 	fields := strings.Fields(line)
 
 	for i, s := range fields {
 		if s == annotation {
 			isAnnotated = true
-			index = i + 1
+			start = i + 1
+			break
 		}
 	}
 
-	return strings.Join(fields[index:], " "), isAnnotated
+	return strings.Join(fields[start:], " "), isAnnotated
 }
 
 // EvalSourceLine evaluates the line (read from a bufio scanner) input
