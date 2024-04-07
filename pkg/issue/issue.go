@@ -20,6 +20,7 @@ package issue
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 )
@@ -50,7 +51,6 @@ type Issue struct {
 type IssueManager interface {
 	GetIssues() []Issue
 	Scan(file *os.File) error
-	ParseComment(ParseCommentParams) error
 }
 
 type ParseCommentParams struct {
@@ -79,6 +79,15 @@ func GetIssueManager(issueType string, annotation string) (IssueManager, error) 
 	default:
 		return nil, errors.New("Unsupported issue type. Please use pending or processed")
 	}
+}
+
+func (is *Issue) Init(lineType string, lineNum uint64, fi *os.FileInfo) {
+	is.StartLineNumber = lineNum
+	is.EndLineNumber = lineNum
+	is.IsSingleLine = lineType == LINE_TYPE_SINGLE
+	is.IsMultiLine = lineType == LINE_TYPE_MULTI_START
+	is.FileInfo = *fi
+	is.ID = fmt.Sprintf("%s-%d", is.FileInfo.Name(), lineNum)
 }
 
 func ParseSingleLineComment(line string, annotation string, prefix string) (string, bool) {
