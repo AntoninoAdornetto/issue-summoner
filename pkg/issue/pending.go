@@ -22,7 +22,7 @@ func (pi *PendingIssue) GetIssues() []Issue {
 func (pi *PendingIssue) Scan(file *os.File) error {
 	lineNum := uint64(0)
 	scanner := bufio.NewScanner(file)
-	comment := GetCommentSymbols(filepath.Ext(file.Name()))
+	comment := CommentPrefixes(filepath.Ext(file.Name()))
 
 	fileInfo, err := file.Stat()
 	if err != nil {
