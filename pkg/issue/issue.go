@@ -81,6 +81,21 @@ func GetIssueManager(issueType string, annotation string) (IssueManager, error) 
 	}
 }
 
+func ParseSingleLineComment(line string, annotation string, prefix string) (string, bool) {
+	index := 1
+	isAnnotated := false
+	fields := strings.Fields(line)
+
+	for i, s := range fields {
+		if s == annotation {
+			isAnnotated = true
+			index = i + 1
+		}
+	}
+
+	return strings.Join(fields[index:], " "), isAnnotated
+}
+
 // EvalSourceLine evaluates the line (read from a bufio scanner) input
 // and determines if the line is a single line comment **(LINE_TYPE_SINGLE)**,
 // a multi line comment **(LINE_TYPE_MULTI)** or sorce code **(LINE_TYPE_SRC_CODE)**
