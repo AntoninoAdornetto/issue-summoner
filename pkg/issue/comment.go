@@ -43,7 +43,7 @@ const (
 	fileExtVim        = ".vim"
 	fileExtZig        = ".zig"
 
-	LINE_TYPE_SRC_CODE    = "c"
+	LINE_TYPE_SRC_CODE    = "src-code"
 	LINE_TYPE_SINGLE      = "single"
 	LINE_TYPE_MULTI_START = "multi-start"
 	LINE_TYPE_MULTI_END   = "multi-end"
@@ -171,6 +171,7 @@ func (c *Comment) SetLineTypeAndPrefix(line string) {
 		if strings.HasPrefix(trimmedLine, s) {
 			c.CurrentLineType = LINE_TYPE_SINGLE
 			c.CurrentPrefix = s
+			return
 		}
 	}
 
@@ -181,11 +182,16 @@ func (c *Comment) SetLineTypeAndPrefix(line string) {
 		if isMultiStart {
 			c.CurrentLineType = LINE_TYPE_MULTI_START
 			c.CurrentPrefix = c.MultiLineStartPrefix[i]
+			return
 		}
 
 		if isMultiEnd {
 			c.CurrentLineType = LINE_TYPE_MULTI_END
 			c.CurrentPrefix = c.MultiLineEndPrefix[i]
+			return
 		}
 	}
+
+	c.CurrentLineType = LINE_TYPE_SRC_CODE
+	c.CurrentPrefix = ""
 }
