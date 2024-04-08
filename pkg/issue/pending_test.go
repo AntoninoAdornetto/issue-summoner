@@ -92,13 +92,59 @@ func TestScan_SingleLineMultipleItems(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-// @TODO uncomment multi line comment test once refactor is finished
-// func TestScan_MultipleLine1Item(t *testing.T) {
+func TestScanMultiCommentLine1Item(t *testing.T) {
+	file, fileInfo := setup(
+		t,
+		`func main(){
+			/* @TEST_TODO Test Me
+				Write test cases that bring up the code coverage
+	*/
+		}`,
+	)
+
+	defer tearDown(file)
+
+	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
+	require.NoError(t, err)
+
+	err = pi.Scan(file)
+	require.NoError(t, err)
+	actual := pi.GetIssues()
+
+	expected := []issue.Issue{
+		{
+			AnnotationLineNumber: 2,
+			StartLineNumber:      2,
+			EndLineNumber:        3,
+			Title:                "Test Me",
+			Description:          "Write test cases that bring up the code coverage",
+			IsSingleLine:         false,
+			IsMultiLine:          true,
+			FileInfo:             fileInfo,
+			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
+		},
+	}
+
+	require.Equal(t, expected, actual)
+}
+
+// func TestScanMultiCommentLineManyItems(t *testing.T) {
 // 	file, fileInfo := setup(
 // 		t,
 // 		`func main(){
-// 			/* @TEST_TODO Test Me
-// 				 Write test cases that bring up the code coverage
+// 			/* @TEST_TODO First Multi Comment
+// 			First multi comment details
+// 			*/
+//
+//
+// 			/* @TEST_TODO Second Multi Comment
+// 			Second multi comment details
+// 			*/
+//
+// 			/*
+// 			@TEST_TODO Third Multi Comment
+// 			Third multi comment details
+// 			Span for multiple lines...
 // 			*/
 // 		}`,
 // 	)
@@ -117,12 +163,34 @@ func TestScan_SingleLineMultipleItems(t *testing.T) {
 // 			AnnotationLineNumber: 2,
 // 			StartLineNumber:      2,
 // 			EndLineNumber:        4,
-// 			Title:                "Test Me",
-// 			Description:          "Write test cases that bring up the code coverage",
+// 			Title:                "First Multi Comment",
+// 			Description:          "First multi comment details",
 // 			IsSingleLine:         false,
 // 			IsMultiLine:          true,
 // 			FileInfo:             fileInfo,
 // 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
+// 		},
+// 		{
+// 			AnnotationLineNumber: 7,
+// 			StartLineNumber:      7,
+// 			EndLineNumber:        9,
+// 			Title:                "Second Multi Comment",
+// 			Description:          "Second multi comment details",
+// 			IsSingleLine:         false,
+// 			IsMultiLine:          true,
+// 			FileInfo:             fileInfo,
+// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 7),
+// 		},
+// 		{
+// 			AnnotationLineNumber: 12,
+// 			StartLineNumber:      11,
+// 			EndLineNumber:        15,
+// 			Title:                "Third Multi Comment",
+// 			Description:          "Third multi comment details Span for multiple lines...",
+// 			IsSingleLine:         false,
+// 			IsMultiLine:          true,
+// 			FileInfo:             fileInfo,
+// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 11),
 // 		},
 // 	}
 //
