@@ -2,12 +2,9 @@ package issue
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
-	"unicode"
 )
 
 type PendingIssue struct {
@@ -20,6 +17,7 @@ func (pi *PendingIssue) GetIssues() []Issue {
 }
 
 func (pi *PendingIssue) Scan(file *os.File) error {
+	issue := &Issue{}
 	lineNum := uint64(0)
 	scanner := bufio.NewScanner(file)
 	comment := CommentPrefixes(filepath.Ext(file.Name()))
@@ -32,107 +30,69 @@ func (pi *PendingIssue) Scan(file *os.File) error {
 	for scanner.Scan() {
 		lineNum++
 		currentLine := scanner.Text()
-		lineType, prefix := EvalSourceLine(
-			strings.TrimLeftFunc(currentLine, unicode.IsSpace),
-			comment,
-		)
+		comment.SetLineTypeAndPrefix(currentLine)
 
-		if lineType == LINE_TYPE_SRC_CODE {
+		switch comment.CurrentLineType {
+		case LINE_TYPE_SRC_CODE:
 			continue
+		case LINE_TYPE_SINGLE:
+			issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
+			lineNum += pi.ProcessComment(issue, scanner, &comment, LINE_TYPE_SRC_CODE)
+		case LINE_TYPE_MULTI_START:
+			issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
+			lineNum += pi.ProcessComment(issue, scanner, &comment, LINE_TYPE_MULTI_END)
 		}
 
-		arg := ParseCommentParams{
-			LineText:      currentLine,
-			LineType:      lineType,
-			LineNum:       &lineNum,
-			Scanner:       scanner,
-			Comment:       comment,
-			CommentPrefix: prefix,
-			FileInfo:      fileInfo,
+		if issue.AnnotationLineNumber > 0 {
+			pi.Issues = append(pi.Issues, *issue)
 		}
-
-		if err := pi.ParseComment(arg); err != nil {
-			return err
-		}
+		//
+		issue = &Issue{}
 	}
 
-	return nil
+	return scanner.Err()
 }
 
-// @TODO split single and multi line parsing into different functions
-// there is an error atm where we fail to build the entire description for
-// multi line comments. This is because we break out of the iteration when
-// the line we are parsing is not the begining or ending of a multi line commment
-func (pi *PendingIssue) ParseComment(arg ParseCommentParams) error {
-	issue := Issue{StartLineNumber: *arg.LineNum}
-	description := strings.Builder{}
+func (pi *PendingIssue) ProcessComment(
+	is *Issue,
+	s *bufio.Scanner,
+	c *Comment,
+	exitLine string,
+) uint64 {
+	scannedLines := uint64(0)
+	currentLine := s.Text()
+	content, isAnnotated := c.ExtractCommentContent(currentLine, pi.Annotation)
 
-	for {
-		annotated := containsAnnotation(arg.LineText, pi.Annotation)
-		if annotated && issue.AnnotationLineNumber == 0 {
-			pi.processAnnotationMetaData(arg.LineText, arg.LineType, arg.LineNum, &issue)
-		} else if issue.AnnotationLineNumber > 0 {
-			descriptionText, err := buildDescription(arg.LineText, arg.LineType, arg.CommentPrefix)
-			if err != nil {
-				return err
-			}
-			description.WriteString(descriptionText)
-		}
+	if isAnnotated {
+		is.AnnotationLineNumber = is.StartLineNumber + scannedLines
+		is.Title = content
+	} else if is.Description == "" {
+		is.Description = content
+		is.EndLineNumber = scannedLines + is.StartLineNumber
+	} else {
+		is.Description = fmt.Sprintf("%s %s", is.Description, content)
+		is.EndLineNumber = scannedLines + is.StartLineNumber
+	}
 
-		issue.EndLineNumber = *arg.LineNum
-		if !arg.Scanner.Scan() {
+	for s.Scan() {
+		scannedLines++
+		nextLine := s.Text()
+		content, isAnnotated = c.ExtractCommentContent(nextLine, pi.Annotation)
+		if c.CurrentLineType == exitLine {
 			break
 		}
 
-		nextLine := arg.Scanner.Text()
-		arg.LineText = nextLine
-		nextLineType, _ := EvalSourceLine(
-			strings.TrimLeftFunc(nextLine, unicode.IsSpace),
-			arg.Comment,
-		)
-
-		*arg.LineNum++
-		if nextLineType == LINE_TYPE_SRC_CODE {
-			break
+		if isAnnotated {
+			is.AnnotationLineNumber = is.StartLineNumber + scannedLines
+			is.Title = content
+		} else if is.Description == "" {
+			is.Description = content
+			is.EndLineNumber = scannedLines + is.StartLineNumber
+		} else {
+			is.Description = fmt.Sprintf("%s %s", is.Description, content)
+			is.EndLineNumber = scannedLines + is.StartLineNumber
 		}
 	}
 
-	if issue.AnnotationLineNumber > 0 {
-		issue.Description = strings.TrimLeftFunc(description.String(), unicode.IsSpace)
-		issue.FileInfo = arg.FileInfo
-		issue.ID = fmt.Sprintf("%s-%d", arg.FileInfo.Name(), issue.AnnotationLineNumber)
-		pi.Issues = append(pi.Issues, issue)
-	}
-
-	return nil
-}
-
-func (pi *PendingIssue) processAnnotationMetaData(
-	line string,
-	lineType string,
-	lineNum *uint64,
-	issue *Issue,
-) {
-	remainingText := strings.SplitAfter(line, pi.Annotation)[1]
-	issue.Title = strings.TrimLeftFunc(remainingText, unicode.IsSpace)
-	issue.AnnotationLineNumber = *lineNum
-	issue.IsMultiLine = lineType == LINE_TYPE_MULTI_START || lineType == LINE_TYPE_MULTI_END
-	issue.IsSingleLine = lineType == LINE_TYPE_SINGLE
-}
-
-func buildDescription(line string, lineType string, prefix string) (string, error) {
-	if lineType == LINE_TYPE_SRC_CODE {
-		return "", errors.New("line type should be single or multi")
-	}
-	return processCommentDescription(line, prefix), nil
-}
-
-// processCommentDescription returns all text after the comment prefix
-func processCommentDescription(line string, prefix string) string {
-	remainingText := strings.SplitAfter(line, prefix)[1]
-	return strings.TrimLeftFunc(remainingText, unicode.IsSpace)
-}
-
-func containsAnnotation(line string, annotation string) bool {
-	return strings.Contains(line, annotation)
+	return scannedLines
 }
