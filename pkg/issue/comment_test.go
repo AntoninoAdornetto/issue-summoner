@@ -87,133 +87,133 @@ func TestCommentSymbols_MARKDOWN(t *testing.T) {
 	require.Equal(t, expectedMultiLineEndPrefix, m.MultiLineEndPrefix)
 }
 
-func TestParseLineCommentSingleLinePrefixC(t *testing.T) {
+func TestExtractCommentContentSingleLinePrefixC(t *testing.T) {
 	m := issue.CommentPrefixes(".c")
 	prefix := "//"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s Single line comment text", prefix, annotation)
 	expected := "Single line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentSingleLinePrefixGo(t *testing.T) {
+func TestExtractCommentContentSingleLinePrefixGo(t *testing.T) {
 	m := issue.CommentPrefixes(".go")
 	prefix := "//"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s Single line comment text", prefix, annotation)
 	expected := "Single line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentSingleLinePrefixPython(t *testing.T) {
+func TestExtractCommentContentSingleLinePrefixPython(t *testing.T) {
 	m := issue.CommentPrefixes(".py")
 	prefix := "#"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s Single line comment text", prefix, annotation)
 	expected := "Single line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiStartLinePrefixC(t *testing.T) {
+func TestExtractCommentContentMultiStartLinePrefixC(t *testing.T) {
 	m := issue.CommentPrefixes(".c")
 	prefix := "/*"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s MultiStart line comment text", prefix, annotation)
 	expected := "MultiStart line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiStartLinePrefixGo(t *testing.T) {
+func TestExtractCommentContentMultiStartLinePrefixGo(t *testing.T) {
 	m := issue.CommentPrefixes(".go")
 	prefix := "/*"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s MultiStart line comment text", prefix, annotation)
 	expected := "MultiStart line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiStartLinePrefixPython(t *testing.T) {
+func TestExtractCommentContentMultiStartLinePrefixPython(t *testing.T) {
 	m := issue.CommentPrefixes(".py")
 	prefix := "'''"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s MultiStart line comment text", prefix, annotation)
 	expected := "MultiStart line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiStartLinePrefixPythonDoubleQuotes(t *testing.T) {
+func TestExtractCommentContentMultiStartLinePrefixPythonDoubleQuotes(t *testing.T) {
 	m := issue.CommentPrefixes(".py")
 	prefix := `"""`
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s %s MultiStart line comment text", prefix, annotation)
 	expected := "MultiStart line comment text"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, prefix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiEndLinePrefixC(t *testing.T) {
+func TestExtractCommentContentMultiEndLinePrefixC(t *testing.T) {
 	m := issue.CommentPrefixes(".c")
 	suffix := "*/"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("Mutli line end Comment %s", suffix)
 	expected := "Mutli line end Comment"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.False(t, isAnnotated)
 	require.Equal(t, suffix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiEndLinePrefixAnnotationC(t *testing.T) {
+func TestExtractCommentContentMultiEndLinePrefixAnnotationC(t *testing.T) {
 	m := issue.CommentPrefixes(".c")
 	suffix := "*/"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s Multi line end comment with annotation %s", annotation, suffix)
 	expected := "Multi line end comment with annotation"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, suffix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiEndLinePrefixPython(t *testing.T) {
+func TestExtractCommentContentMultiEndLinePrefixPython(t *testing.T) {
 	m := issue.CommentPrefixes(".py")
 	suffix := "'''"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("Mutli line end Comment %s", suffix)
 	expected := "Mutli line end Comment"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.False(t, isAnnotated)
 	require.Equal(t, suffix, m.CurrentPrefix)
 }
 
-func TestParseLineCommentMultiEndLinePrefixAnnotationPython(t *testing.T) {
+func TestExtractCommentContentMultiEndLinePrefixAnnotationPython(t *testing.T) {
 	m := issue.CommentPrefixes(".py")
 	suffix := "'''"
 	annotation := "@TEST_TODO"
 	line := fmt.Sprintf("%s Mutli line end Comment %s", annotation, suffix)
 	expected := "Mutli line end Comment"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.True(t, isAnnotated)
 	require.Equal(t, suffix, m.CurrentPrefix)
@@ -224,7 +224,7 @@ func TestParseLineNoPrefixOrSuffixC(t *testing.T) {
 	annotation := "@TEST_TODO"
 	line := "// no annotation"
 	expected := "no annotation"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.False(t, isAnnotated)
 }
@@ -234,7 +234,7 @@ func TestParseLineNoPrefixOrSuffixPy(t *testing.T) {
 	annotation := "@TEST_TODO"
 	line := "# no annotation"
 	expected := "no annotation"
-	actual, isAnnotated := m.ParseLineComment(line, annotation)
+	actual, isAnnotated := m.ExtractCommentContent(line, annotation)
 	require.Equal(t, expected, actual)
 	require.False(t, isAnnotated)
 }

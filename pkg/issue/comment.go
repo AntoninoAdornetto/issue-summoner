@@ -111,18 +111,18 @@ func CommentPrefixes(ext string) Comment {
 	}
 }
 
-func (c *Comment) ParseLineComment(line string, annotation string) (string, bool) {
+func (c *Comment) ExtractCommentContent(line string, annotation string) (string, bool) {
 	fields := strings.Fields(line)
-	evalComment(c, strings.Join(fields, " "))
+	c.SetLineTypeAndPrefix(strings.Join(fields, " "))
 
 	if c.CurrentLineType == LINE_TYPE_MULTI_END {
-		return trimCommentEnd(fields, annotation, c.CurrentPrefix)
+		return extractBeforeSuffix(fields, annotation, c.CurrentPrefix)
 	}
 
-	return trimCommentStart(fields, annotation, c.CurrentPrefix)
+	return extractAfterPrefix(fields, annotation, c.CurrentPrefix)
 }
 
-func trimCommentStart(fields []string, annotation string, prefix string) (string, bool) {
+func extractAfterPrefix(fields []string, annotation string, prefix string) (string, bool) {
 	start := 0
 
 	if len(fields) == 0 {
@@ -142,7 +142,7 @@ func trimCommentStart(fields []string, annotation string, prefix string) (string
 	return strings.Join(fields[start:], " "), false
 }
 
-func trimCommentEnd(fields []string, annotation string, prefix string) (string, bool) {
+func extractBeforeSuffix(fields []string, annotation string, prefix string) (string, bool) {
 	if len(fields) == 0 {
 		return "", false
 	}
@@ -151,13 +151,10 @@ func trimCommentEnd(fields []string, annotation string, prefix string) (string, 
 		fields = fields[:len(fields)-1]
 	}
 
-	return trimCommentStart(fields, annotation, prefix)
+	return extractAfterPrefix(fields, annotation, prefix)
 }
 
-// @TODO associate this method with the Comment struct.
-// it will help with unneccesary parsing of source code line types
-// that we use in the Scan function of a pending issue
-func evalComment(c *Comment, line string) {
+func (c *Comment) SetLineTypeAndPrefix(line string) {
 	if c.CurrentPrefix != "" {
 		if strings.HasPrefix(line, c.CurrentPrefix) || strings.HasSuffix(line, c.CurrentPrefix) {
 			return
