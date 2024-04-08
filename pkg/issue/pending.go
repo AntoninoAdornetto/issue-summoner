@@ -46,7 +46,7 @@ func (pi *PendingIssue) Scan(file *os.File) error {
 		if issue.AnnotationLineNumber > 0 {
 			pi.Issues = append(pi.Issues, *issue)
 		}
-		//
+
 		issue = &Issue{}
 	}
 

@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 )
 
 const (
@@ -84,49 +83,4 @@ func (is *Issue) Init(lineType string, lineNum uint64, fi *os.FileInfo) {
 	is.IsMultiLine = lineType == LINE_TYPE_MULTI_START
 	is.FileInfo = *fi
 	is.ID = fmt.Sprintf("%s-%d", is.FileInfo.Name(), lineNum)
-}
-
-func ParseSingleLineComment(line string, annotation string, prefix string) (string, bool) {
-	start := 1
-	isAnnotated := false
-	fields := strings.Fields(line)
-
-	for i, s := range fields {
-		if s == annotation {
-			isAnnotated = true
-			start = i + 1
-			break
-		}
-	}
-
-	return strings.Join(fields[start:], " "), isAnnotated
-}
-
-// EvalSourceLine evaluates the line (read from a bufio scanner) input
-// and determines if the line is a single line comment **(LINE_TYPE_SINGLE)**,
-// a multi line comment **(LINE_TYPE_MULTI)** or sorce code **(LINE_TYPE_SRC_CODE)**
-// In addition, this function is used within the Scan implementations of the
-// PendingIssue & ProcessedIssue structs to determine if we should proceed
-// with the parsing of a single/multi comment line or skip the process entirely.
-func EvalSourceLine(line string, c Comment) (string, string) {
-	for _, s := range c.SingleLinePrefix {
-		if strings.HasPrefix(line, s) {
-			return LINE_TYPE_SINGLE, s
-		}
-	}
-
-	for i := range c.MultiLineStartPrefix {
-		isMultiStart := strings.HasPrefix(line, c.MultiLineStartPrefix[i])
-		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndPrefix[i])
-
-		if isMultiStart {
-			return LINE_TYPE_MULTI_START, c.MultiLineStartPrefix[i]
-		}
-
-		if isMultiEnd {
-			return LINE_TYPE_MULTI_END, c.MultiLineEndPrefix[i]
-		}
-	}
-
-	return LINE_TYPE_SRC_CODE, ""
 }
