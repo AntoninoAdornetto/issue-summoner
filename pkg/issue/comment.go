@@ -6,7 +6,10 @@ Comments are important because actionable annotations (if they exist) will resid
 */
 package issue
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 const (
 	fileExtAsm        = ".asm"
@@ -155,22 +158,25 @@ func extractBeforeSuffix(fields []string, annotation string, prefix string) (str
 }
 
 func (c *Comment) SetLineTypeAndPrefix(line string) {
+	trimmedLine := strings.TrimLeftFunc(line, unicode.IsSpace)
+
 	if c.CurrentPrefix != "" {
-		if strings.HasPrefix(line, c.CurrentPrefix) || strings.HasSuffix(line, c.CurrentPrefix) {
+		if strings.HasPrefix(trimmedLine, c.CurrentPrefix) ||
+			strings.HasSuffix(trimmedLine, c.CurrentPrefix) {
 			return
 		}
 	}
 
 	for _, s := range c.SingleLinePrefix {
-		if strings.HasPrefix(line, s) {
+		if strings.HasPrefix(trimmedLine, s) {
 			c.CurrentLineType = LINE_TYPE_SINGLE
 			c.CurrentPrefix = s
 		}
 	}
 
 	for i := range c.MultiLineStartPrefix {
-		isMultiStart := strings.HasPrefix(line, c.MultiLineStartPrefix[i])
-		isMultiEnd := strings.HasSuffix(line, c.MultiLineEndPrefix[i])
+		isMultiStart := strings.HasPrefix(trimmedLine, c.MultiLineStartPrefix[i])
+		isMultiEnd := strings.HasSuffix(trimmedLine, c.MultiLineEndPrefix[i])
 
 		if isMultiStart {
 			c.CurrentLineType = LINE_TYPE_MULTI_START
