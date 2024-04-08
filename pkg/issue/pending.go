@@ -2,7 +2,6 @@ package issue
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -32,17 +31,18 @@ func (pi *PendingIssue) Scan(file *os.File) error {
 		currentLine := scanner.Text()
 		comment.SetLineTypeAndPrefix(currentLine)
 
-		switch comment.CurrentLineType {
-		case LINE_TYPE_SRC_CODE:
+		if comment.CurrentLineType == LINE_TYPE_SRC_CODE {
 			continue
-		case LINE_TYPE_SINGLE:
-			issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
-			lineNum += pi.ProcessComment(issue, scanner, &comment, LINE_TYPE_SRC_CODE)
-		case LINE_TYPE_MULTI_START:
-			issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
-			lineNum += pi.ProcessComment(issue, scanner, &comment, LINE_TYPE_MULTI_END)
 		}
 
+		exitOn := LINE_TYPE_SRC_CODE
+		issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
+		if issue.IsMultiLine {
+			exitOn = LINE_TYPE_MULTI_END
+		}
+
+		linesScanned := pi.ProcessComment(issue, scanner, &comment, exitOn)
+		lineNum += linesScanned
 		if issue.AnnotationLineNumber > 0 {
 			pi.Issues = append(pi.Issues, *issue)
 		}
@@ -62,17 +62,7 @@ func (pi *PendingIssue) ProcessComment(
 	scannedLines := uint64(0)
 	currentLine := s.Text()
 	content, isAnnotated := c.ExtractCommentContent(currentLine, pi.Annotation)
-
-	if isAnnotated {
-		is.AnnotationLineNumber = is.StartLineNumber + scannedLines
-		is.Title = content
-	} else if is.Description == "" {
-		is.Description = content
-		is.EndLineNumber = scannedLines + is.StartLineNumber
-	} else {
-		is.Description = fmt.Sprintf("%s %s", is.Description, content)
-		is.EndLineNumber = scannedLines + is.StartLineNumber
-	}
+	is.Build(content, isAnnotated, scannedLines)
 
 	for s.Scan() {
 		scannedLines++
@@ -82,16 +72,7 @@ func (pi *PendingIssue) ProcessComment(
 			break
 		}
 
-		if isAnnotated {
-			is.AnnotationLineNumber = is.StartLineNumber + scannedLines
-			is.Title = content
-		} else if is.Description == "" {
-			is.Description = content
-			is.EndLineNumber = scannedLines + is.StartLineNumber
-		} else {
-			is.Description = fmt.Sprintf("%s %s", is.Description, content)
-			is.EndLineNumber = scannedLines + is.StartLineNumber
-		}
+		is.Build(content, isAnnotated, scannedLines)
 	}
 
 	return scannedLines

@@ -32,7 +32,7 @@ const (
 type Issue struct {
 	ID                   string
 	Title                string
-	Description          string
+	Description          string // @TODO use a string builder to reduce copying
 	FileInfo             os.FileInfo
 	StartLineNumber      uint64
 	EndLineNumber        uint64
@@ -83,4 +83,17 @@ func (is *Issue) Init(lineType string, lineNum uint64, fi *os.FileInfo) {
 	is.IsMultiLine = lineType == LINE_TYPE_MULTI_START
 	is.FileInfo = *fi
 	is.ID = fmt.Sprintf("%s-%d", is.FileInfo.Name(), lineNum)
+}
+
+func (is *Issue) Build(content string, isAnnotated bool, scannedLines uint64) {
+	if isAnnotated {
+		is.AnnotationLineNumber = is.StartLineNumber + scannedLines
+		is.Title = content
+	} else if is.Description == "" {
+		is.Description = content
+		is.EndLineNumber = scannedLines + is.StartLineNumber
+	} else {
+		is.Description = fmt.Sprintf("%s %s", is.Description, content)
+		is.EndLineNumber = scannedLines + is.StartLineNumber
+	}
 }
