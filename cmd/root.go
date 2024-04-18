@@ -45,8 +45,6 @@ func Execute() {
 }
 
 func subCommands() {
-	rootCmd.AddCommand(ScanCmd)
-	rootCmd.AddCommand(ReportCmd)
 	rootCmd.AddCommand(AuthorizeCmd)
 }
 
