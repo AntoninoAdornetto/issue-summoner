@@ -182,3 +182,51 @@ func TestFindPrefixIndexMultiLineAfterSourceCodeInGo(t *testing.T) {
 	// stack should also have one item in it after locating the prefix
 	require.Len(t, notation.Stack.Items, 1)
 }
+
+// should extract all text after the annotation for a single line comment in c
+func TestExtractFromSingleLineCommentInC(t *testing.T) {
+	line := fmt.Sprintf(
+		"int main() {return 0} %s %s single line comment",
+		multi_line_prefix_c,
+		annotation,
+	)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_c, annotation, &bufio.Scanner{})
+	expected := "single line comment"
+	start := notation.FindPrefixIndex(fields) // find prefix and increment by 1
+	actual := notation.ExtractFromSingleLineComment(fields, start+1)
+	require.Equal(t, expected, actual)
+}
+
+// should return an empty string when an annotation is not found
+func TestExtractFromSingleLineCommentEmptyInC(t *testing.T) {
+	line := "int main() {return 0}"
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_c, annotation, &bufio.Scanner{})
+	expected := ""
+	start := notation.FindPrefixIndex(fields) // find prefix and increment by 1
+	actual := notation.ExtractFromSingleLineComment(fields, start+1)
+	require.Equal(t, expected, actual)
+}
+
+// should extract all text after the annotation for a single line comment in python
+func TestExtractFromSingleLineCommentInPython(t *testing.T) {
+	line := fmt.Sprintf("n = 5 %s %s single line comment", single_line_prefix_python, annotation)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_py, annotation, &bufio.Scanner{})
+	expected := "single line comment"
+	start := notation.FindPrefixIndex(fields) // find prefix and increment by 1
+	actual := notation.ExtractFromSingleLineComment(fields, start+1)
+	require.Equal(t, expected, actual)
+}
+
+// should return an empty string when an annotation is not found
+func TestExtractFromSingleLineCommentEmptyInPython(t *testing.T) {
+	line := "n = 5"
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_py, annotation, &bufio.Scanner{})
+	expected := ""
+	start := notation.FindPrefixIndex(fields) // find prefix and increment by 1
+	actual := notation.ExtractFromSingleLineComment(fields, start+1)
+	require.Equal(t, expected, actual)
+}
