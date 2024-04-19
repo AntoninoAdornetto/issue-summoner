@@ -2,8 +2,11 @@ package issue
 
 import (
 	"bufio"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 type PendingIssue struct {
@@ -11,69 +14,63 @@ type PendingIssue struct {
 	Issues     []Issue
 }
 
-func (pi *PendingIssue) GetIssues() []Issue {
-	return pi.Issues
+func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error) {
+	n := 0
+	foundGitDir := false
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			if !foundGitDir && skipGitDir(d.Name()) {
+				foundGitDir = true
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if skip := skipIgnoreMatch(path, gitIgnore); skip {
+			return nil
+		}
+
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		n++
+		return pi.Scan(file, path)
+	})
+
+	return n, err
 }
 
-func (pi *PendingIssue) Scan(file *os.File) error {
-	issue := &Issue{}
+func (pi *PendingIssue) Scan(r io.Reader, path string) error {
 	lineNum := uint64(0)
-	scanner := bufio.NewScanner(file)
-	comment := CommentPrefixes(filepath.Ext(file.Name()))
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		return err
-	}
+	issues := make([]Issue, 0)
+	scanner := bufio.NewScanner(r)
+	notation := NewCommentNotation(filepath.Ext(path), pi.Annotation, scanner)
 
 	for scanner.Scan() {
 		lineNum++
-		currentLine := scanner.Text()
-		comment.SetLineTypeAndPrefix(currentLine)
-
-		if comment.CurrentLineType == LINE_TYPE_SRC_CODE {
-			continue
+		issue, err := notation.ParseLine(&lineNum)
+		if err != nil {
+			return err
 		}
 
-		exitOn := LINE_TYPE_SRC_CODE
-		issue.Init(comment.CurrentLineType, lineNum, &fileInfo)
-		if issue.IsMultiLine {
-			exitOn = LINE_TYPE_MULTI_END
-		}
-
-		linesScanned := pi.ProcessComment(issue, scanner, &comment, exitOn)
-		lineNum += linesScanned
 		if issue.AnnotationLineNumber > 0 {
-			pi.Issues = append(pi.Issues, *issue)
+			issue.ID = generateID(path, issue.AnnotationLineNumber)
+			issue.FilePath = path
+			issues = append(issues, issue)
 		}
-
-		issue = &Issue{}
 	}
 
+	pi.Issues = append(pi.Issues, issues...)
 	return scanner.Err()
 }
 
-func (pi *PendingIssue) ProcessComment(
-	is *Issue,
-	s *bufio.Scanner,
-	c *Comment,
-	exitLine string,
-) uint64 {
-	scannedLines := uint64(0)
-	currentLine := s.Text()
-	content, isAnnotated := c.ExtractCommentContent(currentLine, pi.Annotation)
-	is.Build(content, isAnnotated, scannedLines)
-
-	for s.Scan() {
-		scannedLines++
-		nextLine := s.Text()
-		content, isAnnotated = c.ExtractCommentContent(nextLine, pi.Annotation)
-		if c.CurrentLineType == exitLine {
-			break
-		}
-
-		is.Build(content, isAnnotated, scannedLines)
-	}
-
-	return scannedLines
+func (pi *PendingIssue) GetIssues() []Issue {
+	return pi.Issues
 }

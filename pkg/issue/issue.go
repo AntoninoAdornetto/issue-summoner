@@ -1,27 +1,37 @@
 /*
 The issue package is responsible for handling pending and processed issues.
-Issues are objects that describe a task, concern, or area of code that require
-some attention.
+Issues are objects that describe a task, concern, or area of code that
+requires attention.
 
-Issues are discovered by parsing single and multi line comments in source code files.
-In order for a comment to be considered as an issue, the comment must have an annotation.
-The annotation can be as simple as // @TODO. Or as complex as // @TICKET_123_REVIEW
-Once an annotation is found, we parse the surrounding data and build an issue object
-that will be used later on.
+Issues are discovered by parsing each line in a source file. When a file is
+first opened, we determine the syntax used to denote single and multi line comments
+by checking the extension of the file. I.E main.c, main.go, main.cpp and so on.
+This will allow the program to understand what comment symbols to search for.
 
-There are two types of issues, pending and processed. Pending issues have not yet been
-uploaded to a source code management platform. Processed issues have been uploaded to
-a source code management platform and will have an ID number right beside the annotation.
-A simple processed issue may look like this: // @TODO(1234) where 1234 is the ID that the
-source code management platform returned after making an http request to create the issue.
+As we scan each line, we check if the line contains the prefix notation for a single
+or multi line comment. If it contains a single line comment prefix, we parse and get
+all text after the prefix and annotation. If an issue annotation was located,
+it qualifies as an issue and we will be appended as a new issue object onto an issues slice.
+
+In the case locating of a multi line comment prefix, we will continue to scan subsequent lines until
+reaching the multi line comment suffix. At that point, we will do the same check for the single line
+comment and check that an issue annotation was located and push onto the issues slice if it contained
+the annotation.
+
+There are two types of issues, pending and processed. Pending issues are those that have not yet been
+uploaded to a source code management platform. Processed issues are issues that have been uploaded to a
+source code management platform and will have a unique id number associated with the issue annotation.
+
+See the issue_test.go file for examples.
 */
 package issue
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"os"
+	"io"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -32,68 +42,48 @@ const (
 type Issue struct {
 	ID                   string
 	Title                string
-	Description          string // @TODO use a string builder to reduce copying
-	FileInfo             os.FileInfo
+	Description          string
+	FilePath             string
 	StartLineNumber      uint64
 	EndLineNumber        uint64
 	AnnotationLineNumber uint64
-	IsSingleLine         bool
-	IsMultiLine          bool
 }
 
-// IssueManager is responsible for defining the methods
-// we will use for parsing single and multi line comments.
 type IssueManager interface {
 	GetIssues() []Issue
-	Scan(file *os.File) error
+	Scan(r io.Reader, path string) error
+	Walk(root string, ignore []regexp.Regexp) (int, error)
 }
 
-type ParseCommentParams struct {
-	LineText      string
-	LineType      string
-	LineNum       *uint64
-	Scanner       *bufio.Scanner
-	Comment       Comment
-	CommentPrefix string
-	FileInfo      os.FileInfo
-}
-
-// GetIssueManager takes an issue type as input and returns
-// a new struct that satisfies the IssueManager interface.
-// The PendingIssue struct is in charge of issues that have not
-// been reported to a source code management platform yet.
-// ProcessedIssue struct is in charge of issues that have
-// already been reported. An error is returned if an unsupported
-// issueType is passed into the function
-func GetIssueManager(issueType string, annotation string) (IssueManager, error) {
+// NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
+// that satisfies the methods defined in the IssueManager interface. The methods in
+// said interface are used to report new issues an SCM or locate issues that have been
+// reported to an SCM. Each struct will implement methods for walking the project directory
+// and parsing source code files. The main difference is that pending issues can be uploaded
+// to an SCM and processed issues can be resolved and the matching comment in the source code
+// can be removed through it's methods.
+func NewIssueManager(issueType string, annotation string) (IssueManager, error) {
 	switch issueType {
 	case PENDING_ISSUE:
-		return &PendingIssue{Issues: make([]Issue, 0), Annotation: annotation}, nil
-	case PROCESSED_ISSUE:
-		return &ProcessedIssue{Issues: make([]Issue, 0)}, nil
+		return &PendingIssue{Annotation: annotation}, nil
 	default:
-		return nil, errors.New("Unsupported issue type. Please use pending or processed")
+		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
 	}
 }
 
-func (is *Issue) Init(lineType string, lineNum uint64, fi *os.FileInfo) {
-	is.StartLineNumber = lineNum
-	is.EndLineNumber = lineNum
-	is.IsSingleLine = lineType == LINE_TYPE_SINGLE
-	is.IsMultiLine = lineType == LINE_TYPE_MULTI_START
-	is.FileInfo = *fi
-	is.ID = fmt.Sprintf("%s-%d", is.FileInfo.Name(), lineNum)
+func skipGitDir(name string) bool {
+	return strings.Contains(name, ".git")
 }
 
-func (is *Issue) Build(content string, isAnnotated bool, scannedLines uint64) {
-	if isAnnotated {
-		is.AnnotationLineNumber = is.StartLineNumber + scannedLines
-		is.Title = content
-	} else if is.Description == "" {
-		is.Description = content
-		is.EndLineNumber = scannedLines + is.StartLineNumber
-	} else {
-		is.Description = fmt.Sprintf("%s %s", is.Description, content)
-		is.EndLineNumber = scannedLines + is.StartLineNumber
+func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {
+	for _, re := range patterns {
+		if matched := re.MatchString(path); matched {
+			return true
+		}
 	}
+	return false
+}
+
+func generateID(fileName string, annotationLineNumber uint64) string {
+	return fmt.Sprintf("%s-%d", fileName, annotationLineNumber)
 }

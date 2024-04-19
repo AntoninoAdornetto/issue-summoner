@@ -7,8 +7,6 @@ import (
 	"net/url"
 )
 
-// SubmitPostRequest is a convienience function that reduces DRY code for making
-// an HTTP post request
 func SubmitPostRequest(url string, body io.Reader, h http.Header) ([]byte, error) {
 	var res []byte
 	req, _ := http.NewRequest("POST", url, body)
@@ -30,10 +28,6 @@ func SubmitPostRequest(url string, body io.Reader, h http.Header) ([]byte, error
 	return res, err
 }
 
-// BuildURL will construct a URL based on the paths and query params provided to the
-// function. Each string in the paths slice will be appended the base URL using the
-// url.JoinPath method. Additionally, all query params provided by the qParams
-// input will be set, encoded and returned as part of the resulting string
 func BuildURL(baseURL string, paths []string, qParams map[string]string) (string, error) {
 	u, err := url.JoinPath(baseURL, paths...)
 	if err != nil {

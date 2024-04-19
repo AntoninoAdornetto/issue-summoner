@@ -1,222 +1,264 @@
 package issue_test
 
 import (
-	"fmt"
+	"bytes"
+	"io"
 	"os"
+	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/stretchr/testify/require"
 )
 
-func TestScan_SingleLine1Item(t *testing.T) {
-	file, fileInfo := setup(
-		t,
-		`func main(){
-			// @TEST_TODO Test Me
-			// Write test cases that bring up the code coverage
-		}`,
-	)
-
-	defer tearDown(file)
-
-	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
+// @TODO the line numbers of this assertion are off by 1. Fix in ParseLine function of comment.go
+func TestScanSingleLineCommentsGo(t *testing.T) {
+	r := generateSingleLineCommentImplFileGo()
+	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+	require.NoError(t, err)
+	require.NotNil(t, im)
+	err = im.Scan(r, "/tmp/temp-dir/mock.go")
 	require.NoError(t, err)
 
-	err = pi.Scan(file)
-	require.NoError(t, err)
-	actual := pi.GetIssues()
-
+	// see generateSingleLineCommentImplFileGo for how the file
+	// looks. It contains single line comments within a mock
+	// source code file and provides an example of how single
+	// line comments may be used. In the mock file, we added
+	// 2 single line comments with annotations.
 	expected := []issue.Issue{
 		{
-			AnnotationLineNumber: 2,
-			StartLineNumber:      2,
-			EndLineNumber:        3,
-			Title:                "Test Me",
-			Description:          "Write test cases that bring up the code coverage",
-			IsSingleLine:         true,
-			IsMultiLine:          false,
-			FileInfo:             fileInfo,
-			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
-		},
-	}
-
-	require.Equal(t, expected, actual)
-}
-
-func TestScan_SingleLineMultipleItems(t *testing.T) {
-	file, fileInfo := setup(
-		t,
-		`func main() {
-		// @TEST_TODO Test Me
-
-		fmt.Printf("hello world\n")
-		// @TEST_TODO Test Me as well
-		}`,
-	)
-
-	defer tearDown(file)
-
-	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
-	require.NoError(t, err)
-
-	err = pi.Scan(file)
-	require.NoError(t, err)
-	actual := pi.GetIssues()
-
-	expected := []issue.Issue{
-		{
-			AnnotationLineNumber: 2,
-			StartLineNumber:      2,
-			EndLineNumber:        2,
-			Title:                "Test Me",
+			Title:                "add ! (not) operator support for ignoring specific files/directories",
 			Description:          "",
-			IsSingleLine:         true,
-			IsMultiLine:          false,
-			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
-			FileInfo:             fileInfo,
+			AnnotationLineNumber: 13,
+			StartLineNumber:      13,
+			EndLineNumber:        13,
+			ID:                   "/tmp/temp-dir/mock.go-13",
+			FilePath:             "/tmp/temp-dir/mock.go",
 		},
 		{
-			AnnotationLineNumber: 5,
-			StartLineNumber:      5,
-			EndLineNumber:        5,
-			Title:                "Test Me as well",
+			Title:                "update the formatIgnoreExpression expression to include ! operator support",
 			Description:          "",
-			IsSingleLine:         true,
-			IsMultiLine:          false,
-			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 5),
-			FileInfo:             fileInfo,
+			AnnotationLineNumber: 25,
+			StartLineNumber:      25,
+			EndLineNumber:        25,
+			ID:                   "/tmp/temp-dir/mock.go-25",
+			FilePath:             "/tmp/temp-dir/mock.go",
 		},
 	}
 
+	actual := im.GetIssues()
 	require.Equal(t, expected, actual)
 }
 
-func TestScanMultiCommentLine1Item(t *testing.T) {
-	file, fileInfo := setup(
-		t,
-		`func main(){
-			/* @TEST_TODO Test Me
-				Write test cases that bring up the code coverage
-	*/
-		}`,
-	)
-
-	defer tearDown(file)
-
-	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
+// should Walk the temp project created in /tmp dir and return
+// a count of the number of times that Walk calls the Scan method
+func TestWalkCountScans(t *testing.T) {
+	root, err := setup()
 	require.NoError(t, err)
 
-	err = pi.Scan(file)
+	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
-	actual := pi.GetIssues()
+	require.NotNil(t, im)
 
-	expected := []issue.Issue{
-		{
-			AnnotationLineNumber: 2,
-			StartLineNumber:      2,
-			EndLineNumber:        3,
-			Title:                "Test Me",
-			Description:          "Write test cases that bring up the code coverage",
-			IsSingleLine:         false,
-			IsMultiLine:          true,
-			FileInfo:             fileInfo,
-			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
-		},
+	// the setup func generates 3 files and 3 directories.
+	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
+	// the expected number of times that Scan should be called is 2 times.
+	// one time for the exe file and one time for the go impl file.
+	// the only reason scan is called on the exe file is because this test
+	// does not add any ignore patterns to pass into Walk. The next test
+	// will make the assertion with ignore patterns.
+	expected := 2
+	actual, err := im.Walk(root, []regexp.Regexp{})
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+	err = teardown(root)
+	require.NoError(t, err)
+}
+
+// should Walk the temp project created in /tmp dir and return
+// a count of the number of times that Walk calls filepath.WalkDir
+// but this time we will add path validation in the mix.
+// regular expressions are built based off the gitignore file.
+// see ignore.go for examples on we that process is handled.
+
+// should Walk the temp project create in /tmp dir and return
+// a count of the number of times that Walk calls the Scan method.
+// This time, we will add ignore patterns as a argument to Walk
+// and the result is that Scan is only called 1 time on an impl file.
+func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
+	root, err := setup()
+	require.NoError(t, err)
+
+	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+	require.NoError(t, err)
+	require.NotNil(t, im)
+
+	// the setup func generates 3 files and 3 directories.
+	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
+	// the expected number of times that Scan should be called is 1 time.
+	// one time for the go impl file. We will add an ignore pattern to
+	// assert that Scan is not called on the executable.
+	expected := 1
+	actual, err := im.Walk(root, []regexp.Regexp{*regexp.MustCompile(`.*\.exe`)})
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+	err = teardown(root)
+	require.NoError(t, err)
+}
+
+// should return an error when the root path does not exist
+func TestWalkNoneExistentRoot(t *testing.T) {
+	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+	require.NoError(t, err)
+	require.NotNil(t, im)
+
+	_, err = im.Walk("unknown-path", []regexp.Regexp{})
+	require.Error(t, err)
+}
+
+// setup will create 6 files/dirs in total.
+// 1. temp dir (temp-git-project)
+// 2. temp pkg dir
+// 3. temp imp file (issue.go)
+// 4. temp git dir
+// 5. temp INDEX file that resides in the temp .git dir
+// 6. temp exe file (used to validate that walk can ignore/skip entire directories)
+func setup() (string, error) {
+	pathName, err := os.MkdirTemp("", "temp-git-project")
+	if err != nil {
+		return "", err
 	}
 
-	require.Equal(t, expected, actual)
+	if err = buildSrc(pathName); err != nil {
+		return "", err
+	}
+
+	return pathName, err
 }
 
-// func TestScanMultiCommentLineManyItems(t *testing.T) {
-// 	file, fileInfo := setup(
-// 		t,
-// 		`func main(){
-// 			/* @TEST_TODO First Multi Comment
-// 			First multi comment details
-// 			*/
-//
-//
-// 			/* @TEST_TODO Second Multi Comment
-// 			Second multi comment details
-// 			*/
-//
-// 			/*
-// 			@TEST_TODO Third Multi Comment
-// 			Third multi comment details
-// 			Span for multiple lines...
-// 			*/
-// 		}`,
-// 	)
-//
-// 	defer tearDown(file)
-//
-// 	pi, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
-// 	require.NoError(t, err)
-//
-// 	err = pi.Scan(file)
-// 	require.NoError(t, err)
-// 	actual := pi.GetIssues()
-//
-// 	expected := []issue.Issue{
-// 		{
-// 			AnnotationLineNumber: 2,
-// 			StartLineNumber:      2,
-// 			EndLineNumber:        4,
-// 			Title:                "First Multi Comment",
-// 			Description:          "First multi comment details",
-// 			IsSingleLine:         false,
-// 			IsMultiLine:          true,
-// 			FileInfo:             fileInfo,
-// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 2),
-// 		},
-// 		{
-// 			AnnotationLineNumber: 7,
-// 			StartLineNumber:      7,
-// 			EndLineNumber:        9,
-// 			Title:                "Second Multi Comment",
-// 			Description:          "Second multi comment details",
-// 			IsSingleLine:         false,
-// 			IsMultiLine:          true,
-// 			FileInfo:             fileInfo,
-// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 7),
-// 		},
-// 		{
-// 			AnnotationLineNumber: 12,
-// 			StartLineNumber:      11,
-// 			EndLineNumber:        15,
-// 			Title:                "Third Multi Comment",
-// 			Description:          "Third multi comment details Span for multiple lines...",
-// 			IsSingleLine:         false,
-// 			IsMultiLine:          true,
-// 			FileInfo:             fileInfo,
-// 			ID:                   fmt.Sprintf("%s-%d", fileInfo.Name(), 11),
-// 		},
-// 	}
-//
-// 	require.Equal(t, expected, actual)
-// }
+// produces a go implementation file that utilizes
+// single line comments with a mock annotation.
+// it is used to help assert that the PendingIssue Scan
+// implementation behaves as expected. There are two
+// valid issue annotations in the bytes buffer returned
+// from this function. There are also 2 additonal single
+// line comments that should be ignored.
+func generateSingleLineCommentImplFileGo() io.Reader {
+	implBytes := []byte(`package scm
 
-func setup(t *testing.T, text string) (*os.File, os.FileInfo) {
-	file, err := os.CreateTemp("", "*.go")
-	require.NoError(t, err)
+		import (
+			"bufio"
+			"bytes"
+			"io"
+			"regexp"
+			"unicode"
+		)
 
-	_, err = file.WriteString(text)
-	require.NoError(t, err)
+		type IgnorePattern = regexp.Regexp
 
-	err = file.Sync()
-	require.NoError(t, err)
+		// @TEST_TODO add ! (not) operator support for ignoring specific files/directories
+		func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
+			regexps := make([]IgnorePattern, 0)
+			buf := &bytes.Buffer{}
+			scanner := bufio.NewScanner(r)
 
-	_, err = file.Seek(0, 0)
-	require.NoError(t, err)
+			for scanner.Scan() {
+				line := scanner.Bytes()
+				if len(line) == 0 {
+					continue
+				}
 
-	fileInfo, err := file.Stat()
-	require.NoError(t, err)
+				// @TEST_TODO update the formatIgnoreExpression expression to include ! operator support
+				if err := formatIgnoreExpression(buf, line); err != nil {
+					return regexps, err
+				}
 
-	return file, fileInfo
+				// a single line comment that should be ignored
+				if buf.Len() > 0 {
+					re := regexp.MustCompile(buf.String())
+					regexps = append(regexps, *re)
+					buf.Reset()
+				}
+			}
+
+			// another single line comment that should be ignored
+			return regexps, scanner.Err()
+		}
+	`)
+	r := bytes.NewReader(implBytes)
+	return r
 }
 
-func tearDown(f *os.File) {
-	f.Close()
-	os.Remove(f.Name())
+// creates temp source code files for our temporary dir
+// this will be used to test the Walk func.
+func buildSrc(path string) error {
+	tempPkg, err := os.MkdirTemp(path, "pkg")
+	if err != nil {
+		return err
+	}
+
+	// we add a temp .git dir to ensure that our walk func
+	// does not parse the files inside a .git dir
+	tempGitDir, err := os.MkdirTemp(path, ".git")
+	if err != nil {
+		return err
+	}
+
+	gitIndex, err := os.CreateTemp(tempGitDir, "INDEX")
+	if err != nil {
+		return err
+	}
+
+	gitIndexBytes := []byte("git index file")
+	_, err = gitIndex.Write(gitIndexBytes)
+	if err != nil {
+		return err
+	}
+
+	// another ignored file. This is to test the ignore pattern
+	// functionality of the walk func
+	_, err = os.CreateTemp(path, ".exe")
+	if err != nil {
+		return err
+	}
+
+	issueGo, err := os.CreateTemp(tempPkg, "issue")
+	if err != nil {
+		return err
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	issueSrc, err := os.Open(filepath.Join(wd, "issue.go"))
+	if err != nil {
+		return err
+	}
+
+	sourceBytes, err := io.ReadAll(issueSrc)
+	if err != nil {
+		return err
+	}
+
+	_, err = issueGo.Write(sourceBytes)
+	if err != nil {
+		return err
+	}
+
+	newFileName := issueGo.Name() + ".go"
+	err = os.Rename(issueGo.Name(), newFileName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func teardown(path string) error {
+	return os.RemoveAll(path)
 }

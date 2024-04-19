@@ -7,20 +7,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetIssueManager_Pending(t *testing.T) {
-	issueManager, err := issue.GetIssueManager(issue.PENDING_ISSUE, "@TEST_TODO")
-	require.NoError(t, err)
-	require.IsType(t, &issue.PendingIssue{}, issueManager)
-}
+const (
+	annotation = "@TEST_TODO"
+)
 
-func TestGetIssueManager_Processed(t *testing.T) {
-	issueManager, err := issue.GetIssueManager(issue.PROCESSED_ISSUE, "@TEST_TODO")
-	require.NoError(t, err)
-	require.IsType(t, &issue.ProcessedIssue{}, issueManager)
-}
-
-func TestGetIssueManager_UnknownIssueType(t *testing.T) {
-	issueManager, err := issue.GetIssueManager("unknown", "@TEST_TODO")
-	require.Error(t, err)
-	require.Nil(t, issueManager)
+func TestNewIssueManagerUnsupported(t *testing.T) {
+	im, err := issue.NewIssueManager("unsupported", annotation)
+	require.Errorf(t, err, "Unsupported issue type. Use 'pending' or 'processed'")
+	require.Nil(t, im)
 }

@@ -1,21 +1,24 @@
 package issue
 
 import (
-	"os"
+	"io"
+	"regexp"
 )
 
 type ProcessedIssue struct {
-	Issues []Issue
+	Annotation string
+	Issues     []Issue
+}
+
+func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) (int, error) {
+	n := 0
+	return n, nil
+}
+
+func (pi *ProcessedIssue) Scan(r io.Reader) error {
+	return nil
 }
 
 func (pi *ProcessedIssue) GetIssues() []Issue {
 	return pi.Issues
-}
-
-func (pi *ProcessedIssue) Scan(file *os.File) error {
-	return nil
-}
-
-func (pi *ProcessedIssue) ParseComment(arg ParseCommentParams) error {
-	return nil
 }

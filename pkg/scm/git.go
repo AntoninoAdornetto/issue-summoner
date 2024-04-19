@@ -193,6 +193,7 @@ func GlobalUserName() (string, error) {
 	return userName, nil
 }
 
+// @TODO write unit test for RepoName/extractRepoName function.
 func RepoName() (string, error) {
 	var out strings.Builder
 	cmd := exec.Command("git", "remote", "-v")
