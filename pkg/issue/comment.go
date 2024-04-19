@@ -9,6 +9,14 @@ with a default syntax for unrecognized file types. When walking a project direct
 each file extension and uses the CommentNotations map to determine the comment syntax for parsing.
 */
 package issue
+
+import (
+	"bufio"
+	"errors"
+	"regexp"
+	"strings"
+)
+
 const (
 	file_ext_asm        = ".asm"
 	file_ext_bash       = ".sh"
@@ -48,6 +56,8 @@ type CommentNotation struct {
 	AnnotationIndicator bool
 	SingleLinePrefix    string
 	SingleLinePrefixRe  *regexp.Regexp
+	SingleLineSuffix    string
+	SingleLineSuffixRe  *regexp.Regexp
 	MultiLinePrefix     string
 	MultiLinePrefixRe   *regexp.Regexp
 	MultiLineSuffix     string
@@ -67,7 +77,7 @@ var CommentNotations = map[string]CommentNotation{
 		SingleLinePrefix: `\/\/`,
 		MultiLinePrefix:  `\/\*`,
 		MultiLineSuffix:  `\*\/`,
-		NewLinePrefix:    `\*`,
+		NewLinePrefix:    `*`,
 	},
 	file_ext_python: {
 		SingleLinePrefix: `#`,
@@ -75,8 +85,8 @@ var CommentNotations = map[string]CommentNotation{
 		MultiLineSuffix:  `(\"\"\")|(\'\'\')`,
 	},
 	file_ext_markdown: {
-		MultiLinePrefix: `<!--`,
-		MultiLineSuffix: `-->`,
+		SingleLinePrefix: `<!--`,
+		SingleLineSuffix: `-->`,
 	},
 	"default": {
 		SingleLinePrefix: `#`,
@@ -115,10 +125,135 @@ func NewCommentNotation(ext string, annotation string, scanner *bufio.Scanner) C
 	cn.Scanner = scanner
 	cn.Stack = *InitNotationStack()
 	cn.SingleLinePrefixRe = compileAndSetRegexp(cn.SingleLinePrefix)
+	cn.SingleLineSuffixRe = compileAndSetRegexp(cn.SingleLineSuffix)
 	cn.MultiLinePrefixRe = compileAndSetRegexp(cn.MultiLinePrefix)
 	cn.MultiLineSuffixRe = compileAndSetRegexp(cn.MultiLineSuffix)
 
 	return cn
+}
+
+func (c *CommentNotation) ParseLine(n *uint64) (Issue, error) {
+	var err error
+	issue := Issue{}
+	fields := strings.Fields(c.Scanner.Text())
+	if len(fields) == 0 {
+		return issue, nil
+	}
+
+	start := -1
+	if c.Stack.IsEmpty() {
+		if start = c.FindPrefixIndex(fields); start == -1 {
+			return issue, nil
+		}
+	}
+
+	top, err := c.Stack.Peek()
+	if err != nil {
+		return issue, err
+	}
+
+	if top == c.SingleLinePrefix {
+		err = c.BuildSingle(fields, &issue, start+1, n)
+	}
+
+	if top == c.MultiLinePrefix {
+		issue.StartLineNumber = *n
+		for c.Scanner.Scan() && !c.Stack.IsEmpty() {
+			err = c.BuildMulti(fields, &issue, start+1, n)
+			fields = strings.Fields(c.Scanner.Text())
+			start = -1
+			c.AnnotationIndicator = false
+			*n++
+		}
+	}
+
+	c.AnnotationIndicator = false
+	return issue, err
+}
+
+func (c *CommentNotation) BuildSingle(fields []string, is *Issue, start int, n *uint64) error {
+	content, err := c.ExtractFromSingle(fields, start)
+	if err != nil {
+		return err
+	}
+
+	if c.AnnotationIndicator {
+		is.Title = content
+		is.Description = ""
+		is.AnnotationLineNumber = *n
+		is.StartLineNumber = *n
+		is.EndLineNumber = *n
+	}
+
+	return nil
+}
+
+func (c *CommentNotation) ExtractFromSingle(fields []string, start int) (string, error) {
+	end := len(fields)
+
+	for i := start; i < len(fields); i++ {
+		if fields[i] == c.Annotation {
+			c.AnnotationIndicator = true
+			start = i + 1
+		}
+
+		if c.SingleLineSuffixRe != nil && c.SingleLineSuffixRe.MatchString(fields[i]) {
+			end = i
+		}
+	}
+
+	_, err := c.Stack.Pop()
+	return strings.Join(fields[start:end], " "), err
+}
+
+func (c *CommentNotation) BuildMulti(fields []string, is *Issue, start int, n *uint64) error {
+	content, err := c.ExtractFromMulti(fields, start)
+	if err != nil {
+		return err
+	}
+
+	if content == "" {
+		return nil
+	}
+
+	if c.AnnotationIndicator && is.Title == "" {
+		is.Title = content
+		is.AnnotationLineNumber = *n
+	} else if is.Description == "" {
+		is.Description = content
+	} else {
+		is.Description += " " + content
+	}
+
+	is.EndLineNumber = *n
+	return nil
+}
+
+func (c *CommentNotation) ExtractFromMulti(fields []string, start int) (string, error) {
+	var err error
+	end := len(fields)
+
+	if len(fields) == 0 {
+		return "", nil
+	}
+
+	if fields[0] == c.NewLinePrefix {
+		start++
+	}
+
+	for i := start; i < len(fields); i++ {
+		if fields[i] == c.Annotation {
+			c.AnnotationIndicator = true
+			start = i + 1
+		}
+
+		if c.MultiLineSuffixRe.MatchString(fields[i]) {
+			_, err = c.Stack.Pop()
+			end = i
+		}
+	}
+
+	return strings.Join(fields[start:end], " "), err
 }
 
 func (c *CommentNotation) FindPrefixIndex(fields []string) int {
@@ -134,17 +269,6 @@ func (c *CommentNotation) FindPrefixIndex(fields []string) int {
 		}
 	}
 	return -1
-}
-
-func (c *CommentNotation) ExtractFromSingleLineComment(fields []string, start int) string {
-	for i := start; i < len(fields); i++ {
-		if fields[i] == c.Annotation {
-			c.AnnotationIndicator = true
-			return strings.Join(fields[i+1:], " ")
-		}
-	}
-	c.AnnotationIndicator = false
-	return ""
 }
 
 func InitNotationStack() *NotationStack {
