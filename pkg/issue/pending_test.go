@@ -12,9 +12,8 @@ import (
 )
 
 // should Walk the temp project created in /tmp dir and return
-// a count of the number of times that Walk calls filepath.WalkDir
-// along with no error.
-func TestWalkCountSteps(t *testing.T) {
+// a count of the number of times that Walk calls the Scan method
+func TestWalkCountScans(t *testing.T) {
 	root, err := setup()
 	require.NoError(t, err)
 	defer teardown(root)
@@ -23,13 +22,15 @@ func TestWalkCountSteps(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	// without any git ignore patterns (regular expressions)
-	// the Walk function should call the filepath.WalkDir function
-	// exactly 4 times. In the setup() func, we create 6 files/dirs
-	// in total. Two of them we created were a .git dir and a INDEX
-	// file in the .git dir. These two files should be ignored as we
-	// dont need to parse them.
-	expected := 4
+	// the setup func generates 3 files and 3 directories.
+	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
+	// the expected number of times that Scan should be called is 2 times.
+	// one time for the exe file and one time for the go impl file.
+	// the only reason scan is called on the exe file is because this test
+	// does not add any ignore patterns to pass into Walk. The next test
+	// will make the assertion with ignore patterns.
+	expected := 2
 	actual, err := im.Walk(root, []regexp.Regexp{})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
@@ -40,6 +41,11 @@ func TestWalkCountSteps(t *testing.T) {
 // but this time we will add path validation in the mix.
 // regular expressions are built based off the gitignore file.
 // see ignore.go for examples on we that process is handled.
+
+// should Walk the temp project create in /tmp dir and return
+// a count of the number of times that Walk calls the Scan method.
+// This time, we will add ignore patterns as a argument to Walk
+// and the result is that Scan is only called 1 time on an impl file.
 func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	root, err := setup()
 	require.NoError(t, err)
@@ -49,12 +55,13 @@ func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	// for this test, we will add the ignore regexp's that are generated from
-	// ignore.go in the scm package. We want to ignore exe files and the .git dir
-	// so this should reduce our total steps by 3 giving us a total of 3 steps.
-	// the main differences is that we will ignore the .gitdir and the file contained within it
-	// additionally, we will ignore the .exe file specified in our reg expression below
-	expected := 3
+	// the setup func generates 3 files and 3 directories.
+	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
+	// the expected number of times that Scan should be called is 1 time.
+	// one time for the go impl file. We will add an ignore pattern to
+	// assert that Scan is not called on the executable.
+	expected := 1
 	actual, err := im.Walk(root, []regexp.Regexp{*regexp.MustCompile(`.*\.exe`)})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)

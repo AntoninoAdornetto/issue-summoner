@@ -71,11 +71,8 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 	}
 }
 
-func skipGitDir(name string, isDir bool) bool {
-	if isDir && strings.Contains(name, ".git") {
-		return true
-	}
-	return false
+func skipGitDir(name string) bool {
+	return strings.Contains(name, ".git")
 }
 
 func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {
