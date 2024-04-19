@@ -124,10 +124,12 @@ func NewCommentNotation(ext string, annotation string, scanner *bufio.Scanner) C
 func (c *CommentNotation) FindPrefixIndex(fields []string) int {
 	for i, field := range fields {
 		if c.SingleLinePrefixRe != nil && c.SingleLinePrefixRe.MatchString(field) {
+			c.Stack.Push(c.SingleLinePrefix)
 			return i
 		}
 
 		if c.MultiLinePrefixRe != nil && c.MultiLinePrefixRe.MatchString(field) {
+			c.Stack.Push(c.MultiLinePrefix)
 			return i
 		}
 	}
