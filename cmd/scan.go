@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// scanCmd represents the scan command
 var ScanCmd = &cobra.Command{
 	Use:   "scan",
 	Short: "scans source code for Issue annotations (actionable comments)",
