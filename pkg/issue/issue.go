@@ -25,3 +25,37 @@ See the issue_test.go file for examples.
 */
 package issue
 
+import (
+	"errors"
+	"io"
+	"os"
+	"regexp"
+)
+
+const (
+	PENDING_ISSUE   = "pending"
+	PROCESSED_ISSUE = "processed"
+)
+
+type Issue struct {
+	ID                   string
+	Title                string
+	Description          string
+	FileInfo             os.FileInfo
+	StartLineNumber      uint64
+	EndLineNumber        uint64
+	AnnotationLineNumber uint64
+}
+
+type IssueManager interface {
+	GetIssues() []Issue
+	Scan(r io.Reader) error
+	Walk(root string, ignore []regexp.Regexp) error
+}
+
+func NewIssueManager(issueType string, annotation string) (IssueManager, error) {
+	switch issueType {
+	default:
+		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
+	}
+}
