@@ -1,6 +1,7 @@
 package issue_test
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,12 +12,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// @TODO the line numbers of this assertion are off by 1. Fix in ParseLine function of comment.go
+func TestScanSingleLineCommentsGo(t *testing.T) {
+	r := generateSingleLineCommentImplFileGo()
+	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+	require.NoError(t, err)
+	require.NotNil(t, im)
+	err = im.Scan(r, "/tmp/temp-dir/mock.go")
+	require.NoError(t, err)
+
+	// see generateSingleLineCommentImplFileGo for how the file
+	// looks. It contains single line comments within a mock
+	// source code file and provides an example of how single
+	// line comments may be used. In the mock file, we added
+	// 2 single line comments with annotations.
+	expected := []issue.Issue{
+		{
+			Title:                "add ! (not) operator support for ignoring specific files/directories",
+			Description:          "",
+			AnnotationLineNumber: 13,
+			StartLineNumber:      13,
+			EndLineNumber:        13,
+			ID:                   "/tmp/temp-dir/mock.go-13",
+			FilePath:             "/tmp/temp-dir/mock.go",
+		},
+		{
+			Title:                "update the formatIgnoreExpression expression to include ! operator support",
+			Description:          "",
+			AnnotationLineNumber: 25,
+			StartLineNumber:      25,
+			EndLineNumber:        25,
+			ID:                   "/tmp/temp-dir/mock.go-25",
+			FilePath:             "/tmp/temp-dir/mock.go",
+		},
+	}
+
+	actual := im.GetIssues()
+	require.Equal(t, expected, actual)
+}
+
 // should Walk the temp project created in /tmp dir and return
 // a count of the number of times that Walk calls the Scan method
 func TestWalkCountScans(t *testing.T) {
 	root, err := setup()
 	require.NoError(t, err)
-	defer teardown(root)
 
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
@@ -34,6 +73,8 @@ func TestWalkCountScans(t *testing.T) {
 	actual, err := im.Walk(root, []regexp.Regexp{})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
+	err = teardown(root)
+	require.NoError(t, err)
 }
 
 // should Walk the temp project created in /tmp dir and return
@@ -49,7 +90,6 @@ func TestWalkCountScans(t *testing.T) {
 func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	root, err := setup()
 	require.NoError(t, err)
-	defer teardown(root)
 
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
@@ -65,6 +105,8 @@ func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	actual, err := im.Walk(root, []regexp.Regexp{*regexp.MustCompile(`.*\.exe`)})
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
+	err = teardown(root)
+	require.NoError(t, err)
 }
 
 // should return an error when the root path does not exist
@@ -95,6 +137,59 @@ func setup() (string, error) {
 	}
 
 	return pathName, err
+}
+
+// produces a go implementation file that utilizes
+// single line comments with a mock annotation.
+// it is used to help assert that the PendingIssue Scan
+// implementation behaves as expected. There are two
+// valid issue annotations in the bytes buffer returned
+// from this function. There are also 2 additonal single
+// line comments that should be ignored.
+func generateSingleLineCommentImplFileGo() io.Reader {
+	implBytes := []byte(`package scm
+
+		import (
+			"bufio"
+			"bytes"
+			"io"
+			"regexp"
+			"unicode"
+		)
+
+		type IgnorePattern = regexp.Regexp
+
+		// @TEST_TODO add ! (not) operator support for ignoring specific files/directories
+		func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
+			regexps := make([]IgnorePattern, 0)
+			buf := &bytes.Buffer{}
+			scanner := bufio.NewScanner(r)
+
+			for scanner.Scan() {
+				line := scanner.Bytes()
+				if len(line) == 0 {
+					continue
+				}
+
+				// @TEST_TODO update the formatIgnoreExpression expression to include ! operator support
+				if err := formatIgnoreExpression(buf, line); err != nil {
+					return regexps, err
+				}
+
+				// a single line comment that should be ignored
+				if buf.Len() > 0 {
+					re := regexp.MustCompile(buf.String())
+					regexps = append(regexps, *re)
+					buf.Reset()
+				}
+			}
+
+			// another single line comment that should be ignored
+			return regexps, scanner.Err()
+		}
+	`)
+	r := bytes.NewReader(implBytes)
+	return r
 }
 
 // creates temp source code files for our temporary dir
