@@ -66,6 +66,8 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 	switch issueType {
 	case PENDING_ISSUE:
 		return &PendingIssue{Annotation: annotation}, nil
+	case PROCESSED_ISSUE:
+		return &ProcessedIssue{Annotation: annotation}, nil
 	default:
 		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
 	}
