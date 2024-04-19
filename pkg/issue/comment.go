@@ -136,6 +136,17 @@ func (c *CommentNotation) FindPrefixIndex(fields []string) int {
 	return -1
 }
 
+func (c *CommentNotation) ExtractFromSingleLineComment(fields []string, start int) string {
+	for i := start; i < len(fields); i++ {
+		if fields[i] == c.Annotation {
+			c.AnnotationIndicator = true
+			return strings.Join(fields[i+1:], " ")
+		}
+	}
+	c.AnnotationIndicator = false
+	return ""
+}
+
 func InitNotationStack() *NotationStack {
 	stack := &NotationStack{}
 	stack.Items = make([]string, 0)
