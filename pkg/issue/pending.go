@@ -1,6 +1,7 @@
 package issue
 
 import (
+	"bufio"
 	"io"
 	"io/fs"
 	"os"
@@ -40,14 +41,34 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 		defer file.Close()
 
 		n++
-		return pi.Scan(file)
+		return pi.Scan(file, path)
 	})
 
 	return n, err
 }
 
-func (pi *PendingIssue) Scan(r io.Reader) error {
-	return nil
+func (pi *PendingIssue) Scan(r io.Reader, path string) error {
+	lineNum := uint64(0)
+	issues := make([]Issue, 0)
+	scanner := bufio.NewScanner(r)
+	notation := NewCommentNotation(filepath.Ext(path), pi.Annotation, scanner)
+
+	for scanner.Scan() {
+		lineNum++
+		issue, err := notation.ParseLine(&lineNum)
+		if err != nil {
+			return err
+		}
+
+		if issue.AnnotationLineNumber > 0 {
+			issue.ID = generateID(path, issue.AnnotationLineNumber)
+			issue.FilePath = path
+			issues = append(issues, issue)
+		}
+	}
+
+	pi.Issues = append(pi.Issues, issues...)
+	return scanner.Err()
 }
 
 func (pi *PendingIssue) GetIssues() []Issue {
