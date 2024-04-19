@@ -71,19 +71,6 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 	}
 }
 
-// each pattern in the patterns slice was compiled using the expressions contained in
-// a git ignore file. The purpose of the function is to help adhere to the same rules
-// that the git ignore file does for git repos. We don't want to parse files/dirs that
-// we do not have to parse.
-func validatePath(path string, patterns []regexp.Regexp) bool {
-	for _, re := range patterns {
-		if matched := re.MatchString(path); matched {
-			return false
-		}
-	}
-	return true
-}
-
 func skipGitDir(name string, isDir bool) bool {
 	if isDir && strings.Contains(name, ".git") {
 		return true
