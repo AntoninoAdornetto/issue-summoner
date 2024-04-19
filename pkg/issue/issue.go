@@ -53,6 +53,13 @@ type IssueManager interface {
 	Walk(root string, ignore []regexp.Regexp) error
 }
 
+// NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
+// that satisfies the methods defined in the IssueManager interface. The methods in
+// said interface are used to report new issues an SCM or locate issues that have been
+// reported to an SCM. Each struct will implement methods for walking the project directory
+// and parsing source code files. The main difference is that pending issues can be uploaded
+// to an SCM and processed issues can be resolved and the matching comment in the source code
+// can be removed through it's methods.
 func NewIssueManager(issueType string, annotation string) (IssueManager, error) {
 	switch issueType {
 	default:
