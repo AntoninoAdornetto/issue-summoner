@@ -28,8 +28,8 @@ package issue
 
 import (
 	"errors"
+	"fmt"
 	"io"
-	"os"
 	"regexp"
 	"strings"
 )
@@ -43,7 +43,7 @@ type Issue struct {
 	ID                   string
 	Title                string
 	Description          string
-	FileInfo             os.FileInfo
+	FilePath             string
 	StartLineNumber      uint64
 	EndLineNumber        uint64
 	AnnotationLineNumber uint64
@@ -51,7 +51,7 @@ type Issue struct {
 
 type IssueManager interface {
 	GetIssues() []Issue
-	Scan(r io.Reader) error
+	Scan(r io.Reader, path string) error
 	Walk(root string, ignore []regexp.Regexp) (int, error)
 }
 
@@ -82,4 +82,8 @@ func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {
 		}
 	}
 	return false
+}
+
+func generateID(fileName string, annotationLineNumber uint64) string {
+	return fmt.Sprintf("%s-%d", fileName, annotationLineNumber)
 }
