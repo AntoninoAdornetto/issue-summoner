@@ -121,6 +121,15 @@ func NewCommentNotation(ext string, annotation string, scanner *bufio.Scanner) C
 	return cn
 }
 
+func (c *CommentNotation) FindPrefixIndex(fields []string) int {
+	for i, field := range fields {
+		if c.SingleLinePrefixRe != nil && c.SingleLinePrefixRe.MatchString(field) {
+			return i
+		}
+	}
+	return -1
+}
+
 func InitNotationStack() *NotationStack {
 	stack := &NotationStack{}
 	stack.Items = make([]string, 0)
