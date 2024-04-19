@@ -92,17 +92,18 @@ var ScanCmd = &cobra.Command{
 					),
 				),
 			)
-			if verbose {
-				issue.PrintTagResults(issues, ui.DimTextStyle, ui.PrimaryTextStyle)
-			} else {
-				fmt.Println(
-					ui.SecondaryTextStyle.Render(
-						"Tip: run issue-summoner scan -v (verbose) for more details about the tag annotations that were found",
-					),
-				)
-			}
 		} else {
 			fmt.Println(ui.SecondaryTextStyle.Render(fmt.Sprintf("\nNo tags were located in your project using the annotation %s", annotation)))
+		}
+
+		if verbose {
+			issue.PrintTagResults(issues, ui.DimTextStyle, ui.PrimaryTextStyle)
+		} else {
+			fmt.Println(
+				ui.SecondaryTextStyle.Render(
+					"Tip: run issue-summoner scan -v (verbose) for more details about the tag annotations that were found",
+				),
+			)
 		}
 	},
 }
