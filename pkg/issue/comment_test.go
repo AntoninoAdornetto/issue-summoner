@@ -30,6 +30,20 @@ func TestFindPrefixIndexSingleLineInC(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
+}
+
+// should return -1 when no single line comment prefix exists
+func TestFindPrefixIndexSingleLineNotFoundInC(t *testing.T) {
+	line := "int main() {return 0}" // no prefix added
+	fields := strings.Fields(line)
+	notation := issue.NewCommentNotation(file_ext_c, annotation, &bufio.Scanner{})
+	expected := -1
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+	// since we didn't find the prefix, the stack should be empty
+	require.Len(t, notation.Stack.Items, 0)
 }
 
 // should return the prefix index as 4 for a c file where the
@@ -41,6 +55,8 @@ func TestFindPrefixIndexSingleLineAfterSourceCodeInC(t *testing.T) {
 	expected := 4
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 0 for a python file
@@ -51,6 +67,20 @@ func TestFindPrefixIndexSingleLineInPython(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
+}
+
+// should return -1 when no single line comment prefix exists
+func TestFindPrefixIndexSingleLineNotFoundInPython(t *testing.T) {
+	line := "n = 5" // no prefix added
+	fields := strings.Fields(line)
+	notation := issue.NewCommentNotation(file_ext_py, annotation, &bufio.Scanner{})
+	expected := -1
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+	// since we didn't find the prefix, the stack should be empty
+	require.Len(t, notation.Stack.Items, 0)
 }
 
 // should return the prefix index as 3 for a python file where the
@@ -62,6 +92,8 @@ func TestFindPrefixIndexSingleLineAfterSourceCodeInPython(t *testing.T) {
 	expected := 3
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 0 for a go file
@@ -72,6 +104,8 @@ func TestFindPrefixIndexSingleLineInGo(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 3 for a go file where the
@@ -83,6 +117,8 @@ func TestFindPrefixIndexSingleLineAfterSourceCodeInGo(t *testing.T) {
 	expected := 3
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 0 for a c file
@@ -93,6 +129,8 @@ func TestFindPrefixIndexMultiLineInC(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 4 for a c file where the
@@ -104,6 +142,8 @@ func TestFindPrefixIndexMultiLineAfterSourceCodeInC(t *testing.T) {
 	expected := 4
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 0 for a python file
@@ -114,6 +154,8 @@ func TestFindPrefixIndexMultiLineInPython(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 0 for a go file
@@ -124,6 +166,8 @@ func TestFindPrefixIndexMultiLineInGo(t *testing.T) {
 	expected := 0
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
 
 // should return the prefix index as 3 for a go file where the
@@ -135,4 +179,6 @@ func TestFindPrefixIndexMultiLineAfterSourceCodeInGo(t *testing.T) {
 	expected := 3
 	actual := notation.FindPrefixIndex(fields)
 	require.Equal(t, expected, actual)
+	// stack should also have one item in it after locating the prefix
+	require.Len(t, notation.Stack.Items, 1)
 }
