@@ -10,8 +10,9 @@ type ProcessedIssue struct {
 	Issues     []Issue
 }
 
-func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) error {
-	return nil
+func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) (int, error) {
+	n := 0
+	return n, nil
 }
 
 func (pi *ProcessedIssue) Scan(r io.Reader) error {
