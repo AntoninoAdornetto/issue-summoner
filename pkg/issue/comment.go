@@ -121,3 +121,42 @@ func NewCommentNotation(ext string, annotation string, scanner *bufio.Scanner) C
 	return cn
 }
 
+func InitNotationStack() *NotationStack {
+	stack := &NotationStack{}
+	stack.Items = make([]string, 0)
+	stack.Top = -1
+	return stack
+}
+
+func (s *NotationStack) Push(notation string) {
+	s.Items = append(s.Items, notation)
+	s.Top++
+}
+
+func (s *NotationStack) Pop() (string, error) {
+	if s.IsEmpty() {
+		return "", errors.New(errStackUnderflow)
+	}
+	item := s.Items[s.Top]
+	s.Items = s.Items[:len(s.Items)-1]
+	s.Top--
+	return item, nil
+}
+
+func (s *NotationStack) Peek() (string, error) {
+	if s.IsEmpty() {
+		return "", errors.New(errStackUnderflow)
+	}
+	return s.Items[s.Top], nil
+}
+
+func (s *NotationStack) IsEmpty() bool {
+	return s.Top == -1
+}
+
+func compileAndSetRegexp(exp string) *regexp.Regexp {
+	if exp == "" {
+		return nil
+	}
+	return regexp.MustCompile(exp)
+}
