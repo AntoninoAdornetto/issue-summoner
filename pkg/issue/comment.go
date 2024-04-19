@@ -126,6 +126,10 @@ func (c *CommentNotation) FindPrefixIndex(fields []string) int {
 		if c.SingleLinePrefixRe != nil && c.SingleLinePrefixRe.MatchString(field) {
 			return i
 		}
+
+		if c.MultiLinePrefixRe != nil && c.MultiLinePrefixRe.MatchString(field) {
+			return i
+		}
 	}
 	return -1
 }
