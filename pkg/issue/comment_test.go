@@ -14,6 +14,9 @@ const (
 	single_line_prefix_c      = "//"
 	single_line_prefix_go     = "//"
 	single_line_prefix_python = "#"
+	multi_line_prefix_c       = "/*"
+	multi_line_prefix_go      = "/*"
+	multi_line_prefix_python  = "'''"
 	file_ext_c                = ".c"
 	file_ext_py               = ".py"
 	file_ext_go               = ".go"
@@ -53,7 +56,7 @@ func TestFindPrefixIndexSingleLineInPython(t *testing.T) {
 // should return the prefix index as 3 for a python file where the
 // prefix notation is not denoted until after the source code
 func TestFindPrefixIndexSingleLineAfterSourceCodeInPython(t *testing.T) {
-	line := fmt.Sprintf("dict = 1 %s single line comment in python", single_line_prefix_python)
+	line := fmt.Sprintf("n = 1 %s single line comment in python", single_line_prefix_python)
 	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
 	notation := issue.NewCommentNotation(file_ext_py, annotation, &bufio.Scanner{})
 	expected := 3
@@ -74,7 +77,59 @@ func TestFindPrefixIndexSingleLineInGo(t *testing.T) {
 // should return the prefix index as 3 for a go file where the
 // prefix notation is not denoted until after the source code
 func TestFindPrefixIndexSingleLineAfterSourceCodeInGo(t *testing.T) {
-	line := fmt.Sprintf("dict = 1 %s single line comment in go", single_line_prefix_go)
+	line := fmt.Sprintf("n := 5 %s single line comment in go", single_line_prefix_go)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_go, annotation, &bufio.Scanner{})
+	expected := 3
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+}
+
+// should return the prefix index as 0 for a c file
+func TestFindPrefixIndexMultiLineInC(t *testing.T) {
+	line := fmt.Sprintf("%s multi line comment in c", multi_line_prefix_c)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 0
+	notation := issue.NewCommentNotation(file_ext_c, annotation, &bufio.Scanner{})
+	expected := 0
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+}
+
+// should return the prefix index as 4 for a c file where the
+// prefix notation is not denoted until after the source code
+func TestFindPrefixIndexMultiLineAfterSourceCodeInC(t *testing.T) {
+	line := fmt.Sprintf("int main() {return 0}; %s multi line comment in c", multi_line_prefix_c)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
+	notation := issue.NewCommentNotation(file_ext_c, annotation, &bufio.Scanner{})
+	expected := 4
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+}
+
+// should return the prefix index as 0 for a python file
+func TestFindPrefixIndexMultiLineInPython(t *testing.T) {
+	line := fmt.Sprintf("%s multi line comment in python", multi_line_prefix_python)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 0
+	notation := issue.NewCommentNotation(file_ext_py, annotation, &bufio.Scanner{})
+	expected := 0
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+}
+
+// should return the prefix index as 0 for a go file
+func TestFindPrefixIndexMultiLineInGo(t *testing.T) {
+	line := fmt.Sprintf("%s multi line comment in go", multi_line_prefix_go)
+	fields := strings.Fields(line) // after splitting, the prefix is located at index 0
+	notation := issue.NewCommentNotation(file_ext_go, annotation, &bufio.Scanner{})
+	expected := 0
+	actual := notation.FindPrefixIndex(fields)
+	require.Equal(t, expected, actual)
+}
+
+// should return the prefix index as 3 for a go file where the
+// prefix notation is not denoted until after the source code
+func TestFindPrefixIndexMultiLineAfterSourceCodeInGo(t *testing.T) {
+	line := fmt.Sprintf("n := 1 %s multi line comment in go", multi_line_prefix_go)
 	fields := strings.Fields(line) // after splitting, the prefix is located at index 4
 	notation := issue.NewCommentNotation(file_ext_go, annotation, &bufio.Scanner{})
 	expected := 3
