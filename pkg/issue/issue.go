@@ -31,6 +31,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -81,4 +82,20 @@ func validatePath(path string, patterns []regexp.Regexp) bool {
 		}
 	}
 	return true
+}
+
+func skipGitDir(name string, isDir bool) bool {
+	if isDir && strings.Contains(name, ".git") {
+		return true
+	}
+	return false
+}
+
+func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {
+	for _, re := range patterns {
+		if matched := re.MatchString(path); matched {
+			return true
+		}
+	}
+	return false
 }
