@@ -63,6 +63,8 @@ type IssueManager interface {
 // can be removed through it's methods.
 func NewIssueManager(issueType string, annotation string) (IssueManager, error) {
 	switch issueType {
+	case PENDING_ISSUE:
+		return &PendingIssue{Annotation: annotation}, nil
 	default:
 		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
 	}
