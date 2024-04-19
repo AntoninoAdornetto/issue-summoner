@@ -46,6 +46,7 @@ func Execute() {
 
 func subCommands() {
 	rootCmd.AddCommand(AuthorizeCmd)
+	rootCmd.AddCommand(ScanCmd)
 }
 
 func init() {
