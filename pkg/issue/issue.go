@@ -50,7 +50,7 @@ type Issue struct {
 type IssueManager interface {
 	GetIssues() []Issue
 	Scan(r io.Reader) error
-	Walk(root string, ignore []regexp.Regexp) error
+	Walk(root string, ignore []regexp.Regexp) (int, error)
 }
 
 // NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
