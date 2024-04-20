@@ -164,7 +164,7 @@ We can get a little more information about the annotation by passing the verbose
 
 ![issue-summoner-scan-verbose](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e9dc9ffc-40ff-4e78-b06e-5730e10a5e47)
 
-You may have noticed that there is not a description. This is because single line comments are used for concise comments. However, we can be more granular by utilizing a multi line comment:
+You may have noticed that there is not a description. This is because single line comments are concise. However, we can be more granular by utilizing a multi line comment:
 
 ```c
 #include <stdio.h>
