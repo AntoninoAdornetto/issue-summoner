@@ -57,7 +57,7 @@ func (gh *GitHubManager) Report(issues []Issue, scm string) error {
 type createIssueResponse struct {
 	URL           string `json:"url"`
 	RepositoryURL string `json:"repository_url"`
-	LabelsURL     string `json:"labels_url"` // Note that this is a template string, you'll need to replace {name} with the label name in use.
+	LabelsURL     string `json:"labels_url"`
 	CommentsURL   string `json:"comments_url"`
 	EventsURL     string `json:"events_url"`
 	HTMLURL       string `json:"html_url"`

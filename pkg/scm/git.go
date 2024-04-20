@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	GH = "GitHub"
-	GL = "GitLab"
-	BB = "BitBucket"
+	GH = "github"
+	GL = "gitlab"
+	BB = "bitbucket"
 )
 
 // @TODO can GlobalUserName and RepoName functions be deleted?

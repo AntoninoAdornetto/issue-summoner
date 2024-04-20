@@ -15,7 +15,7 @@ func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) (int, error)
 	return n, nil
 }
 
-func (pi *ProcessedIssue) Scan(r io.Reader) error {
+func (pi *ProcessedIssue) Scan(r io.Reader, path string) error {
 	return nil
 }
 

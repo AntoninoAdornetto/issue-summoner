@@ -165,6 +165,7 @@ func (c *CommentNotation) ParseLine(n *uint64) (Issue, error) {
 			c.AnnotationIndicator = false
 			*n++
 		}
+		issue.EndLineNumber += 1
 	}
 
 	c.AnnotationIndicator = false
