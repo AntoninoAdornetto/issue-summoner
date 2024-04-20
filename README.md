@@ -184,6 +184,20 @@ The new result using a multi line comment:
 
 ![issue-summoner-scan-2](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/f065c8d5-7a7a-4d61-b8d4-fab388f40fe7)
 
+### Authorize Command
+
+In order to publish issues to a source code management system, we must first authorize the program to allow this. Authorizing will look different for each provider. As of now, I have added support for GitHub. I will be adding more in the near future.
+
+- `-s`, `--scm` The source code management platform to authorize. (default is GitHub).
+
+#### Authorize for GitHub
+
+The [device-flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) is utilized to create an access token. The only thing you really need to know here is that when you run the command, you will be given a `user code` in the terminal and your default browser will open to https://github.com/login/device You will then be prompted to enter the user code while the program polls the authorization service for an access token. Once the steps are complete, the program will have all scopes it needs to report issues for you. **Note**: this does grant the program access to both public and private repositories.
+
+```sh
+issue-summoner authorize -s github
+```
+
 <!-- _For more examples, please refer to the [Documentation](https://example.com)_ -->
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
