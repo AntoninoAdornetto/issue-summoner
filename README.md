@@ -67,7 +67,7 @@ This repo is under active development. I am in the early stages of building out 
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Go Issue Summoner is a tool that will stremline the process of creating issues within your code base. It works by scanning source code files for special annotations (that you define and pass into the program via a flag) and automatically creates issues on a source code management platform of your choosing. This process will ensure that no important task or concern is overlooked.
+Go Issue Summoner is a tool that will streamline the process of creating issues within your code base. It works by scanning source code files for special annotations (that you define and pass into the program via a flag) and automatically creates issues on a source code management platform of your choosing. This process will ensure that no important task or concern is overlooked.
 
 ## Core Features
 
