@@ -124,43 +124,65 @@ go install github.com/AntoninoAdornetto/go-issue-summoner@latest
 
 ## Usage
 
-Annotations are scanned and located through single and multi line comments. Lets take a look at an example using a single line comment in go:
+### Scan Command
 
-```go
-// @TODO handle error in main function
-// we should not ignore the error that may be returned from `importantFunc`
-func main(){
-  data, _ := importantFunc()
+Scans your local git project for comments that contain an issue annotation. Issues are objects that are built when scanning the project. In short, they describe a task, concern, or area of code that requires attention. The scan command is a preliminary command that may be used prior to the `report` command. This will give you an idea of the issue annotations that reside in your project. Heck, even if you did not want to use the tool to publish the issues to a source code platform, you could utilize the tool by running the scan command locally to keep track of what items need attention.
+
+- `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
+
+- `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
+
+- `-g`, `--gitignore` The path to your .gitignore file. This is optional, and will default to your current working directory or to the gitignore located at the path you provided from the flag above. You can provide the gitignore file path for projects that you are not scanning. This may be a very niche use case, but it is supported.
+
+- `-m`, `--mode` The two modes are `pending` and `processed`. Meaning that you can scan for annotations that have not been uploaded to a source code management platform, I.E pending, or you can scan for annotations that have been published, I.E processed. Processed annotations will look differently than pending annotations because when issues are reported, the program will update the annotation to include a unique id so the comment can be removed by the program once it has been marked as resolved. (default mode is pending)
+
+- `-v`, `--verbose` Logs detailed information about each issue annotation that was located during the scan.
+
+#### Scan Usage
+
+```sh
+issue-summoner scan
+```
+
+The command will walk your git project directory and check each source file. It adheres to the rules of your projects .gitignore file and skips entire directories and files when it finds a match. Yes, you do not need to worry about your node_modules folder being scanned! The comment syntax to use for each file is based on the files extension. Most languages are supported and more are to come! Let's take a look at an example that uses a single line comment for a C file:
+
+```c
+#include <stdio.h>
+
+// @TODO implement the main function
+int main() {
+	printf("Hello world\n");
+	return 0;
 }
 ```
 
-We add the annotation and the action that should be taken. Next, we run the `scan` command to see information about all of the issues that are using the `@TODO` annotation in our project. We only have one item at this time, but if you had multiple they would all be displayed.
+Basic usage of the command would result in the following:
 
-```sh
-# default tag annotation is @TODO you dont have to specify it, if you use this tag.
-issue-summoner scan --tag @TODO --verbose
+![issue-summoner-scan](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/f9eaef15-ac50-49d1-b8b2-1c0dd72f8393)
 
-Filename:  main.go
-Title:  handle error in main function
-Description:  we should not ignore the error that may be returned from `importantFunc`
-Start Line number:  8
-End Line number:  9
-Annotation Line number:  8
-Multi line comment:  false
-Single line comment:  true
+We can get a little more information about the annotation by passing the verbose flag `-v` the result would be:
 
-Found 1 (@TODO) tag annotations in your project.
+![issue-summoner-scan-verbose](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e9dc9ffc-40ff-4e78-b06e-5730e10a5e47)
+
+You may have noticed that there is not a description. This is because single line comments are used for concise comments. However, we can be more granular by utilizing a multi line comment:
+
+```c
+#include <stdio.h>
+
+int main() {
+  /*
+   * @TODO implement the main function
+   * The main function does nothing useful.
+   * Remove the print statement and build something that is useful!
+   * */
+  printf("Hello world\n");
+  return 0;
+}
 ```
 
-You can read more about the scan command [here - (does not exist yet)]() but in short, it provides us information about each annotation that is discovered in your source code. If you wanted to report this issue to GitHub, you could then run the following command after [authorizing - (does not exist yet)]() the program to submit issues on your behalf.
+The new result using a multi line comment:
 
-```sh
-issue-summoner report --tag @TODO
-```
-
-Running the above command will provide a multi select option where you can choose which items you would like to report. The default source code management adapter for the `report` command is GitHub. You can read more about the command [here - (does not exist yet)]()
-
-![issue-summoner-report](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/04b8ad6b-0791-4dd7-840f-201796d75c97)
+![issue-summoner-scan-2](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/f065c8d5-7a7a-4d61-b8d4-fab388f40fe7)
 
 <!-- _For more examples, please refer to the [Documentation](https://example.com)_ -->
 
