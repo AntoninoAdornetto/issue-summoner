@@ -18,11 +18,6 @@ import (
 // in the `allowedPlatforms` slice.
 var allowedPlatforms = []string{scm.GH, scm.GL, scm.BB}
 
-func init() {
-	AuthorizeCmd.Flags().
-		StringP("scm", "s", scm.GH, "What source code manager platform would you like to Authorize?")
-}
-
 // authorizeCmd represents the authorize command
 var AuthorizeCmd = &cobra.Command{
 	Use:   "authorize",
@@ -114,4 +109,9 @@ var AuthorizeCmd = &cobra.Command{
 			),
 		)
 	},
+}
+
+func init() {
+	AuthorizeCmd.Flags().
+		StringP("scm", "s", scm.GH, "What source code manager platform would you like to Authorize?")
 }
