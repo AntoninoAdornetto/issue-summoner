@@ -151,8 +151,8 @@ The command will walk your git project directory and check each source file. It 
 
 // @TODO implement the main function
 int main() {
-	printf("Hello world\n");
-	return 0;
+    printf("Hello world\n");
+    return 0;
 }
 ```
 
