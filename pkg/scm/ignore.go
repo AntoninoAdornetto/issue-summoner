@@ -48,7 +48,7 @@ func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
 			continue
 		}
 
-		if err := formatIgnoreExpression(buf, line); err != nil {
+		if err := writeIgnoreRegexpBytes(buf, line); err != nil {
 			return regexps, err
 		}
 
@@ -62,48 +62,68 @@ func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
 	return regexps, scanner.Err()
 }
 
-func formatIgnoreExpression(buf *bytes.Buffer, b []byte) error {
+func writeIgnoreRegexpBytes(buf *bytes.Buffer, b []byte) error {
 	b = bytes.TrimLeftFunc(b, unicode.IsSpace)
-	if err := prependEscapedBackSlash(buf, b); err != nil {
+	if err := prependExpression(buf, b); err != nil {
 		return err
 	}
 
-	for _, byt := range b {
-		switch byt {
-		case '\n', '#':
+	for _, char := range b {
+		if char == '\n' || char == '#' {
 			return nil
-		case '*':
-			if err := writeAnyCharMatcherAndQuantifier(buf); err != nil {
-				return err
-			}
-		default:
-			if err := writeAndCheck(buf, []byte{byt}); err != nil {
-				return err
-			}
 		}
-	}
 
-	return nil
-}
-
-func prependEscapedBackSlash(buf *bytes.Buffer, b []byte) error {
-	escaped := byte('\\')
-	if b[0] == '/' {
-		if err := writeAndCheck(buf, []byte{escaped}); err != nil {
+		if err := writeAndCheck(buf, []byte{char}); err != nil {
 			return err
 		}
 	}
-	return nil
+
+	return appendExpression(buf)
 }
 
-func writeAnyCharMatcherAndQuantifier(buf *bytes.Buffer) error {
-	characterMatcher := byte('.')
-	quantifier := byte('*')
-	escape := byte('\\')
-	if err := writeAndCheck(buf, []byte{characterMatcher, quantifier, escape}); err != nil {
-		return err
+func prependExpression(buf *bytes.Buffer, b []byte) error {
+	if len(b) == 0 {
+		return nil
 	}
-	return nil
+
+	first := b[0]
+	switch first {
+	case '/', '\\':
+		// prevent unescaped & dangling backslash error when compiling the expression
+		return writeEscapeChar(buf)
+	case '*':
+		// write the dot operator to match any character before the quantifier
+		// the quantifer matches 0 or more of the preceeding token
+		return matchAnyChar(buf)
+	default:
+		return nil
+	}
+}
+
+func appendExpression(buf *bytes.Buffer) error {
+	if buf.Len() == 0 {
+		return nil
+	}
+
+	last := buf.Bytes()[buf.Len()-1]
+	switch last {
+	case '*':
+		return matchAnyChar(buf)
+	case '\\':
+		return writeEscapeChar(buf)
+	default:
+		return nil
+	}
+}
+
+func writeEscapeChar(buf *bytes.Buffer) error {
+	return writeAndCheck(buf, []byte(`\`))
+}
+
+// matchAnyChar writes a dot (.) byte to the buffer
+// dot (.) matches any character except line breaks
+func matchAnyChar(buf *bytes.Buffer) error {
+	return writeAndCheck(buf, []byte("."))
 }
 
 func writeAndCheck(buf *bytes.Buffer, b []byte) error {
