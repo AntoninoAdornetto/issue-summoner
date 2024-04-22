@@ -15,6 +15,7 @@ func TestParseIgnorePatterns(t *testing.T) {
 		"/tmp",
 		".pnp.js",
 		"*.log",
+		"*.log*",
 		"src/pkg/test/impl/",
 		"# Comment, to be ignored",
 		"",
@@ -29,11 +30,12 @@ func TestParseIgnorePatterns(t *testing.T) {
 	expected := []regexp.Regexp{
 		*regexp.MustCompile(`\/tmp`),
 		*regexp.MustCompile(`.pnp.js`),
-		*regexp.MustCompile(`.*\.log`),
+		*regexp.MustCompile(`.*.log`),
+		*regexp.MustCompile(`.*.log*.`),
 		*regexp.MustCompile(`src/pkg/test/impl/`),
 		*regexp.MustCompile(`\/tmp`),
 		*regexp.MustCompile(`.pnp.js`),
-		*regexp.MustCompile(`.*\.log`),
+		*regexp.MustCompile(`.*.log`),
 		*regexp.MustCompile(`src/pkg/test/impl/`),
 	}
 
