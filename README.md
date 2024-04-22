@@ -101,7 +101,7 @@ To get started, follow these steps:
 Install using go. (**_Ensure you have [Go](https://golang.org/doc/install) on your system first._**)
 
 ```sh
-go install github.com/AntoninoAdornetto/go-issue-summoner@latest
+go install github.com/AntoninoAdornetto/issue-summoner@latest
 ```
 
 <!-- Install using archive file (**_Helpful if you don't want to install go on your system_**) -->
