@@ -55,7 +55,7 @@ var CommentNotations = map[string]CommentNotation{
 		SingleLinePrefixRe: regexp.MustCompile(`\/\/`),
 		MultiLinePrefixRe:  regexp.MustCompile(`\/\*`),
 		MultiLineSuffixRe:  regexp.MustCompile(`\*\/`),
-		NewLinePrefixRe:    regexp.MustCompile(`*`),
+		NewLinePrefixRe:    regexp.MustCompile(`\*`),
 	},
 	file_ext_python: {
 		SingleLinePrefixRe: regexp.MustCompile(`#`),
