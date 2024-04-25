@@ -98,7 +98,7 @@ func NewCommentNotation(ext string) CommentNotation {
 	}
 }
 
-func (cn *CommentNotation) FindPrefixIndexAndLineType(line []byte) ([]int, string) {
+func (cn *CommentNotation) FindPrefixLocations(line []byte) ([]int, string) {
 	if cn.SingleLinePrefixRe != nil {
 		if locations := cn.SingleLinePrefixRe.FindSubmatchIndex(line); locations != nil {
 			return locations, SINGLE_LINE_COMMENT
