@@ -59,8 +59,8 @@ var CommentNotations = map[string]CommentNotation{
 	},
 	file_ext_python: {
 		SingleLinePrefixRe: regexp.MustCompile(`#`),
-		MultiLinePrefixRe:  regexp.MustCompile(`(\"\"\")|(\'\'\')`),
-		MultiLineSuffixRe:  regexp.MustCompile(`(\"\"\")|(\'\'\')`),
+		MultiLinePrefixRe:  regexp.MustCompile(`['\"]{3}`),
+		MultiLineSuffixRe:  regexp.MustCompile(`['\"]{3}`),
 	},
 	file_ext_markdown: {
 		SingleLinePrefixRe: regexp.MustCompile(`<!--`),
