@@ -34,6 +34,20 @@ type NewCommentManagerParams struct {
 	Scanner         *bufio.Scanner
 }
 
+func NewCommentManager(arg NewCommentManagerParams) (CommentManager, error) {
+	switch arg.CommentType {
+	case SINGLE_LINE_COMMENT:
+		return &SingleLineComment{
+			Annotation:               arg.Annotation,
+			AnnotationIndicator:      false,
+			FileName:                 arg.FileName,
+			FilePath:                 arg.FilePath,
+			PrefixRe:                 arg.PrefixRe,
+			SuffixRe:                 arg.SuffixRe,
+			Scanner:                  arg.Scanner,
+			CommentNotationLocations: arg.Locations,
+		}, nil
 	default:
+		return nil, errors.New("unsupported comment type. single/multi line comments are supported")
 	}
 }
