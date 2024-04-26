@@ -38,11 +38,11 @@ func setupSingleLineComment(ext string, line []byte) issue.SingleLineComment {
 }
 
 // should parse a single line comment and remove the comment symbols and the annotation
-// and return a Comment object. Note: single line comment will not have a description.
+// and return an Issue object.
 func TestParseCommentC(t *testing.T) {
 	slc := setupSingleLineComment(".c", []byte(c_single_line_comment))
 
-	expected := []issue.Comment{
+	expected := []issue.Issue{
 		{
 			ID:                   "test.c-1",
 			Title:                "single line comment in c",
@@ -53,6 +53,54 @@ func TestParseCommentC(t *testing.T) {
 			EndLineNumber:        1,
 			AnnotationLineNumber: 1,
 			ColumnLocations:      [][]int{{2}},
+		},
+	}
+
+	actual, err := slc.ParseComment(1)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
+// should parse a single line comment and remove the comment symbols and the annotation
+// and return a Issue object for a markdown comment
+func TestParseCommentMarkdown(t *testing.T) {
+	slc := setupSingleLineComment(".md", []byte(md_single_line_comment))
+
+	expected := []issue.Issue{
+		{
+			ID:                   "test.md-1",
+			Title:                "single line comment in markdown",
+			Description:          "",
+			FileName:             "test.md",
+			FilePath:             "/home/user/app/test.md",
+			StartLineNumber:      1,
+			EndLineNumber:        1,
+			AnnotationLineNumber: 1,
+			ColumnLocations:      [][]int{{4, 48}},
+		},
+	}
+
+	actual, err := slc.ParseComment(1)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
+}
+
+// should parse a single line comment and remove the comment symbols and the annotation
+// and return a Issue object for a python comment
+func TestParseCommentPython(t *testing.T) {
+	slc := setupSingleLineComment(".py", []byte(py_single_line_comment))
+
+	expected := []issue.Issue{
+		{
+			ID:                   "test.py-1",
+			Title:                "single line comment in python",
+			Description:          "",
+			FileName:             "test.py",
+			FilePath:             "/home/user/app/test.py",
+			StartLineNumber:      1,
+			EndLineNumber:        1,
+			AnnotationLineNumber: 1,
+			ColumnLocations:      [][]int{{1}},
 		},
 	}
 
