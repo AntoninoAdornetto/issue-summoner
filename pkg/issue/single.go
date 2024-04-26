@@ -21,8 +21,8 @@ type SingleLineComment struct {
 	CommentNotationLocations []int
 }
 
-func (slc *SingleLineComment) ParseComment(start int) ([]Comment, error) {
-	comments := make([]Comment, 0)
+func (slc *SingleLineComment) ParseComment(start int) ([]Issue, error) {
+	issues := make([]Issue, 0)
 	line := slc.Scanner.Bytes()
 	cutIndices, err := slc.FindCutLocations(line)
 	if err != nil {
@@ -42,10 +42,10 @@ func (slc *SingleLineComment) ParseComment(start int) ([]Comment, error) {
 		}
 	}
 
-	if comment := slc.NewComment(&buf, start); comment != nil {
-		comment.ColumnLocations = [][]int{cutIndices}
-		comments = append(comments, *comment)
-		return comments, nil
+	if issue := slc.NewIssue(&buf, start); issue != nil {
+		issue.ColumnLocations = [][]int{cutIndices}
+		issues = append(issues, *issue)
+		return issues, nil
 	}
 
 	return nil, nil
@@ -105,13 +105,13 @@ func (slc *SingleLineComment) Write(wr io.Writer, field []byte) (int, error) {
 	}
 }
 
-func (slc *SingleLineComment) NewComment(buf *bytes.Buffer, lineNumber int) *Comment {
+func (slc *SingleLineComment) NewIssue(buf *bytes.Buffer, lineNumber int) *Issue {
 	if !slc.AnnotationIndicator || buf.Len() == 0 {
 		return nil
 	}
 
 	title := buf.String()[:buf.Len()-1]
-	return &Comment{
+	return &Issue{
 		ID:                   fmt.Sprintf("%s-%d", slc.FileName, lineNumber),
 		Title:                title,
 		Description:          "",
