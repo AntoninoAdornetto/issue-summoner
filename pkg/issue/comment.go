@@ -6,20 +6,8 @@ import (
 	"regexp"
 )
 
-type Comment struct {
-	ID                   string
-	Title                string
-	Description          string
-	FileName             string
-	FilePath             string
-	StartLineNumber      int
-	EndLineNumber        int
-	AnnotationLineNumber int
-	ColumnLocations      [][]int
-}
-
 type CommentManager interface {
-	ParseComment(startLineNumber int) ([]Comment, error)
+	ParseComment(startLineNumber int) ([]Issue, error)
 }
 
 type NewCommentManagerParams struct {
