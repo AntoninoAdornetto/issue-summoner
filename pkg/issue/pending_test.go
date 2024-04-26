@@ -12,7 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// @TODO the line numbers of this assertion are off by 1. Fix in ParseLine function of comment.go
+// should handle parsing multile comments with annotations in a go file
+// and ignore any comments that do not contain an annotation.
 func TestScanSingleLineCommentsGo(t *testing.T) {
 	r := generateSingleLineCommentImplFileGo()
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
@@ -25,7 +26,8 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 	// looks. It contains single line comments within a mock
 	// source code file and provides an example of how single
 	// line comments may be used. In the mock file, we added
-	// 2 single line comments with annotations.
+	// 2 single line comments with annotations and 1 comment that is not
+	// annotated. The result should be 2 issues
 	expected := []issue.Issue{
 		{
 			Title:                "add ! (not) operator support for ignoring specific files/directories",
@@ -33,7 +35,9 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			AnnotationLineNumber: 13,
 			StartLineNumber:      13,
 			EndLineNumber:        13,
-			ID:                   "/tmp/temp-dir/mock.go-13",
+			ID:                   "mock.go-13",
+			FileName:             "mock.go",
+			ColumnLocations:      [][]int{{4}},
 			FilePath:             "/tmp/temp-dir/mock.go",
 		},
 		{
@@ -42,7 +46,9 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			AnnotationLineNumber: 25,
 			StartLineNumber:      25,
 			EndLineNumber:        25,
-			ID:                   "/tmp/temp-dir/mock.go-25",
+			ColumnLocations:      [][]int{{6}},
+			FileName:             "mock.go",
+			ID:                   "mock.go-25",
 			FilePath:             "/tmp/temp-dir/mock.go",
 		},
 	}
@@ -62,7 +68,7 @@ func TestWalkCountScans(t *testing.T) {
 	require.NotNil(t, im)
 
 	// the setup func generates 3 files and 3 directories.
-	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 dirs (root temp dir, .git/ dir, and pkg/ dir)
 	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
 	// the expected number of times that Scan should be called is 2 times.
 	// one time for the exe file and one time for the go impl file.
@@ -78,12 +84,6 @@ func TestWalkCountScans(t *testing.T) {
 }
 
 // should Walk the temp project created in /tmp dir and return
-// a count of the number of times that Walk calls filepath.WalkDir
-// but this time we will add path validation in the mix.
-// regular expressions are built based off the gitignore file.
-// see ignore.go for examples on we that process is handled.
-
-// should Walk the temp project create in /tmp dir and return
 // a count of the number of times that Walk calls the Scan method.
 // This time, we will add ignore patterns as a argument to Walk
 // and the result is that Scan is only called 1 time on an impl file.
@@ -96,7 +96,7 @@ func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	require.NotNil(t, im)
 
 	// the setup func generates 3 files and 3 directories.
-	// 3 dirs (root temp dir, .git/, and pkg/)
+	// 3 dirs (root temp dir, .git/ dir, and pkg/ dir)
 	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
 	// the expected number of times that Scan should be called is 1 time.
 	// one time for the go impl file. We will add an ignore pattern to
@@ -121,7 +121,7 @@ func TestWalkNoneExistentRoot(t *testing.T) {
 
 // setup will create 6 files/dirs in total.
 // 1. temp dir (temp-git-project)
-// 2. temp pkg dir
+// 2. temp pkg dir (temp-git-project/pkg/)
 // 3. temp imp file (issue.go)
 // 4. temp git dir
 // 5. temp INDEX file that resides in the temp .git dir
