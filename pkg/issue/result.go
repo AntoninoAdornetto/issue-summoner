@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func PrintTagResults(issues []Issue, keyStyle, valStyle lipgloss.Style) {
+func PrintIssueDetails(issues []Issue, keyStyle, valStyle lipgloss.Style) {
 	for _, issue := range issues {
 		fmt.Printf("\n\n")
 		paths := strings.Split(issue.FilePath, "/")

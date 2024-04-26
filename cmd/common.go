@@ -14,6 +14,8 @@ const (
 	err_unauthorized     = "Please run `issue-summoner authorize` and complete the authorization process. This will allow us to submit issues on your behalf."
 	no_issues            = "No issues were found in your project using the annotation: "
 	found_issues         = "Number of issues found: "
+	select_issues        = "Select the issues you wish to report"
+	issue_template_path  = "./templates/issue.tmpl"
 	tip_verbose          = "Tip: run issue-summoner scan -v (verbose) for more details about the tag annotations that were found"
 	flag_path            = "path"
 	flag_gignore         = "gitignore"

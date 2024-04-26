@@ -19,7 +19,7 @@ import (
 var allowedPlatforms = []string{scm.GH, scm.GL, scm.BB}
 
 // authorizeCmd represents the authorize command
-var AuthorizeCmd = &cobra.Command{
+var authorizeCmd = &cobra.Command{
 	Use:   "authorize",
 	Short: "Create access tokens for the source code management platform you want to use for issue creation",
 	Long: `Authorize will help the program create issues for both public and private
@@ -50,8 +50,6 @@ var AuthorizeCmd = &cobra.Command{
 				),
 			)
 		}
-
-		gitManager := scm.GetGitConfig(sourceCodeManager)
 
 		hasAccess, err := scm.CheckForAccess(sourceCodeManager)
 		if err != nil && !os.IsNotExist(err) {
@@ -90,6 +88,7 @@ var AuthorizeCmd = &cobra.Command{
 			}
 		}()
 
+		gitManager := scm.GetGitConfig(sourceCodeManager)
 		err = gitManager.Authorize()
 		if err != nil {
 			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
@@ -112,6 +111,6 @@ var AuthorizeCmd = &cobra.Command{
 }
 
 func init() {
-	AuthorizeCmd.Flags().
-		StringP("scm", "s", scm.GH, "What source code manager platform would you like to Authorize?")
+	rootCmd.AddCommand(authorizeCmd)
+	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GH, flag_desc_scm)
 }
