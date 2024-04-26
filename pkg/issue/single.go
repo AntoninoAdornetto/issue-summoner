@@ -63,7 +63,7 @@ func (slc *SingleLineComment) FindCutLocations(line []byte) ([]int, error) {
 	if suffixIndices != nil {
 		end := suffixIndices[0]
 		cutIndices = append(cutIndices, end)
-		return suffixIndices, nil
+		return cutIndices, nil
 	}
 
 	return cutIndices, nil
