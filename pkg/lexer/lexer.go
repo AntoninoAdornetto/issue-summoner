@@ -1,10 +1,10 @@
 /*
 The goal for our lexer is not to create a compiler or intrepreter. It's primary purpose
 is to scan the raw source code as a series of characters and group them into tokens.
-The implementation will ignore many tokens that other scanners would not.
+The implementation will ignore many tokens that other scanner/lexers would not.
 
 The types of tokens that we are concered about:
-Single line comment tokens (such as // for languages that adopted from c or # for python)
+Single line comment tokens (such as // for languages that have adopted c like comment syntax or # for python)
 Multi line comment tokens (such as /* for c adopted languages and ”' """ for python)
 String tokens
 End of file tokens
@@ -15,6 +15,10 @@ with specific configuration files in the JS eco system. One example is the eslin
 where a developer can specifiy ignore patterns as strings. The ignore pattern could include the
 same notation as a multi line comment (/*) and would thus cause the lexer to incorrectly create
 comment tokens.
+
+Each language that is supported will need to satisfy the LexingManager interface and support tokenizing
+methods for Comments and Strings. This will allow each implementation to utilize the comment notation that
+is specific to a language.
 */
 package lexer
 
@@ -33,9 +37,10 @@ type Lexer struct {
 	Manager  LexingManager
 }
 
-// @TODO // replace any with Comment type
 type LexingManager interface {
 	AnalyzeToken(lexer *Lexer) error
+	String(lexer *Lexer, delim byte) error
+	Comment(lexer *Lexer) error
 	ParseCommentTokens(lexer *Lexer, annotation []byte) ([]Comment, error)
 }
 
