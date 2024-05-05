@@ -33,20 +33,19 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 			return nil
 		}
 
-		file, err := os.Open(path)
+		src, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
 		n++
-		return pi.Scan(file, path)
+		return pi.Scan(src, path)
 	})
 
 	return n, err
 }
 
-func (pi *PendingIssue) Scan(r io.Reader, path string) error {
+func (pi *PendingIssue) Scan(src []byte, path string) error {
 	return nil
 }
 
