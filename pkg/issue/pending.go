@@ -1,11 +1,13 @@
 package issue
 
 import (
-	"io"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
 )
 
 type PendingIssue struct {
@@ -46,6 +48,25 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 }
 
 func (pi *PendingIssue) Scan(src []byte, path string) error {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
+
+	// @TODO remove file ext check when additional language support is added. This is for testing phase
+	if !lexer.IsAdoptedFromC(ext) {
+		return nil
+	}
+
+	lex, err := lexer.NewLexer(src, base)
+	if err != nil {
+		return err
+	}
+
+	tokens, err := lex.AnalyzeTokens()
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Found %d tokens in %s\n", len(tokens), base)
 	return nil
 }
 
