@@ -71,8 +71,6 @@ func NewLexingManager(ext string) (LexingManager, error) {
 
 func (l *Lexer) AnalyzeTokens() ([]Token, error) {
 	for range l.Source {
-		s := l.Source[l.Start:l.Current]
-		fmt.Println(s)
 		l.Start = l.Current
 		err := l.Manager.AnalyzeToken(l)
 		if err != nil {
