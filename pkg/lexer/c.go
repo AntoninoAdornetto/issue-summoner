@@ -7,6 +7,8 @@ type CLexer struct{}
 func (cl *CLexer) AnalyzeToken(lex *Lexer) error {
 	b := lex.peek()
 	switch b {
+	case '/':
+		return cl.Comment(lex)
 	case '"':
 		return cl.String(lex, '"')
 	case '\'':
@@ -19,6 +21,49 @@ func (cl *CLexer) AnalyzeToken(lex *Lexer) error {
 	default:
 		return nil
 	}
+}
+
+func (cl *CLexer) Comment(lex *Lexer) error {
+	switch lex.peekNext() {
+	case '/':
+		return cl.SingleLineComment(lex)
+	case '*':
+		return cl.MultiLineComment(lex)
+	default:
+		return nil
+	}
+}
+
+func (cl *CLexer) SingleLineComment(lex *Lexer) error {
+	for !lex.isEnd() && lex.peekNext() != '\n' {
+		lex.next()
+	}
+	comment := lex.Source[lex.Start : lex.Current+1]
+	lex.addToken(SINGLE_LINE_COMMENT, comment)
+	return nil
+}
+
+func (cl *CLexer) MultiLineComment(lex *Lexer) error {
+	for !lex.isEnd() {
+		b := lex.next()
+		if b == '\n' {
+			lex.Line++
+		}
+
+		if b == '*' && lex.peekNext() == '/' {
+			lex.next()
+			break
+		}
+	}
+
+	if lex.isEnd() {
+		src := lex.Source[lex.Start:lex.Current]
+		return lex.report(fmt.Sprintf("could not locate closing multi line comment: %s", src))
+	}
+
+	comment := lex.Source[lex.Start : lex.Current+1]
+	lex.addToken(MULTI_LINE_COMMENT, comment)
+	return nil
 }
 
 func (cl *CLexer) String(lex *Lexer, delim byte) error {
