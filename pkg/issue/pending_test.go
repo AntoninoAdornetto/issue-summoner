@@ -14,7 +14,6 @@ import (
 // should handle parsing multile comments with annotations in a go file
 // and ignore any comments that do not contain an annotation.
 func TestScanSingleLineCommentsGo(t *testing.T) {
-	t.Skip() // @TODO unskip once scanner/lexer is complete
 	r := generateSingleLineCommentImplFileGo()
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
@@ -30,19 +29,19 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 	// annotated. The result should be 2 issues
 	expected := []issue.Issue{
 		{
+			ID:          "mock.go-124:205",
 			Title:       "add ! (not) operator support for ignoring specific files/directories",
 			Description: "",
 			LineNumber:  13,
-			ID:          "mock.go-13",
 			FileName:    "mock.go",
 			FilePath:    "/tmp/temp-dir/mock.go",
 		},
 		{
+			ID:          "mock.go-475:562",
 			Title:       "update the formatIgnoreExpression expression to include ! operator support",
 			Description: "",
 			LineNumber:  25,
 			FileName:    "mock.go",
-			ID:          "mock.go-25",
 			FilePath:    "/tmp/temp-dir/mock.go",
 		},
 	}
