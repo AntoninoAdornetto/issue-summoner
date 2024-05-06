@@ -8,6 +8,11 @@ type Comment struct {
 	SourceFileName string
 }
 
+func (c *Comment) Prepare(fileName string, index int) {
+	c.TokenIndex = index
+	c.SourceFileName = fileName
+}
+
 func (c *Comment) Validate() bool {
 	return len(c.Source) > 0
 }
