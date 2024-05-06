@@ -8,19 +8,6 @@ import (
 )
 
 const (
-	// 2 string tokens and 1 EOF token
-	// token[0] Lexeme = "Hello World!"
-	// token[1] Lexeme = "%s\\n" <- first arg to printf
-	// token[2] Lexeme = "" <- End of file token
-	c_src_code_str = `
-	#include <stdio.h>
-	int main() {
-		char str[] = "Hello World!";
-		printf("%s\n", str);
-		return 0;
-	}
-	`
-
 	c_src_code_single_line_comments = `
 	#include <stdio.h>
 	int main() {
@@ -33,9 +20,9 @@ const (
 	`
 
 	// multi line comments have been tricky and there are some edge cases
-	// the main one being where multi line comment can be denoted between
+	// the main one being where multi line comments can be denoted between
 	// source code. The Coords struct is a good example of this and has actually
-	// been a scenario that has broke the program with past implementations.
+	// been a scenario that has broke the program during past implementations.
 	// we want to thoroughly test multi line comment parsing to ensure it's accuracy
 	c_src_code_multi_line_comment = `
 	#include <stdio.h>
@@ -56,92 +43,7 @@ const (
 		return x + y;
 	}
 	`
-
-	// 2 string tokens and 1 EOF token (using single quotes and back tick delimiters)
-	// token[0] Lexeme = 'Hello World!'
-	// token[1] Lexeme = `${str} printed` <- first arg to console.log
-	// token[2] Lexeme = "" <- End of file token
-	js_src_code_str = "\nfunction main(){\n\tconst str = 'Hello World!';\nconsole.log(`${str} printed`)}"
 )
-
-// should return a slice of tokens containing all the string values
-// that are contained in the src bytes passed into the lexer (C Code)
-func TestAnalyzeTokenStrC(t *testing.T) {
-	lex, err := lexer.NewLexer([]byte(c_src_code_str), "main.c")
-	require.NoError(t, err)
-	tokens, err := lex.AnalyzeTokens()
-	require.NoError(t, err)
-
-	expectedTokens := []lexer.Token{
-		{
-			TokenType:      lexer.STRING,
-			Lexeme:         []byte("Hello World!"),
-			Line:           4,
-			StartByteIndex: 50,
-			EndByteIndex:   63,
-		},
-		{
-			TokenType:      lexer.STRING,
-			Lexeme:         []byte("%s\\n"), // the string passed into printf
-			Line:           5,
-			StartByteIndex: 75,
-			EndByteIndex:   80,
-		},
-		{
-			TokenType: lexer.EOF,
-		},
-	}
-	require.Equal(t, expectedTokens, tokens)
-}
-
-// should return a slice of tokens containing all the string values
-// that are contained in the src bytes passed into the lexer (JS Code)
-// languages such as JS can declare strings using double quotes, single quotes
-// and string template literals. see js_src_code_str for the full example src code
-func TestAnalyzeTokenStrJS(t *testing.T) {
-	lex, err := lexer.NewLexer([]byte(js_src_code_str), "index.js")
-	require.NoError(t, err)
-	tokens, err := lex.AnalyzeTokens()
-	require.NoError(t, err)
-
-	expectedTokens := []lexer.Token{
-		{
-			TokenType:      lexer.STRING,
-			Lexeme:         []byte("Hello World!"),
-			Line:           3,
-			StartByteIndex: 31,
-			EndByteIndex:   44,
-		},
-		{
-			TokenType: lexer.STRING,
-			// the template literal passed into console.log
-			Lexeme:         []byte("${str} printed"),
-			Line:           4,
-			StartByteIndex: 59,
-			EndByteIndex:   74,
-		},
-		{
-			TokenType: lexer.EOF,
-		},
-	}
-	require.Equal(t, expectedTokens, tokens)
-}
-
-// should return an error when encountering a string that has not been terminated
-// notice we return an error where the error occured, like a good CLI citizen should do
-func TestAnalyzeTokenStrCUnterminatedStr(t *testing.T) {
-	src := []byte("int x = 0;\nchar str[] = \"Unterminated String")
-	lex, err := lexer.NewLexer(src, "main.c")
-	require.NoError(t, err)
-	tokens, err := lex.AnalyzeTokens()
-	require.Error(t, err)
-	require.ErrorContains(
-		t,
-		err,
-		"[main.c line 2]: Error: unterminated string: \"Unterminated String",
-	)
-	require.Empty(t, tokens)
-}
 
 // should locate all single line comment tokens and store the comment contents
 // as the lexeme for each item in the token slice output
@@ -165,13 +67,6 @@ func TestAnalyzeTokenSingleLineCommentC(t *testing.T) {
 			Line:           5,
 			StartByteIndex: 101,
 			EndByteIndex:   140,
-		},
-		{
-			TokenType:      lexer.STRING,
-			Lexeme:         []byte("X: %d\\tY: %d"),
-			Line:           7,
-			StartByteIndex: 154,
-			EndByteIndex:   167,
 		},
 		{
 			TokenType:      lexer.SINGLE_LINE_COMMENT,
@@ -304,11 +199,10 @@ func TestParseCommentTokensSingleLineC(t *testing.T) {
 			SourceFileName: "main.c",
 		},
 		{
-			Title:       []byte("third single line comment"),
-			Description: []byte(nil),
-			// we skip index 2 because it's a string token
-			TokenIndex:     3,
-			Source:         tokens[3].Lexeme,
+			Title:          []byte("third single line comment"),
+			Description:    []byte(nil),
+			TokenIndex:     2,
+			Source:         tokens[2].Lexeme,
 			SourceFileName: "main.c",
 		},
 	}

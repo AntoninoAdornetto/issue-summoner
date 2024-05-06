@@ -90,20 +90,12 @@ func (cl *CLexer) MultiLineComment(lex *Lexer) error {
 
 func (cl *CLexer) String(lex *Lexer, delim byte) error {
 	for !lex.isEnd() && lex.peekNext() != delim {
-		lex.next()
-		if lex.peek() == '\n' {
+		b := lex.next()
+		if b == '\n' {
 			lex.Line++
 		}
 	}
-
-	if lex.isEnd() {
-		src := lex.Source[lex.Start : lex.Current+1]
-		return lex.report(fmt.Sprintf("unterminated string: %s", src))
-	}
-
 	_ = lex.next() // closing delimiter
-	str := lex.Source[lex.Start+1 : lex.Current]
-	lex.addToken(STRING, str)
 	return nil
 }
 
