@@ -75,14 +75,14 @@ func TestAnalyzeTokenStrC(t *testing.T) {
 	expectedTokens := []lexer.Token{
 		{
 			TokenType:      lexer.STRING,
-			Lexeme:         "Hello World!",
+			Lexeme:         []byte("Hello World!"),
 			Line:           4,
 			StartByteIndex: 50,
 			EndByteIndex:   63,
 		},
 		{
 			TokenType:      lexer.STRING,
-			Lexeme:         "%s\\n", // the string passed into printf
+			Lexeme:         []byte("%s\\n"), // the string passed into printf
 			Line:           5,
 			StartByteIndex: 75,
 			EndByteIndex:   80,
@@ -107,14 +107,15 @@ func TestAnalyzeTokenStrJS(t *testing.T) {
 	expectedTokens := []lexer.Token{
 		{
 			TokenType:      lexer.STRING,
-			Lexeme:         "Hello World!",
+			Lexeme:         []byte("Hello World!"),
 			Line:           3,
 			StartByteIndex: 31,
 			EndByteIndex:   44,
 		},
 		{
-			TokenType:      lexer.STRING,
-			Lexeme:         "${str} printed", // the template literal passed into console.log
+			TokenType: lexer.STRING,
+			// the template literal passed into console.log
+			Lexeme:         []byte("${str} printed"),
 			Line:           4,
 			StartByteIndex: 59,
 			EndByteIndex:   74,
@@ -153,35 +154,35 @@ func TestAnalyzeTokenSingleLineCommentC(t *testing.T) {
 	expectedTokens := []lexer.Token{
 		{
 			TokenType:      lexer.SINGLE_LINE_COMMENT,
-			Lexeme:         "// @TEST_TODO first single line comment",
+			Lexeme:         []byte("// @TEST_TODO first single line comment"),
 			Line:           4,
 			StartByteIndex: 48,
 			EndByteIndex:   86,
 		},
 		{
 			TokenType:      lexer.SINGLE_LINE_COMMENT,
-			Lexeme:         "// @TEST_TODO second single line comment",
+			Lexeme:         []byte("// @TEST_TODO second single line comment"),
 			Line:           5,
 			StartByteIndex: 101,
 			EndByteIndex:   140,
 		},
 		{
 			TokenType:      lexer.STRING,
-			Lexeme:         "X: %d\\tY: %d",
+			Lexeme:         []byte("X: %d\\tY: %d"),
 			Line:           7,
 			StartByteIndex: 154,
 			EndByteIndex:   167,
 		},
 		{
 			TokenType:      lexer.SINGLE_LINE_COMMENT,
-			Lexeme:         "// @TEST_TODO third single line comment",
+			Lexeme:         []byte("// @TEST_TODO third single line comment"),
 			Line:           8,
 			StartByteIndex: 179,
 			EndByteIndex:   217,
 		},
 		{
 			TokenType: lexer.EOF,
-			Lexeme:    "",
+			Lexeme:    []byte(nil),
 		},
 	}
 	require.Equal(t, expectedTokens, actualTokens)
@@ -220,28 +221,30 @@ func TestAnalyzeTokenMultiLineCommentC(t *testing.T) {
 	expectedTokens := []lexer.Token{
 		{
 			TokenType:      lexer.MULTI_LINE_COMMENT,
-			Lexeme:         "/* @TEST_TODO inline 1 */",
+			Lexeme:         []byte("/* @TEST_TODO inline 1 */"),
 			Line:           5,
 			StartByteIndex: 46,
 			EndByteIndex:   70,
 		},
 		{
 			TokenType:      lexer.MULTI_LINE_COMMENT,
-			Lexeme:         "/* @TEST_TODO inline 2 */",
+			Lexeme:         []byte("/* @TEST_TODO inline 2 */"),
 			Line:           5,
 			StartByteIndex: 74,
 			EndByteIndex:   98,
 		},
 		{
-			TokenType:      lexer.MULTI_LINE_COMMENT,
-			Lexeme:         "/*\n\t * @TEST_TODO multi line comment\n\t * second line\n\t * third line\n\t * end line\n\t*/",
+			TokenType: lexer.MULTI_LINE_COMMENT,
+			Lexeme: []byte(
+				"/*\n\t * @TEST_TODO multi line comment\n\t * second line\n\t * third line\n\t * end line\n\t*/",
+			),
 			Line:           13,
 			StartByteIndex: 114,
 			EndByteIndex:   197,
 		},
 		{
 			TokenType: lexer.EOF,
-			Lexeme:    "",
+			Lexeme:    []byte(nil),
 		},
 	}
 

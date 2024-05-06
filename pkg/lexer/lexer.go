@@ -116,7 +116,7 @@ func (l *Lexer) peekNext() byte {
 func (l *Lexer) addToken(tokenType TokenType, value []byte) {
 	l.Tokens = append(l.Tokens, Token{
 		TokenType:      tokenType,
-		Lexeme:         string(value),
+		Lexeme:         value,
 		Line:           l.Line,
 		StartByteIndex: l.Start,
 		EndByteIndex:   l.Current,
