@@ -1,6 +1,23 @@
 package lexer
 
 import "fmt"
+var allowed = []string{
+	".c",
+	".cpp",
+	".java",
+	".js",
+	".jsx",
+	".ts",
+	".tsx",
+	".cs",
+	".go",
+	".php",
+	".swift",
+	".kt",
+	".rs",
+	".m",
+	".scala",
+}
 
 type CLexer struct{}
 
@@ -85,22 +102,6 @@ func (cl *CLexer) String(lex *Lexer, delim byte) error {
 	return nil
 }
 
-var allowed = []string{
-	".c",
-	".cpp",
-	".java",
-	".js",
-	".jsx",
-	".ts",
-	".tsx",
-	".cs",
-	".go",
-	".php",
-	".swift",
-	".kt",
-	".rs",
-	".m",
-	".scala",
 }
 
 func IsAdoptedFromC(ext string) bool {
