@@ -21,7 +21,10 @@ type IgnorePattern = regexp.Regexp
 @TODO add ! (not) operator support for ignoring specific files/directories.
 
 The ParseIgnorePatterns can handle most of the common patterns found in a gitignore
-file. However, there are scenarios where this function will fail to build proper regexps.
+file. However, there are scenarios where this function will fail to build proper expressions
+and cause the program to crash. There are large open source projects I have tested the program on
+that crash the program and we should resolve this immediately.
+
 Here is an example of some patterns that are not yet supported:
 
 1. Ignore files in a specific directory, but not its subdirectories:
