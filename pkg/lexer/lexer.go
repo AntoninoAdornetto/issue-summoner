@@ -5,16 +5,14 @@ The implementation will ignore many tokens that other scanner/lexers would not.
 
 The types of tokens that we are concered about:
 Single line comment tokens (such as // for languages that have adopted c like comment syntax or # for python)
-Multi line comment tokens (such as /* for c adopted languages and ”' """ for python)
-String tokens
+Multi line comment tokens (such as /* for c adopted languages and ”' & """ for python)
 End of file tokens
 
-We should handle string tokens due to certain edge cases where a string may contain comment
-notation that could cause our tokenizer to fail. The original lexer would fail when working
-with specific configuration files in the JS eco system. One example is the eslintrc.js file
-where a developer can specifiy ignore patterns as strings. The ignore pattern could include the
-same notation as a multi line comment (/*) and would thus cause the lexer to incorrectly create
-comment tokens.
+We should check for string tokens, but we do not need to create the token or store the lexeme.
+The reason for checking strings is so we can prevent certain edge cases from happening.
+One example could be where a string contains characters that could be denoted as a comment.
+For C like languages that could be a string such as "/*" or "//".
+We don't want the lexer to create tokens for strings that may contain comment syntax.
 
 Each language that is supported will need to satisfy the LexingManager interface and support tokenizing
 methods for Comments and Strings. This will allow each implementation to utilize the comment notation that
