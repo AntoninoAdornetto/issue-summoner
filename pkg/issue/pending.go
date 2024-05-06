@@ -51,7 +51,13 @@ func (pi *PendingIssue) Scan(src []byte, path string) error {
 	base := filepath.Base(path)
 	ext := filepath.Ext(base)
 
-	// @TODO remove file ext check when additional language support is added. This is for testing phase
+	/*
+	* @TODO remove file extension check when additional language support is added.
+	* The implementation has changed drastically and is now utilizing scanning/lexing
+	* approach. I am starting out with languages that have adopted similar comment syntax
+	* to C since it's the most common. Once more support is added, we can remove this check
+	 */
+
 	if !lexer.IsAdoptedFromC(ext) {
 		return nil
 	}
@@ -66,7 +72,23 @@ func (pi *PendingIssue) Scan(src []byte, path string) error {
 		return err
 	}
 
-	fmt.Printf("Found %d tokens in %s\n", len(tokens), base)
+	comments, err := lex.Manager.ParseCommentTokens(lex, []byte(pi.Annotation))
+	if err != nil {
+		return err
+	}
+
+	for _, c := range comments {
+		token := tokens[c.TokenIndex]
+		pi.Issues = append(pi.Issues, Issue{
+			ID:          fmt.Sprintf("%s-%d:%d", base, token.StartByteIndex, token.EndByteIndex),
+			Title:       string(c.Title),
+			Description: string(c.Description),
+			FileName:    base,
+			FilePath:    path,
+			LineNumber:  token.Line,
+		})
+	}
+
 	return nil
 }
 
