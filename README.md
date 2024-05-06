@@ -81,6 +81,8 @@ Go Issue Summoner is a tool that will streamline the process of creating issues 
 
 - `Minimized Context Switching`: Developers can write a quick note in their source code file about the issue and then run the report command. Those details will be pushed to the source code management platform you selected and will allow the developer to continue on with their original task with minimal context switching.
 
+- `Discover Issues for contributing to open source projects`: Contributing to open source can be a daunting task. Where does one start? What issue should I tackle first? Well, issue-summoner can be used to locate forgotten issues that may have never been reported and were forgotten about. Simply running `issue-summoner scan` on your favorite open source project may return hundreds of `TODO:` annotations that went under the radar. What a great place to start!
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 ### Built With
@@ -162,7 +164,7 @@ Basic usage of the command would result in the following:
 
 We can get a little more information about the annotation by passing the verbose flag `-v` the result would be:
 
-![issue-summoner-scan-verbose](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e9dc9ffc-40ff-4e78-b06e-5730e10a5e47)
+![issue-summoner-scan-verbose](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/45373977-8828-4f57-9371-6486c634bb52)
 
 You may have noticed that there is not a description. This is because single line comments are concise. However, we can be more granular by utilizing a multi line comment:
 
@@ -182,7 +184,7 @@ int main() {
 
 The new result using a multi line comment:
 
-![issue-summoner-scan-2](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/f065c8d5-7a7a-4d61-b8d4-fab388f40fe7)
+![issue-summoner-scan-verbose-multi-line](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/09313924-2a02-4000-898e-09b2aeca07a1)
 
 ### Authorize Command
 
