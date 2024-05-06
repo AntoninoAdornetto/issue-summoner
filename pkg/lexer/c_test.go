@@ -281,3 +281,74 @@ func TestAnalyzeTokenMultiLineCommentErrorC(t *testing.T) {
 		"[main.c line 1]: Error: could not locate closing multi line comment: /* @TEST_TODO no closing comment byte",
 	)
 }
+
+func TestParseCommentTokensSingleLineC(t *testing.T) {
+	lex, err := lexer.NewLexer([]byte(c_src_code_single_line_comments), "main.c")
+	require.NoError(t, err)
+	tokens, err := lex.AnalyzeTokens()
+	require.NoError(t, err)
+
+	expectedComments := []lexer.Comment{
+		{
+			Title:          []byte("first single line comment"),
+			Description:    []byte(nil),
+			TokenIndex:     0,
+			Source:         tokens[0].Lexeme,
+			SourceFileName: "main.c",
+		},
+		{
+			Title:          []byte("second single line comment"),
+			Description:    []byte(nil),
+			TokenIndex:     1,
+			Source:         tokens[1].Lexeme,
+			SourceFileName: "main.c",
+		},
+		{
+			Title:       []byte("third single line comment"),
+			Description: []byte(nil),
+			// we skip index 2 because it's a string token
+			TokenIndex:     3,
+			Source:         tokens[3].Lexeme,
+			SourceFileName: "main.c",
+		},
+	}
+
+	actualComments, err := lex.Manager.ParseCommentTokens(lex, annotation)
+	require.NoError(t, err)
+	require.Equal(t, expectedComments, actualComments)
+}
+
+func TestParseCommentTokensMultiLineC(t *testing.T) {
+	lex, err := lexer.NewLexer([]byte(c_src_code_multi_line_comment), "main.c")
+	require.NoError(t, err)
+	tokens, err := lex.AnalyzeTokens()
+	require.NoError(t, err)
+
+	expectedComments := []lexer.Comment{
+		{
+			Title:          []byte("inline 1"),
+			Description:    []byte(nil),
+			TokenIndex:     0,
+			Source:         tokens[0].Lexeme,
+			SourceFileName: "main.c",
+		},
+		{
+			Title:          []byte("inline 2"),
+			Description:    []byte(nil),
+			TokenIndex:     1,
+			Source:         tokens[1].Lexeme,
+			SourceFileName: "main.c",
+		},
+		{
+			Title:          []byte("multi line comment"),
+			Description:    []byte("second line third line end line"),
+			TokenIndex:     2,
+			Source:         tokens[2].Lexeme,
+			SourceFileName: "main.c",
+		},
+	}
+
+	actualComments, err := lex.Manager.ParseCommentTokens(lex, annotation)
+	require.NoError(t, err)
+	require.Equal(t, expectedComments, actualComments)
+}
