@@ -1,12 +1,13 @@
 package issue
 
 import (
-	"bufio"
-	"io"
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
 )
 
 type PendingIssue struct {
@@ -34,66 +35,61 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 			return nil
 		}
 
-		file, err := os.Open(path)
+		src, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		defer file.Close()
 
 		n++
-		return pi.Scan(file, path)
+		return pi.Scan(src, path)
 	})
 
 	return n, err
 }
 
-func (pi *PendingIssue) Scan(r io.Reader, path string) error {
-	lineNum := 0
-	issues := make([]Issue, 0)
-	scanner := bufio.NewScanner(r)
-	notation := NewCommentNotation(filepath.Ext(path))
+func (pi *PendingIssue) Scan(src []byte, path string) error {
+	base := filepath.Base(path)
+	ext := filepath.Ext(base)
 
-	for scanner.Scan() {
-		lineNum++
-		line := scanner.Bytes()
-		prefixLoc, commentType := notation.FindPrefixLocations(line)
-		if commentType == "" {
-			continue
-		}
+	/*
+	* @TODO remove file extension check when additional language support is added.
+	* The implementation has changed drastically and is now utilizing scanning/lexing
+	* approach. I am starting out with languages that have adopted similar comment syntax
+	* to C since it's the most common. Once more support is added, we can remove this check
+	 */
 
-		arg := NewCommentManagerParams{
-			Annotation:      pi.Annotation,
-			CommentType:     commentType,
-			FilePath:        path,
-			FileName:        filepath.Base(path),
-			StartLineNumber: lineNum,
-			Locations:       prefixLoc,
-			Scanner:         scanner,
-		}
-
-		if commentType == SINGLE_LINE_COMMENT {
-			arg.PrefixRe = notation.SingleLinePrefixRe
-			arg.SuffixRe = notation.SingleLineSuffixRe
-		} else {
-			// @TODO create multi.go & implement multi-line comment parsing
-			continue
-		}
-
-		cm, err := NewCommentManager(arg)
-		if err != nil {
-			return err
-		}
-
-		comments, err := cm.ParseComment(lineNum)
-		if err != nil {
-			return err
-		}
-
-		issues = append(issues, comments...)
+	if !lexer.IsAdoptedFromC(ext) {
+		return nil
 	}
 
-	pi.Issues = append(pi.Issues, issues...)
-	return scanner.Err()
+	lex, err := lexer.NewLexer(src, base)
+	if err != nil {
+		return err
+	}
+
+	tokens, err := lex.AnalyzeTokens()
+	if err != nil {
+		return err
+	}
+
+	comments, err := lex.Manager.ParseCommentTokens(lex, []byte(pi.Annotation))
+	if err != nil {
+		return err
+	}
+
+	for _, c := range comments {
+		token := tokens[c.TokenIndex]
+		pi.Issues = append(pi.Issues, Issue{
+			ID:          fmt.Sprintf("%s-%d:%d", base, token.StartByteIndex, token.EndByteIndex),
+			Title:       string(c.Title),
+			Description: string(c.Description),
+			FileName:    base,
+			FilePath:    path,
+			LineNumber:  token.Line,
+		})
+	}
+
+	return nil
 }
 
 func (pi *PendingIssue) GetIssues() []Issue {

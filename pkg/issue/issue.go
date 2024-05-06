@@ -2,7 +2,6 @@ package issue
 
 import (
 	"errors"
-	"io"
 	"regexp"
 	"strings"
 )
@@ -13,20 +12,17 @@ const (
 )
 
 type Issue struct {
-	ID                   string
-	Title                string
-	Description          string
-	FilePath             string
-	FileName             string
-	StartLineNumber      int
-	EndLineNumber        int
-	AnnotationLineNumber int
-	ColumnLocations      [][]int
+	ID          string
+	Title       string
+	Description string
+	FilePath    string
+	FileName    string
+	LineNumber  int
 }
 
 type IssueManager interface {
 	GetIssues() []Issue
-	Scan(r io.Reader, path string) error
+	Scan(src []byte, path string) error
 	Walk(root string, ignore []regexp.Regexp) (int, error)
 }
 

@@ -21,18 +21,8 @@ func PrintIssueDetails(issues []Issue, keyStyle, valStyle lipgloss.Style) {
 			valStyle.Render(issue.Description),
 		)
 		fmt.Println(
-			keyStyle.Render("Start Line number: "),
-			valStyle.Render(fmt.Sprintf("%d", issue.StartLineNumber)),
-		)
-
-		fmt.Println(
-			keyStyle.Render("End Line number: "),
-			valStyle.Render(fmt.Sprintf("%d", issue.EndLineNumber)),
-		)
-
-		fmt.Println(
-			keyStyle.Render("Annotation Line number: "),
-			valStyle.Render(fmt.Sprintf("%d", issue.AnnotationLineNumber)),
+			keyStyle.Render("Line number: "),
+			valStyle.Render(fmt.Sprintf("%d", issue.LineNumber)),
 		)
 	}
 }

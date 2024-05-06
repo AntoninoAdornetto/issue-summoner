@@ -1,7 +1,6 @@
 package issue
 
 import (
-	"io"
 	"regexp"
 )
 
@@ -23,7 +22,7 @@ func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) (int, error)
 	return n, nil
 }
 
-func (pi *ProcessedIssue) Scan(r io.Reader, path string) error {
+func (pi *ProcessedIssue) Scan(src []byte, path string) error {
 	return nil
 }
 
