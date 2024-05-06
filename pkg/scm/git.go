@@ -43,7 +43,7 @@ type GitConfigManager interface {
 	IsAuthorized() (bool, error)
 }
 
-func GetGitConfig(scm string) GitConfigManager {
+func NewGitManager(scm string) GitConfigManager {
 	switch scm {
 	default:
 		return &GitHubManager{}

@@ -1,9 +1,12 @@
 package issue
 
 import (
+	"bytes"
 	"errors"
 	"regexp"
+	"runtime"
 	"strings"
+	"text/template"
 )
 
 const (
@@ -18,6 +21,7 @@ type Issue struct {
 	FilePath    string
 	FileName    string
 	LineNumber  int
+	Environment string
 }
 
 type IssueManager interface {
@@ -43,6 +47,19 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 	default:
 		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
 	}
+}
+
+func (issue *Issue) GenerateIssueTmplMarkdown(path string) ([]byte, error) {
+	buf := bytes.Buffer{}
+	issue.Environment = runtime.GOOS
+
+	tmpl, err := template.ParseFiles(path)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tmpl.Execute(&buf, issue)
+	return buf.Bytes(), err
 }
 
 func skipGitDir(name string) bool {

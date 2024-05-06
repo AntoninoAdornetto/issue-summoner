@@ -88,7 +88,7 @@ var authorizeCmd = &cobra.Command{
 			}
 		}()
 
-		gitManager := scm.GetGitConfig(sourceCodeManager)
+		gitManager := scm.NewGitManager(sourceCodeManager)
 		err = gitManager.Authorize()
 		if err != nil {
 			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
