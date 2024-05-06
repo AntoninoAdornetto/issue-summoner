@@ -11,7 +11,7 @@ const (
 
 type Token struct {
 	TokenType      TokenType
-	Lexeme         string
+	Lexeme         []byte
 	Line           int
 	StartByteIndex int
 	EndByteIndex   int
