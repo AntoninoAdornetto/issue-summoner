@@ -85,7 +85,7 @@ func WriteToken(token string, scm string) error {
 
 	switch scm {
 	default:
-		config["GitHub"] = ScmTokenConfig{
+		config[GH] = ScmTokenConfig{
 			AccessToken: token,
 		}
 	}
