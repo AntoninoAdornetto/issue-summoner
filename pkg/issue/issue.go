@@ -49,16 +49,10 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 	}
 }
 
-func (issue *Issue) GenerateIssueTmplMarkdown(path string) ([]byte, error) {
+func (issue *Issue) ExecuteIssueTemplate(tmpl *template.Template) ([]byte, error) {
 	buf := bytes.Buffer{}
 	issue.Environment = runtime.GOOS
-
-	tmpl, err := template.ParseFiles(path)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tmpl.Execute(&buf, issue)
+	err := tmpl.Execute(&buf, issue)
 	return buf.Bytes(), err
 }
 

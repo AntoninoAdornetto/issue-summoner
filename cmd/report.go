@@ -10,6 +10,7 @@ import (
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	"github.com/AntoninoAdornetto/issue-summoner/templates"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
@@ -88,10 +89,15 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
+		tmpl, err := templates.LoadIssueTemplate()
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		staged := make([]scm.Issue, 0)
 		for _, is := range issues {
 			if selections.Options[is.ID] {
-				md, err := is.GenerateIssueTmplMarkdown(issue_template_path)
+				md, err := is.ExecuteIssueTemplate(tmpl)
 				if err != nil {
 					ui.LogFatal(err.Error())
 				}
