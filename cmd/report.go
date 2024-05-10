@@ -94,22 +94,22 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		staged := make([]scm.Issue, 0)
+		stagedIssues := make([]scm.Issue, 0)
 		for _, is := range issues {
 			if selections.Options[is.ID] {
 				md, err := is.ExecuteIssueTemplate(tmpl)
 				if err != nil {
 					ui.LogFatal(err.Error())
 				}
-				staged = append(
-					staged,
+				stagedIssues = append(
+					stagedIssues,
 					scm.Issue{Title: is.Title, Body: string(md)},
 				)
 			}
 		}
 
 		gitManager := scm.NewGitManager(sourceCodeManager)
-		idChan := gitManager.ReportIssues(staged)
+		idChan := gitManager.Report(stagedIssues)
 
 		for id := range idChan {
 			/*
