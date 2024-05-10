@@ -5,7 +5,6 @@ import (
 	"errors"
 	"regexp"
 	"runtime"
-	"strings"
 	"text/template"
 )
 
@@ -54,10 +53,6 @@ func (issue *Issue) ExecuteIssueTemplate(tmpl *template.Template) ([]byte, error
 	issue.Environment = runtime.GOOS
 	err := tmpl.Execute(&buf, issue)
 	return buf.Bytes(), err
-}
-
-func skipGitDir(name string) bool {
-	return strings.Contains(name, ".git")
 }
 
 func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {

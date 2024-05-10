@@ -111,9 +111,7 @@ type createIssueErrorResponse struct {
 
 func handleCreateIssueErr(data []byte, statusCode int, title string) error {
 	var res createIssueErrorResponse
-	var err error
-
-	err = json.Unmarshal(data, &res)
+	err := json.Unmarshal(data, &res)
 	if err != nil {
 		return fmt.Errorf(create_issue_error, title, statusCode, err.Error())
 	}
