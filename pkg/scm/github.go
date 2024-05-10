@@ -26,32 +26,29 @@ const (
 
 type GitHubManager struct{}
 
-func (gh *GitHubManager) Report(issues []Issue, scm string) error {
+func (gh *GitHubManager) Report(issues []Issue) <-chan int64 {
+	idChan := make(chan int64)
 	wg := sync.WaitGroup{}
-	issueChan := make(chan createIssueResponse, len(issues))
-	errChan := make(chan error)
+	wg.Add(len(issues))
 
-	accessToken, err := ReadAccessToken(scm)
-	if err != nil {
-		return err
-	}
-
-	for _, is := range issues {
-		wg.Add(1)
-		go func(issue Issue) {
+	for _, issue := range issues {
+		go func(is Issue) {
 			defer wg.Done()
-			resp, err := createIssue(issue, accessToken)
+			resp, err := createIssue(is)
 			if err != nil {
-				errChan <- err
+				fmt.Println(err.Error())
 				return
 			}
-			issueChan <- resp
-		}(is)
+			idChan <- resp.ID
+		}(issue)
 	}
 
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(idChan)
+	}()
 
-	return nil
+	return idChan
 }
 
 type createIssueResponse struct {
