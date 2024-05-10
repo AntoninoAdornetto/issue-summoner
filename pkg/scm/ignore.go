@@ -17,28 +17,6 @@ import (
 
 type IgnorePattern = regexp.Regexp
 
-/*
-@TODO add ! (not) operator support for ignoring specific files/directories.
-
-The ParseIgnorePatterns func can handle most of the common patterns found in a gitignore file.
-However, there are scenarios where this function will fail to build proper expressions and
-cause the program to crash. I've tested on many open source projects and for some we cannot
-run the program at all. We should resolve this immediately.
-Here is an example of some patterns that are not yet supported:
-
-1. Ignore files in a specific directory, but not its sub-directories:
-directory_to_ignore/*
-!directory_to_ignore/*
-
-2. Ignore files in a specific directory, except for one specific file:
-directory_to_ignore/*
-!directory_to_ignore/exception_file.txt
-
-3. Ignore all files in a directory, including hidden files:
-directory_to_ignore/**
-!directory_to_ignore/
-!directory_to_ignore
-*/
 func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
 	regexps := make([]IgnorePattern, 0)
 	buf := &bytes.Buffer{}
@@ -66,6 +44,10 @@ func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
 
 func writeIgnoreRegexpBytes(buf *bytes.Buffer, b []byte) error {
 	b = bytes.TrimLeftFunc(b, unicode.IsSpace)
+	if b[0] == '!' {
+		return nil
+	}
+
 	if err := prependExpression(buf, b); err != nil {
 		return err
 	}
@@ -73,6 +55,10 @@ func writeIgnoreRegexpBytes(buf *bytes.Buffer, b []byte) error {
 	for _, char := range b {
 		if char == '\n' || char == '#' {
 			return nil
+		}
+
+		if repeated(buf, char) {
+			continue
 		}
 
 		if err := writeAndCheck(buf, []byte{char}); err != nil {
@@ -131,4 +117,8 @@ func matchAnyChar(buf *bytes.Buffer) error {
 func writeAndCheck(buf *bytes.Buffer, b []byte) error {
 	_, err := buf.Write(b)
 	return err
+}
+
+func repeated(buf *bytes.Buffer, b byte) bool {
+	return b == '*' && buf.Len() > 0 && buf.Bytes()[buf.Len()-1] == '*'
 }
