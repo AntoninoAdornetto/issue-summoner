@@ -27,6 +27,7 @@ type GitConfig struct {
 	Scm            string // GitHub || GitLab || BitBucket ...
 }
 
+// @TODO Change the name of scm.Issue struct. It conflicts with the struct in issue.go
 type Issue struct {
 	Title string `json:"title"`
 	Body  string `json:"body"`
@@ -39,8 +40,7 @@ type Issue struct {
 // ReadToken checks if there is an access token in ~/.config/issue-summoner/config.json
 type GitConfigManager interface {
 	Authorize() error
-	Report(issues []Issue, scm string) error
-	IsAuthorized() (bool, error)
+	Report(issues []Issue) <-chan int64
 }
 
 func NewGitManager(scm string) GitConfigManager {
