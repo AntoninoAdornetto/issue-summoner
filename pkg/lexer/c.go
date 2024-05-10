@@ -8,6 +8,7 @@ import (
 
 var allowed = []string{
 	".c",
+	".h",
 	".cpp",
 	".java",
 	".js",

@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -22,36 +24,34 @@ const (
 	ACCEPT_JSON        = "application/json"
 	ACCEPT_VDN         = "application/vnd.github+json"
 	GITHUB_API_VERSION = "2022-11-28"
+	create_issue_error = "failed to create issue <%s> with status code: %d\terror: %s"
 )
 
 type GitHubManager struct{}
 
-func (gh *GitHubManager) Report(issues []Issue, scm string) error {
+func (gh *GitHubManager) Report(issues []Issue) <-chan int64 {
+	idChan := make(chan int64)
 	wg := sync.WaitGroup{}
-	issueChan := make(chan createIssueResponse, len(issues))
-	errChan := make(chan error)
+	wg.Add(len(issues))
 
-	accessToken, err := ReadAccessToken(scm)
-	if err != nil {
-		return err
-	}
-
-	for _, is := range issues {
-		wg.Add(1)
-		go func(issue Issue) {
+	for _, issue := range issues {
+		go func(is Issue) {
 			defer wg.Done()
-			resp, err := createIssue(issue, accessToken)
+			resp, err := createIssue(is)
 			if err != nil {
-				errChan <- err
+				fmt.Println(err.Error())
 				return
 			}
-			issueChan <- resp
-		}(is)
+			idChan <- resp.ID
+		}(issue)
 	}
 
-	wg.Wait()
+	go func() {
+		wg.Wait()
+		close(idChan)
+	}()
 
-	return nil
+	return idChan
 }
 
 type createIssueResponse struct {
@@ -67,46 +67,94 @@ type createIssueResponse struct {
 	Title         string `json:"title"`
 }
 
-func createIssue(issue Issue, accessToken string) (createIssueResponse, error) {
+func createIssue(issue Issue) (createIssueResponse, error) {
 	var res createIssueResponse
 
-	repoName, err := RepoName()
+	payload, err := json.Marshal(issue)
 	if err != nil {
 		return res, err
 	}
 
-	userName, err := GlobalUserName()
+	body := bytes.NewBuffer(payload)
+	req, err := newIssueRequest(body)
 	if err != nil {
 		return res, err
 	}
 
-	paths := []string{"repos", userName, repoName, "issues"}
-	url, err := utils.BuildURL(GITHUB_BASE_URL, paths, nil)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return res, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return res, err
 	}
 
-	body, err := json.Marshal(issue)
-	if err != nil {
-		return res, err
+	if resp.StatusCode != 201 {
+		return res, handleCreateIssueErr(data, resp.StatusCode, issue.Title)
 	}
 
-	headers := http.Header{}
-	headers.Add("Accept", ACCEPT_VDN)
-	headers.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	headers.Add("X-GitHub-Api-Version", GITHUB_API_VERSION)
-
-	resp, err := utils.SubmitPostRequest(url, bytes.NewReader(body), headers)
-	if err != nil {
-		return res, err
-	}
-
-	err = json.Unmarshal(resp, &res)
+	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return res, err
 	}
 
 	return res, nil
+}
+
+type createIssueErrorResponse struct {
+	Message string `json:"message"`
+}
+
+func handleCreateIssueErr(data []byte, statusCode int, title string) error {
+	var res createIssueErrorResponse
+	err := json.Unmarshal(data, &res)
+	if err != nil {
+		return fmt.Errorf(create_issue_error, title, statusCode, err.Error())
+	}
+
+	return fmt.Errorf(create_issue_error, title, statusCode, res.Message)
+}
+
+var accessToken = ""
+
+func newIssueRequest(body io.Reader) (*http.Request, error) {
+	if accessToken == "" {
+		token, err := ReadAccessToken(GH)
+		if err != nil {
+			return nil, err
+		}
+		accessToken = token
+	}
+
+	repoName, err := RepoName()
+	if err != nil {
+		return nil, err
+	}
+
+	userName, err := GlobalUserName()
+	if err != nil {
+		return nil, err
+	}
+
+	uri, err := url.JoinPath(GITHUB_BASE_URL, "repos", userName, repoName, "issues")
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", uri, body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Accept", ACCEPT_VDN)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	req.Header.Add("X-GitHub-Api-Version", GITHUB_API_VERSION)
+
+	return req, nil
 }
 
 // Authorize satisfies the GitManager interface. Each source code management
@@ -133,13 +181,6 @@ func (gh *GitHubManager) Authorize() error {
 	case err := <-errChan:
 		return err
 	}
-}
-
-// @TODO do we still need the IsAuthorized func?
-// there is a check in git.go that validates if the user
-// has an access token
-func (gh *GitHubManager) IsAuthorized() (bool, error) {
-	return CheckForAccess(GH)
 }
 
 func initDeviceFlow(vd chan requestDeviceVerificationResponse, ec chan error) {

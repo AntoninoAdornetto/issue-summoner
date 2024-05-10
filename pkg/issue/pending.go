@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
 )
@@ -17,15 +18,14 @@ type PendingIssue struct {
 
 func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error) {
 	n := 0
-	foundGitDir := false
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if d.IsDir() {
-			if !foundGitDir && skipGitDir(d.Name()) {
-				foundGitDir = true
+			// @TODO Flag for Walking/Scanning hidden dirs? Revisit this thought
+			if strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
 			return nil
@@ -53,9 +53,9 @@ func (pi *PendingIssue) Scan(src []byte, path string) error {
 
 	/*
 	* @TODO remove file extension check when additional language support is added.
-	* The implementation has changed drastically and is now utilizing scanning/lexing
+	* The implementation has changed drastically and is now utilizing a scanning/lexing
 	* approach. I am starting out with languages that have adopted similar comment syntax
-	* to C since it's the most common. Once more support is added, we can remove this check
+	* to C, since it's the most common. Once more languages are added, we can remove this check
 	 */
 
 	if !lexer.IsAdoptedFromC(ext) {
