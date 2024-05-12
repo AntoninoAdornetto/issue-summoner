@@ -64,6 +64,8 @@ func NewLexingManager(ext string) (LexingManager, error) {
 	switch {
 	case IsAdoptedFromC(ext):
 		return &CLexer{}, nil
+	case ext == ".py":
+		return &PythonLexer{}, nil
 	default:
 		return nil, fmt.Errorf(
 			"unsupported file type of %s. please open a feature request if you would like support.",
