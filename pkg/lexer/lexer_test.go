@@ -86,6 +86,13 @@ func TestNewLexingManagerGo(t *testing.T) {
 	require.IsType(t, &lexer.CLexer{}, lm)
 }
 
+// should return the python lexing manager for python file extension
+func TestNewLexingManagerPython(t *testing.T) {
+	lm, err := lexer.NewLexingManager(".py")
+	require.NoError(t, err)
+	require.IsType(t, &lexer.PythonLexer{}, lm)
+}
+
 // should return an error when an unsupported file extension is provided
 func TestNewLexingManagerUnsupported(t *testing.T) {
 	lm, err := lexer.NewLexingManager(".unsupported")
