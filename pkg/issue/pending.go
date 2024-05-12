@@ -49,27 +49,17 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 
 func (pi *PendingIssue) Scan(src []byte, path string) error {
 	base := filepath.Base(path)
-	ext := filepath.Ext(base)
-
-	/*
-	* @TODO remove file extension check when additional language support is added.
-	* The implementation has changed drastically and is now utilizing a scanning/lexing
-	* approach. I am starting out with languages that have adopted similar comment syntax
-	* to C, since it's the most common. Once more languages are added, we can remove this check
-	 */
-
-	if !lexer.IsAdoptedFromC(ext) {
-		return nil
-	}
-
 	lex, err := lexer.NewLexer(src, base)
 	if err != nil {
-		return err
+		return nil
 	}
 
 	tokens, err := lex.AnalyzeTokens()
 	if err != nil {
 		return err
+	}
+	for _, token := range tokens {
+		fmt.Println(string(token.Lexeme))
 	}
 
 	comments, err := lex.Manager.ParseCommentTokens(lex, []byte(pi.Annotation))
