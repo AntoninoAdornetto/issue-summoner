@@ -1,7 +1,6 @@
 package lexer
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 )
@@ -105,11 +104,11 @@ func (cl *CLexer) ParseCommentTokens(lex *Lexer, annotation []byte) ([]Comment, 
 	for i, token := range lex.Tokens {
 		switch token.TokenType {
 		case SINGLE_LINE_COMMENT:
-			comment := ParseSingleLineCommentToken(&token, annotation)
-			pushComment(&comment, &comments, lex.FileName, i)
+			comment := token.ParseSingleLineCommentToken(annotation, trimCommentC)
+			comment.Push(&comments, lex.FileName, i)
 		case MULTI_LINE_COMMENT:
-			comment := ParseMultiLineCommentToken(&token, annotation)
-			pushComment(&comment, &comments, lex.FileName, i)
+			comment := token.ParseMultiLineCommentToken(annotation, trimCommentC)
+			comment.Push(&comments, lex.FileName, i)
 		default:
 			continue
 		}
@@ -117,59 +116,12 @@ func (cl *CLexer) ParseCommentTokens(lex *Lexer, annotation []byte) ([]Comment, 
 	return comments, nil
 }
 
-func ParseSingleLineCommentToken(token *Token, annotation []byte) Comment {
-	loc := findAnnotationLocations(annotation, token.Lexeme)
-	if loc == nil {
-		return Comment{}
-	}
-	end := loc[1]
-	title := bytes.TrimFunc(token.Lexeme[end:], trimComment)
-	return Comment{
-		Title:  title,
-		Source: token.Lexeme,
-	}
-}
-
-func ParseMultiLineCommentToken(token *Token, annotation []byte) Comment {
-	loc := findAnnotationLocations(annotation, token.Lexeme)
-	if loc == nil {
-		return Comment{}
-	}
-	end := loc[1]
-	content := bytes.TrimFunc(token.Lexeme[end:], trimComment)
-	newLines := bytes.Split(content, []byte("\n"))
-
-	comment := Comment{
-		Title:  bytes.TrimFunc(newLines[0], trimComment),
-		Source: token.Lexeme,
-	}
-
-	for i := 1; i < len(newLines); i++ {
-		comment.Description = append(
-			comment.Description,
-			bytes.TrimLeftFunc(newLines[i], trimComment)...)
-
-		if i != len(newLines)-1 {
-			comment.Description = append(comment.Description, ' ')
-		}
-	}
-
-	return comment
-}
-
-func pushComment(comment *Comment, comments *[]Comment, fileName string, index int) {
-	if comment.Validate() {
-		comment.Prepare(fileName, index)
-		*comments = append(*comments, *comment)
-	}
-}
-
 func findAnnotationLocations(annotation []byte, commentText []byte) []int {
 	re := regexp.MustCompile(string(annotation))
 	return re.FindIndex(commentText)
 }
 
-func trimComment(r rune) bool {
+func trimCommentC(r rune) bool {
 	switch r {
 	case rune(WHITESPACE), rune(TAB), rune(NEWLINE), rune(ASTERISK), rune(FORWARD_SLASH):
 		return true
