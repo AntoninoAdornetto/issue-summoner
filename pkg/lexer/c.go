@@ -30,15 +30,15 @@ type CLexer struct{}
 func (cl *CLexer) AnalyzeToken(lex *Lexer) error {
 	b := lex.peek()
 	switch b {
-	case '/':
+	case FORWARD_SLASH:
 		return cl.Comment(lex)
-	case '"':
-		return cl.String(lex, '"')
-	case '\'':
-		return cl.String(lex, '\'')
-	case '`':
-		return cl.String(lex, '`')
-	case '\n':
+	case DOUBLE_QUOTE:
+		return cl.String(lex, DOUBLE_QUOTE)
+	case QUOTE:
+		return cl.String(lex, QUOTE)
+	case BACK_TICK:
+		return cl.String(lex, BACK_TICK)
+	case NEWLINE:
 		lex.Line++
 		return nil
 	default:
@@ -48,9 +48,9 @@ func (cl *CLexer) AnalyzeToken(lex *Lexer) error {
 
 func (cl *CLexer) Comment(lex *Lexer) error {
 	switch lex.peekNext() {
-	case '/':
+	case FORWARD_SLASH:
 		return cl.SingleLineComment(lex)
-	case '*':
+	case ASTERISK:
 		return cl.MultiLineComment(lex)
 	default:
 		return nil
@@ -58,7 +58,7 @@ func (cl *CLexer) Comment(lex *Lexer) error {
 }
 
 func (cl *CLexer) SingleLineComment(lex *Lexer) error {
-	for !lex.isEnd() && lex.peekNext() != '\n' {
+	for !lex.isEnd() && lex.peekNext() != NEWLINE {
 		lex.next()
 	}
 	comment := lex.Source[lex.Start : lex.Current+1]
@@ -69,11 +69,11 @@ func (cl *CLexer) SingleLineComment(lex *Lexer) error {
 func (cl *CLexer) MultiLineComment(lex *Lexer) error {
 	for !lex.isEnd() {
 		b := lex.next()
-		if b == '\n' {
+		if b == NEWLINE {
 			lex.Line++
 		}
 
-		if b == '*' && lex.peekNext() == '/' {
+		if b == ASTERISK && lex.peekNext() == FORWARD_SLASH {
 			lex.next()
 			break
 		}
@@ -92,11 +92,11 @@ func (cl *CLexer) MultiLineComment(lex *Lexer) error {
 func (cl *CLexer) String(lex *Lexer, delim byte) error {
 	for !lex.isEnd() && lex.peekNext() != delim {
 		b := lex.next()
-		if b == '\n' {
+		if b == NEWLINE {
 			lex.Line++
 		}
 	}
-	_ = lex.next() // closing delimiter
+	lex.next() // closing delimiter
 	return nil
 }
 
@@ -171,7 +171,7 @@ func findAnnotationLocations(annotation []byte, commentText []byte) []int {
 
 func trimComment(r rune) bool {
 	switch r {
-	case ' ', '\t', '\n', '*', '/':
+	case rune(WHITESPACE), rune(TAB), rune(NEWLINE), rune(ASTERISK), rune(FORWARD_SLASH):
 		return true
 	default:
 		return false
