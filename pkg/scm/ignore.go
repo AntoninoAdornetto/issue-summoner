@@ -17,6 +17,29 @@ import (
 
 type IgnorePattern = regexp.Regexp
 
+/*
+@TODO .gitignore path validation rules are broken
+Throughout some testing on large open source projects, I have found the effectiveness of-
+ignoring paths largely unsuccessful. There are edge cases we need to bake into these functions:
+
+1. (!) Prefix to negate patterns. Matching files excluded by previous patters will become included again.
+
+2. (/) Separator placement. Beginning, middle (or both) means the path pattern is relative to the directory level
+of the gitignore file. If the separator is at the end, the pattern should match directories or files
+
+3. (*) Asterisk matches anything except a slash.
+
+4. (?) Matches any one character except "/"
+
+5. [a-zA-Z] Range notation can be used to match one of the characters in a range
+
+6. (**) Leading/Trailing Double Asterisks
+
+7. Sub directories may contain their own gitignore file. Account for this.
+
+This initial implementation was quick and dirty and it worked for small projects. However, it is now causing issues
+and may lead to some files/directories not being scanned at all or scanning files/dirs that shouldn't be scanned.
+*/
 func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
 	regexps := make([]IgnorePattern, 0)
 	buf := &bytes.Buffer{}
