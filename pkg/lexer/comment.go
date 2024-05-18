@@ -16,3 +16,10 @@ func (c *Comment) Prepare(fileName string, index int) {
 func (c *Comment) Validate() bool {
 	return len(c.Source) > 0
 }
+
+func (c *Comment) Push(comments *[]Comment, fileName string, tokenIndex int) {
+	if c.Validate() {
+		c.Prepare(fileName, tokenIndex)
+		*comments = append(*comments, *c)
+	}
+}
