@@ -173,7 +173,7 @@ func ReadAccessToken(scm string) (string, error) {
 }
 
 // ExtractUserRepoName takes the output from <git remote --verbose> command
-// as input and attempts to extract the user name and repository name. (HTTPS || SSH url)
+// as input and attempts to extract the user name and repository name from out
 func ExtractUserRepoName(out []byte) (string, string, error) {
 	if len(out) == 0 {
 		return "", "", errors.New(

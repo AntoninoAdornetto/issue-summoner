@@ -27,7 +27,10 @@ const (
 	create_issue_error = "failed to create issue <%s> with status code: %d\terror: %s"
 )
 
-type GitHubManager struct{}
+type GitHubManager struct {
+	repoName string
+	userName string
+}
 
 func (gh *GitHubManager) Report(issues []Issue) <-chan int64 {
 	idChan := make(chan int64)
@@ -130,17 +133,7 @@ func newIssueRequest(body io.Reader) (*http.Request, error) {
 		accessToken = token
 	}
 
-	repoName, err := RepoName()
-	if err != nil {
-		return nil, err
-	}
-
-	userName, err := GlobalUserName()
-	if err != nil {
-		return nil, err
-	}
-
-	uri, err := url.JoinPath(GITHUB_BASE_URL, "repos", userName, repoName, "issues")
+	uri, err := url.JoinPath(GITHUB_BASE_URL, "repos", gh.userName, gh.repoName, "issues")
 	if err != nil {
 		return nil, err
 	}

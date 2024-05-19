@@ -108,9 +108,20 @@ platform.`,
 			}
 		}
 
-		gitManager := scm.NewGitManager(sourceCodeManager)
-		idChan := gitManager.Report(stagedIssues)
+		out := bytes.Buffer{}
+		remoteCmd := exec.Command("git", "remote", "-v")
+		remoteCmd.Stdout = &out
+		if err := remoteCmd.Run(); err != nil {
+			ui.LogFatal(err.Error())
+		}
 
+		userName, repoName, err := scm.ExtractUserRepoName(out.Bytes())
+		gitManager, err := scm.NewGitManager(sourceCodeManager, userName, repoName)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		idChan := gitManager.Report(stagedIssues)
 		for id := range idChan {
 			/*
 			* @TODO Write the issue ID to it's corresponding comment
