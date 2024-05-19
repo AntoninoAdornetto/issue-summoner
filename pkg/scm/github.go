@@ -24,7 +24,8 @@ const (
 	ACCEPT_JSON        = "application/json"
 	ACCEPT_VDN         = "application/vnd.github+json"
 	GITHUB_API_VERSION = "2022-11-28"
-	create_issue_error = "failed to create issue <%s> with status code: %d\terror: %s"
+	err_create_issue   = "failed to create issue <%s> with status code: %d\terror: %s"
+	err_not_found      = "failed to create issue <%s> with status code: %d\terror: unable to find repo. please check your remote url via <git remote -v>"
 )
 
 type GitHubManager struct {
@@ -116,10 +117,14 @@ func handleCreateIssueErr(data []byte, statusCode int, title string) error {
 	var res createIssueErrorResponse
 	err := json.Unmarshal(data, &res)
 	if err != nil {
-		return fmt.Errorf(create_issue_error, title, statusCode, err.Error())
+		return fmt.Errorf(err_create_issue, title, statusCode, err.Error())
 	}
 
-	return fmt.Errorf(create_issue_error, title, statusCode, res.Message)
+	if statusCode == 404 {
+		return fmt.Errorf(err_not_found, title, statusCode)
+	}
+
+	return fmt.Errorf(err_create_issue, title, statusCode, res.Message)
 }
 
 var accessToken = ""
