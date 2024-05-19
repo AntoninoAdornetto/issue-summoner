@@ -24,20 +24,24 @@ const (
 	ACCEPT_JSON        = "application/json"
 	ACCEPT_VDN         = "application/vnd.github+json"
 	GITHUB_API_VERSION = "2022-11-28"
-	create_issue_error = "failed to create issue <%s> with status code: %d\terror: %s"
+	err_create_issue   = "failed to create issue <%s> with status code: %d\terror: %s"
+	err_not_found      = "failed to create issue <%s> with status code: %d\terror: unable to find repo. please check your remote url via <git remote -v>"
 )
 
-type GitHubManager struct{}
+type GitHubManager struct {
+	repoName string
+	userName string
+}
 
-func (gh *GitHubManager) Report(issues []Issue) <-chan int64 {
+func (gh *GitHubManager) Report(issues []GitIssue) <-chan int64 {
 	idChan := make(chan int64)
 	wg := sync.WaitGroup{}
 	wg.Add(len(issues))
 
 	for _, issue := range issues {
-		go func(is Issue) {
+		go func(is GitIssue) {
 			defer wg.Done()
-			resp, err := createIssue(is)
+			resp, err := gh.createIssue(is)
 			if err != nil {
 				fmt.Println(err.Error())
 				return
@@ -67,7 +71,7 @@ type createIssueResponse struct {
 	Title         string `json:"title"`
 }
 
-func createIssue(issue Issue) (createIssueResponse, error) {
+func (gh *GitHubManager) createIssue(issue GitIssue) (createIssueResponse, error) {
 	var res createIssueResponse
 
 	payload, err := json.Marshal(issue)
@@ -76,7 +80,7 @@ func createIssue(issue Issue) (createIssueResponse, error) {
 	}
 
 	body := bytes.NewBuffer(payload)
-	req, err := newIssueRequest(body)
+	req, err := gh.newIssueRequest(body)
 	if err != nil {
 		return res, err
 	}
@@ -113,34 +117,28 @@ func handleCreateIssueErr(data []byte, statusCode int, title string) error {
 	var res createIssueErrorResponse
 	err := json.Unmarshal(data, &res)
 	if err != nil {
-		return fmt.Errorf(create_issue_error, title, statusCode, err.Error())
+		return fmt.Errorf(err_create_issue, title, statusCode, err.Error())
 	}
 
-	return fmt.Errorf(create_issue_error, title, statusCode, res.Message)
+	if statusCode == 404 {
+		return fmt.Errorf(err_not_found, title, statusCode)
+	}
+
+	return fmt.Errorf(err_create_issue, title, statusCode, res.Message)
 }
 
 var accessToken = ""
 
-func newIssueRequest(body io.Reader) (*http.Request, error) {
+func (gh *GitHubManager) newIssueRequest(body io.Reader) (*http.Request, error) {
 	if accessToken == "" {
-		token, err := ReadAccessToken(GH)
+		token, err := ReadAccessToken(GITHUB)
 		if err != nil {
 			return nil, err
 		}
 		accessToken = token
 	}
 
-	repoName, err := RepoName()
-	if err != nil {
-		return nil, err
-	}
-
-	userName, err := GlobalUserName()
-	if err != nil {
-		return nil, err
-	}
-
-	uri, err := url.JoinPath(GITHUB_BASE_URL, "repos", userName, repoName, "issues")
+	uri, err := url.JoinPath(GITHUB_BASE_URL, "repos", gh.userName, gh.repoName, "issues")
 	if err != nil {
 		return nil, err
 	}
@@ -177,12 +175,31 @@ func (gh *GitHubManager) Authorize() error {
 
 	select {
 	case token := <-tokenChan:
-		return WriteToken(token.AccessToken, GH)
+		return WriteToken(token.AccessToken, GITHUB)
 	case err := <-errChan:
 		return err
 	}
 }
 
+/*
+@TODO user code is not printed when opening browser in same workspace as issue summoner process
+When executing <issue-summoner authorize>, without my default browser being open already, the
+user code is never printed to the terminal for me to copy and paste into githubs device authorization
+page. However, if I have my default browser open in a workspace where the issue summoner process is not running,
+I can see the user code is printed to the terminal just fine. I have a feeling this may be a simple fix where
+I just need to adjust the way I am utilizing go routines. Will investigate further.
+
+Environment Notes:
+This needs to be tested on other environments and most importantly, different tiling window managers.
+I am reporting this issue from Arch, btw, while using hyprland as my window manager.
+
+Expected Behavior: executing <issue-summoner authorize> should open the default browser and print the usercode
+to the terminal regardless if the browser is open already or if the browser opens in the same workspace as the
+issue-summoner process.
+
+Actual Behavior: executing <issue-summoner authorize> opens the default browser but fails to print the usercode
+to the terminal.
+*/
 func initDeviceFlow(vd chan requestDeviceVerificationResponse, ec chan error) {
 	resp, err := requestDeviceVerification()
 	if err != nil {

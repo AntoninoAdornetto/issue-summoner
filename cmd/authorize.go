@@ -16,7 +16,7 @@ import (
 
 // We only support GitHub, at the moment, but eventually I want to support all that are contained
 // in the `allowedPlatforms` slice.
-var allowedPlatforms = []string{scm.GH, scm.GL, scm.BB}
+var allowedPlatforms = []string{scm.GITHUB, scm.GITLAB, scm.BITBUCKET}
 
 // authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
@@ -51,12 +51,12 @@ var authorizeCmd = &cobra.Command{
 			)
 		}
 
-		hasAccess, err := scm.CheckForAccess(sourceCodeManager)
+		accessToken, err := scm.ReadAccessToken(sourceCodeManager)
 		if err != nil && !os.IsNotExist(err) {
 			ui.LogFatal(err.Error())
 		}
 
-		if hasAccess {
+		if accessToken != "" {
 			fmt.Println(
 				ui.PrimaryTextStyle.Render(
 					fmt.Sprintf(
@@ -88,7 +88,11 @@ var authorizeCmd = &cobra.Command{
 			}
 		}()
 
-		gitManager := scm.NewGitManager(sourceCodeManager)
+		gitManager, err := scm.NewGitManager(sourceCodeManager, "", "")
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		err = gitManager.Authorize()
 		if err != nil {
 			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
@@ -112,5 +116,5 @@ var authorizeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(authorizeCmd)
-	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GH, flag_desc_scm)
+	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GITHUB, flag_desc_scm)
 }

@@ -4,8 +4,10 @@ Copyright © 2024 AntoninoAdornetto
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
@@ -32,17 +34,15 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		isAuthorized, err := scm.CheckForAccess(sourceCodeManager)
+		_, err = scm.ReadAccessToken(sourceCodeManager)
 		if err != nil {
 			if os.IsNotExist(err) {
-				ui.LogFatal(err_unauthorized)
+				ui.LogFatal(
+					"configuration file does not exist. please run <issue-summoner authorize> or see <issue-summoner authorize --help>",
+				)
 			} else {
 				ui.LogFatal(err.Error())
 			}
-		}
-
-		if !isAuthorized {
-			ui.LogFatal(err_unauthorized)
 		}
 
 		issueManager, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
@@ -94,7 +94,7 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		stagedIssues := make([]scm.Issue, 0)
+		stagedIssues := make([]scm.GitIssue, 0)
 		for _, is := range issues {
 			if selections.Options[is.ID] {
 				md, err := is.ExecuteIssueTemplate(tmpl)
@@ -103,14 +103,29 @@ platform.`,
 				}
 				stagedIssues = append(
 					stagedIssues,
-					scm.Issue{Title: is.Title, Body: string(md)},
+					scm.GitIssue{Title: is.Title, Body: string(md)},
 				)
 			}
 		}
 
-		gitManager := scm.NewGitManager(sourceCodeManager)
-		idChan := gitManager.Report(stagedIssues)
+		out := bytes.Buffer{}
+		remoteCmd := exec.Command("git", "remote", "-v")
+		remoteCmd.Stdout = &out
+		if err := remoteCmd.Run(); err != nil {
+			ui.LogFatal(err.Error())
+		}
 
+		userName, repoName, err := scm.ExtractUserRepoName(out.Bytes())
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		gitManager, err := scm.NewGitManager(sourceCodeManager, userName, repoName)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		idChan := gitManager.Report(stagedIssues)
 		for id := range idChan {
 			/*
 			* @TODO Write the issue ID to it's corresponding comment
@@ -133,5 +148,5 @@ func init() {
 	reportCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
 	reportCmd.Flags().StringP(flag_gignore, shortflag_gignore, "", flag_desc_gignore)
 	reportCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
-	reportCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GH, flag_desc_scm)
+	reportCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GITHUB, flag_desc_scm)
 }
