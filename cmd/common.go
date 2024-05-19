@@ -30,7 +30,7 @@ const (
 	shortflag_verbose    = "v"
 	shortflag_annotation = "a"
 	flag_desc_path       = "the path to your local git repository"
-	flag_desc_scm        = "The source code management platform you would like to use. Example: GitHub or GitLab"
+	flag_desc_scm        = "The source code management platform you would like to use. Such as, github, gitlab, or bitbucket"
 	flag_desc_gignore    = "path to gitignore file"
 	flag_desc_mode       = "'processed' is for issues that have already been pushed to a scm. 'pending' is for issues that have not yet been published"
 	flag_desc_verbose    = "log detailed information about each issue annotation that is located during the scan"
