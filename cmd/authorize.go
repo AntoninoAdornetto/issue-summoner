@@ -51,12 +51,12 @@ var authorizeCmd = &cobra.Command{
 			)
 		}
 
-		hasAccess, err := scm.CheckForAccess(sourceCodeManager)
+		accessToken, err := scm.ReadAccessToken(sourceCodeManager)
 		if err != nil && !os.IsNotExist(err) {
 			ui.LogFatal(err.Error())
 		}
 
-		if hasAccess {
+		if accessToken != "" {
 			fmt.Println(
 				ui.PrimaryTextStyle.Render(
 					fmt.Sprintf(
@@ -88,7 +88,11 @@ var authorizeCmd = &cobra.Command{
 			}
 		}()
 
-		gitManager := scm.NewGitManager(sourceCodeManager)
+		gitManager, err := scm.NewGitManager(sourceCodeManager, "", "")
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		err = gitManager.Authorize()
 		if err != nil {
 			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {

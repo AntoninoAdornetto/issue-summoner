@@ -4,8 +4,10 @@ Copyright © 2024 AntoninoAdornetto
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
@@ -32,17 +34,15 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		isAuthorized, err := scm.CheckForAccess(sourceCodeManager)
+		_, err = scm.ReadAccessToken(sourceCodeManager)
 		if err != nil {
 			if os.IsNotExist(err) {
-				ui.LogFatal(err_unauthorized)
+				ui.LogFatal(
+					"configuration file does not exist. please run <issue-summoner authorize> or see <issue-summoner authorize --help>",
+				)
 			} else {
 				ui.LogFatal(err.Error())
 			}
-		}
-
-		if !isAuthorized {
-			ui.LogFatal(err_unauthorized)
 		}
 
 		issueManager, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
@@ -94,7 +94,7 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		stagedIssues := make([]scm.Issue, 0)
+		stagedIssues := make([]scm.GitIssue, 0)
 		for _, is := range issues {
 			if selections.Options[is.ID] {
 				md, err := is.ExecuteIssueTemplate(tmpl)
@@ -103,7 +103,7 @@ platform.`,
 				}
 				stagedIssues = append(
 					stagedIssues,
-					scm.Issue{Title: is.Title, Body: string(md)},
+					scm.GitIssue{Title: is.Title, Body: string(md)},
 				)
 			}
 		}
