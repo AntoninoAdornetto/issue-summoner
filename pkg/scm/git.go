@@ -172,6 +172,54 @@ func ReadAccessToken(scm string) (string, error) {
 	return accessToken, nil
 }
 
+// ExtractUserRepoName takes the output from <git remote --verbose> command
+// as input and attempts to extract the user name and repository name. (HTTPS || SSH url)
+func ExtractUserRepoName(out []byte) (string, string, error) {
+	if len(out) == 0 {
+		return "", "", errors.New(
+			"expected to receive the output from <git remote -v> but got empty byte slice",
+		)
+	}
+
+	line := bytes.Split(out, []byte("\n"))[0]
+	// fields will give us -> ["origin", "url (https | ssh)", "(push) | (pull)"]
+	// we only care about the url since it contains both the username and repo name
+	fields := bytes.Fields(line)
+	if len(fields) < 2 {
+		return "", "", fmt.Errorf(
+			"expected to receive the origin and url but got %s",
+			string(fields[0]),
+		)
+	}
+
+	url := fields[1]
+	if bytes.HasPrefix(url, []byte("https")) {
+		userName, repoName := extractFromHTTPS(url)
+		return userName, repoName, nil
+	}
+
+	if bytes.HasPrefix(url, []byte("git")) {
+		userName, repoName := extractFromSSH(url)
+		return userName, repoName, nil
+	}
+
+	return "", "", fmt.Errorf("expected a https or ssh url but got %s", string(url))
+}
+
+func extractFromHTTPS(url []byte) (string, string) {
+	split := bytes.SplitAfter(url, []byte("https://"))[1]
+	sep := bytes.Split(split, []byte("/"))
+	userName, repoName := sep[1], sep[2]
+	return string(userName), string(bytes.TrimSuffix(repoName, []byte(".git")))
+}
+
+func extractFromSSH(url []byte) (string, string) {
+	split := bytes.SplitAfter(url, []byte(":"))[1]
+	sep := bytes.Split(split, []byte("/"))
+	userName, repoName := sep[0], sep[1]
+	return string(userName), string(bytes.TrimSuffix(repoName, []byte(".git")))
+}
+
 // GlobalUserName uses the **git config** command to retrieve the global
 // configuration options. Specifically, the user.name option. The userName is
 // read and set onto the reciever's (GitConfig) UserName property. This will be used
