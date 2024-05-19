@@ -116,6 +116,10 @@ platform.`,
 		}
 
 		userName, repoName, err := scm.ExtractUserRepoName(out.Bytes())
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		gitManager, err := scm.NewGitManager(sourceCodeManager, userName, repoName)
 		if err != nil {
 			ui.LogFatal(err.Error())
