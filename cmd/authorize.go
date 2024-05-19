@@ -16,7 +16,7 @@ import (
 
 // We only support GitHub, at the moment, but eventually I want to support all that are contained
 // in the `allowedPlatforms` slice.
-var allowedPlatforms = []string{scm.GH, scm.GL, scm.BB}
+var allowedPlatforms = []string{scm.GITHUB, scm.GITLAB, scm.BITBUCKET}
 
 // authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
@@ -112,5 +112,5 @@ var authorizeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(authorizeCmd)
-	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GH, flag_desc_scm)
+	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GITHUB, flag_desc_scm)
 }

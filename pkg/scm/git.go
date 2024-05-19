@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	GH = "github"
-	GL = "gitlab"
-	BB = "bitbucket"
+	GITHUB    = "github"
+	GITLAB    = "gitlab"
+	BITBUCKET = "bitbucket"
 )
 
 // @TODO can GlobalUserName and RepoName functions be deleted?
@@ -85,7 +85,7 @@ func WriteToken(token string, scm string) error {
 
 	switch scm {
 	default:
-		config[GH] = ScmTokenConfig{
+		config[GITHUB] = ScmTokenConfig{
 			AccessToken: token,
 		}
 	}

@@ -126,7 +126,7 @@ var accessToken = ""
 
 func newIssueRequest(body io.Reader) (*http.Request, error) {
 	if accessToken == "" {
-		token, err := ReadAccessToken(GH)
+		token, err := ReadAccessToken(GITHUB)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +170,7 @@ func (gh *GitHubManager) Authorize() error {
 
 	select {
 	case token := <-tokenChan:
-		return WriteToken(token.AccessToken, GH)
+		return WriteToken(token.AccessToken, GITHUB)
 	case err := <-errChan:
 		return err
 	}
