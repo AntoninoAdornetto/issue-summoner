@@ -15,6 +15,20 @@ const (
 	`
 )
 
+// should create a new GitHubManager struct
+func TestNewGitManagerGitHub(t *testing.T) {
+	gm, err := scm.NewGitManager(scm.GITHUB, "AntoninoAdornetto", "issue-summoner")
+	require.NoError(t, err)
+	require.IsType(t, &scm.GitHubManager{}, gm)
+}
+
+// should return an error when provided an unsupported source code management platform
+func TestNewGitManagerUnsupported(t *testing.T) {
+	gm, err := scm.NewGitManager("unsupported", "AntoninoAdornetto", "issue-summoner")
+	require.Error(t, err)
+	require.Empty(t, gm)
+}
+
 // should return the username and repo name when provided output
 // from the git remote command that contains an https url
 func TestExtractUserRepoNameHTTPS(t *testing.T) {
