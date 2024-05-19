@@ -32,15 +32,15 @@ type GitHubManager struct {
 	userName string
 }
 
-func (gh *GitHubManager) Report(issues []Issue) <-chan int64 {
+func (gh *GitHubManager) Report(issues []GitIssue) <-chan int64 {
 	idChan := make(chan int64)
 	wg := sync.WaitGroup{}
 	wg.Add(len(issues))
 
 	for _, issue := range issues {
-		go func(is Issue) {
+		go func(is GitIssue) {
 			defer wg.Done()
-			resp, err := createIssue(is)
+			resp, err := gh.createIssue(is)
 			if err != nil {
 				fmt.Println(err.Error())
 				return
@@ -70,7 +70,7 @@ type createIssueResponse struct {
 	Title         string `json:"title"`
 }
 
-func createIssue(issue Issue) (createIssueResponse, error) {
+func (gh *GitHubManager) createIssue(issue GitIssue) (createIssueResponse, error) {
 	var res createIssueResponse
 
 	payload, err := json.Marshal(issue)
@@ -79,7 +79,7 @@ func createIssue(issue Issue) (createIssueResponse, error) {
 	}
 
 	body := bytes.NewBuffer(payload)
-	req, err := newIssueRequest(body)
+	req, err := gh.newIssueRequest(body)
 	if err != nil {
 		return res, err
 	}
@@ -124,7 +124,7 @@ func handleCreateIssueErr(data []byte, statusCode int, title string) error {
 
 var accessToken = ""
 
-func newIssueRequest(body io.Reader) (*http.Request, error) {
+func (gh *GitHubManager) newIssueRequest(body io.Reader) (*http.Request, error) {
 	if accessToken == "" {
 		token, err := ReadAccessToken(GITHUB)
 		if err != nil {
