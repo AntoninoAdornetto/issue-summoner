@@ -176,6 +176,25 @@ func (gh *GitHubManager) Authorize() error {
 	}
 }
 
+/*
+@TODO user code is not printed when opening browser in same workspace as issue summoner process
+When executing <issue-summoner authorize>, without my default browser being open already, the
+user code is never printed to the terminal for me to copy and paste into githubs device authorization
+page. However, if I have my default browser open in a workspace where the issue summoner process is not running,
+I can see the user code is printed to the terminal just fine. I have a feeling this may be a simple fix where
+I just need to adjust the way I am utilizing go routines. Will investigate further.
+
+Environment Notes:
+This needs to be tested on other environments and most importantly, different tiling window managers.
+I am reporting this issue from Arch, btw, while using hyprland as my window manager.
+
+Expected Behavior: executing <issue-summoner authorize> should open the default browser and print the usercode
+to the terminal regardless if the browser is open already or if the browser opens in the same workspace as the
+issue-summoner process.
+
+Actual Behavior: executing <issue-summoner authorize> opens the default browser but fails to print the usercode
+to the terminal.
+*/
 func initDeviceFlow(vd chan requestDeviceVerificationResponse, ec chan error) {
 	resp, err := requestDeviceVerification()
 	if err != nil {
