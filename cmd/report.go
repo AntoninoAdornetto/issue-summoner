@@ -27,7 +27,7 @@ Once issue annotations are discovered, you will be presented with a list of all 
 that were located and you can select which ones you would like to report to a source code management
 platform.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		annotation, ignorePath, path := handleCommonFlags(cmd)
+		annotation, path := handleCommonFlags(cmd)
 
 		sourceCodeManager, err := cmd.Flags().GetString(flag_scm)
 		if err != nil {
@@ -50,8 +50,7 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		ignorePatterns := gitIgnorePatterns(ignorePath)
-		_, err = issueManager.Walk(path, ignorePatterns)
+		_, err = issueManager.Walk(path)
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}

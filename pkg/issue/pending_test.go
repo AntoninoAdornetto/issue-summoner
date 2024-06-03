@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
@@ -69,7 +68,7 @@ func TestWalkCountScans(t *testing.T) {
 	// does not add any ignore patterns to pass into Walk. The next test
 	// will make the assertion with ignore patterns.
 	expected := 2
-	actual, err := im.Walk(root, []regexp.Regexp{})
+	actual, err := im.Walk(root)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 	err = teardown(root)
@@ -95,7 +94,7 @@ func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	// one time for the go impl file. We will add an ignore pattern to
 	// assert that Scan is not called on the executable.
 	expected := 1
-	actual, err := im.Walk(root, []regexp.Regexp{*regexp.MustCompile(`.*\.exe`)})
+	actual, err := im.Walk(root)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
 	err = teardown(root)
@@ -108,7 +107,7 @@ func TestWalkNoneExistentRoot(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	_, err = im.Walk("unknown-path", []regexp.Regexp{})
+	_, err = im.Walk("unknown-path")
 	require.Error(t, err)
 }
 

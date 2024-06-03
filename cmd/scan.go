@@ -23,7 +23,7 @@ command. Report will actually publish the located comments to your favorite
 source code management platform. Scan is for reviewing the issue annotations
 that reside in your code base.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		annotation, ignorePath, path := handleCommonFlags(cmd)
+		annotation, path := handleCommonFlags(cmd)
 
 		verbose, err := cmd.Flags().GetBool(flag_verbose)
 		if err != nil {
@@ -35,13 +35,12 @@ that reside in your code base.`,
 			ui.LogFatal(err.Error())
 		}
 
-		ignorePatterns := gitIgnorePatterns(ignorePath)
 		issueManager, err := issue.NewIssueManager(mode, annotation)
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		_, err = issueManager.Walk(path, ignorePatterns)
+		_, err = issueManager.Walk(path)
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}

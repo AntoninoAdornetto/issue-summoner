@@ -26,7 +26,7 @@ type Issue struct {
 type IssueManager interface {
 	GetIssues() []Issue
 	Scan(src []byte, path string) error
-	Walk(root string, ignore []regexp.Regexp) (int, error)
+	Walk(root string) (int, error)
 }
 
 // NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct

@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
@@ -16,7 +15,7 @@ type PendingIssue struct {
 	Issues     []Issue
 }
 
-func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error) {
+func (pi *PendingIssue) Walk(root string) (int, error) {
 	n := 0
 	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -28,10 +27,6 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 			if strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
-			return nil
-		}
-
-		if skip := skipIgnoreMatch(path, gitIgnore); skip {
 			return nil
 		}
 

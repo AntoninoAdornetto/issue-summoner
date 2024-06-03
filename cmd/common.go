@@ -2,10 +2,7 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
-	"regexp"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -38,14 +35,9 @@ const (
 )
 
 // both the scan and report command will use similar flags
-func handleCommonFlags(cmd *cobra.Command) (annotation string, ignorePath string, path string) {
+func handleCommonFlags(cmd *cobra.Command) (annotation string, path string) {
 	var err error
 	annotation, err = cmd.Flags().GetString(flag_annotation)
-	if err != nil {
-		ui.LogFatal(err.Error())
-	}
-
-	ignorePath, err = cmd.Flags().GetString(flag_gignore)
 	if err != nil {
 		ui.LogFatal(err.Error())
 	}
@@ -63,23 +55,5 @@ func handleCommonFlags(cmd *cobra.Command) (annotation string, ignorePath string
 		path = wd
 	}
 
-	if ignorePath == "" {
-		ignorePath = filepath.Join(path, ".gitignore")
-	}
-
-	return annotation, ignorePath, path
-}
-
-func gitIgnorePatterns(ignorePath string) []regexp.Regexp {
-	f, err := os.Open(ignorePath)
-	if err != nil {
-		ui.LogFatal(err.Error())
-	}
-
-	ignorePatterns, err := scm.ParseIgnorePatterns(f)
-	if err != nil {
-		ui.LogFatal(err.Error())
-	}
-
-	return ignorePatterns
+	return annotation, path
 }
