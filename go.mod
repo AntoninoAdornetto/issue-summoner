@@ -3,7 +3,7 @@ module github.com/AntoninoAdornetto/issue-summoner
 go 1.21.5
 
 require (
-	github.com/AntoninoAdornetto/go-gitignore v0.1.3
+	github.com/AntoninoAdornetto/go-gitignore v0.1.4
 	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
