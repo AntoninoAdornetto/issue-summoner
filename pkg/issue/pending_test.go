@@ -3,46 +3,65 @@ package issue_test
 import (
 	"io"
 	"os"
-	"path/filepath"
-	"regexp"
 	"testing"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/stretchr/testify/require"
 )
 
-// should handle parsing multile comments with annotations in a go file
-// and ignore any comments that do not contain an annotation.
+// should handle parsing multiple different types of comments that contain
+// annotations in a c file.
 func TestScanSingleLineCommentsGo(t *testing.T) {
-	r := generateSingleLineCommentImplFileGo()
+	srcFile, err := os.Open("../../testdata/test.c")
+	require.NoError(t, err)
+
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
 	require.NotNil(t, im)
-	err = im.Scan(r, "/tmp/temp-dir/mock.go")
+
+	src, err := io.ReadAll(srcFile)
 	require.NoError(t, err)
 
-	// see generateSingleLineCommentImplFileGo for how the file
-	// looks. It contains single line comments within a mock
-	// source code file and provides an example of how single
-	// line comments may be used. In the mock file, we added
-	// 2 single line comments with annotations and 1 comment that is not
-	// annotated. The result should be 2 issues
+	err = im.Scan(src, "../../testdata/test.c")
+	require.NoError(t, err)
+
+	// see test.c in the testdata directory for how the file looks prior
+	// to scanning. The file contains c source code with comments that
+	// are parsed. All comments that are annotated with @TEST_TODO should
+	// appear in the expected slice.
 	expected := []issue.Issue{
 		{
-			ID:          "mock.go-124:205",
-			Title:       "add ! (not) operator support for ignoring specific files/directories",
+			ID:          "test.c-62:95",
+			Title:       "inline comment #1",
 			Description: "",
-			LineNumber:  13,
-			FileName:    "mock.go",
-			FilePath:    "/tmp/temp-dir/mock.go",
+			LineNumber:  5,
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
 		},
 		{
-			ID:          "mock.go-475:562",
-			Title:       "update the formatIgnoreExpression expression to include ! operator support",
+			ID:          "test.c-115:148",
+			Title:       "inline comment #2",
 			Description: "",
-			LineNumber:  25,
-			FileName:    "mock.go",
-			FilePath:    "/tmp/temp-dir/mock.go",
+			LineNumber:  6,
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+		},
+		{
+			ID:          "test.c-192:252",
+			Title:       "decode the message and clean up after yourself!",
+			Description: "",
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			LineNumber:  10,
+		},
+		{
+			ID:          "test.c-269:561",
+			Title:       "drop a star if you know about this code wars challenge",
+			Description: "Digital Cypher assigns to each letter of the alphabet unique number. Instead of letters in encrypted word we write the corresponding number Then we add to each obtained digit consecutive digits from the key",
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			LineNumber:  19,
+			Environment: "",
 		},
 	}
 
@@ -50,56 +69,77 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-// should Walk the temp project created in /tmp dir and return
-// a count of the number of times that Walk calls the Scan method
+// should walk the testdata directory and return a count that is equal
+// to the number of times that the function walk is called.
 func TestWalkCountScans(t *testing.T) {
-	root, err := setup()
-	require.NoError(t, err)
-
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	// the setup func generates 3 files and 3 directories.
-	// 3 dirs (root temp dir, .git/ dir, and pkg/ dir)
-	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
-	// the expected number of times that Scan should be called is 2 times.
-	// one time for the exe file and one time for the go impl file.
-	// the only reason scan is called on the exe file is because this test
-	// does not add any ignore patterns to pass into Walk. The next test
-	// will make the assertion with ignore patterns.
-	expected := 2
-	actual, err := im.Walk(root, []regexp.Regexp{})
+	// Walk is called 4 times in total within the testdata directory
+	// 1 time for the .gitignore file
+	// 1 time for the ignore.sh file
+	// 1 time for test.c
+	// 1 time for test.log
+	// this test does not include gitignore exclude rules. see next test for that.
+	expected := 4
+	actual, err := im.Walk("../../testdata/")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
-	err = teardown(root)
-	require.NoError(t, err)
 }
 
-// should Walk the temp project created in /tmp dir and return
-// a count of the number of times that Walk calls the Scan method.
-// This time, we will add ignore patterns as a argument to Walk
-// and the result is that Scan is only called 1 time on an impl file.
+// should walk the testdata directory and return a count that is equal
+// to the number of times walk calls the scan method. This time,
+// we will add an exclude pattern to the .gitignore file in testdata/.gitignore
 func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
-	root, err := setup()
-	require.NoError(t, err)
-
 	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	// the setup func generates 3 files and 3 directories.
-	// 3 dirs (root temp dir, .git/ dir, and pkg/ dir)
-	// 3 files (.exe file, impl go file, INDEX file that lives in .git/)
-	// the expected number of times that Scan should be called is 1 time.
-	// one time for the go impl file. We will add an ignore pattern to
-	// assert that Scan is not called on the executable.
-	expected := 1
-	actual, err := im.Walk(root, []regexp.Regexp{*regexp.MustCompile(`.*\.exe`)})
+	ignoreFile, err := os.OpenFile("../../testdata/.gitignore", os.O_RDWR, 0644)
+	require.NoError(t, err)
+	defer ignoreFile.Close()
+
+	originalBytes, err := io.ReadAll(ignoreFile)
+	require.NoError(t, err)
+
+	ignorePatterns := `
+	# Wildcard pattern
+	*.log
+
+	# ignore everything within the exclude directory
+	exclude/
+	`
+
+	_, err = ignoreFile.Seek(0, 0)
+	require.NoError(t, err)
+	err = ignoreFile.Truncate(0)
+	require.NoError(t, err)
+
+	_, err = ignoreFile.WriteString(ignorePatterns)
+	require.NoError(t, err)
+	err = ignoreFile.Sync()
+	require.NoError(t, err)
+
+	defer func() {
+		_, err := ignoreFile.Seek(0, 0)
+		require.NoError(t, err)
+		err = ignoreFile.Truncate(0)
+		require.NoError(t, err)
+		_, err = ignoreFile.Write(originalBytes)
+		if err != nil {
+			t.Fatalf("Failed to restore .gitignore contents: %s", err.Error())
+		}
+		err = ignoreFile.Sync()
+		require.NoError(t, err)
+	}()
+
+	// walk should call scan one time for test.c and one test for .gitignore
+	// might change calling it on .gitignore file but for now it's ok
+	expected := 2
+	actual, err := im.Walk("../../testdata")
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
-	err = teardown(root)
-	require.NoError(t, err)
 }
 
 // should return an error when the root path does not exist
@@ -108,148 +148,6 @@ func TestWalkNoneExistentRoot(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, im)
 
-	_, err = im.Walk("unknown-path", []regexp.Regexp{})
+	_, err = im.Walk("unknown-path")
 	require.Error(t, err)
-}
-
-// setup will create 6 files/dirs in total.
-// 1. temp dir (temp-git-project)
-// 2. temp pkg dir (temp-git-project/pkg/)
-// 3. temp imp file (issue.go)
-// 4. temp git dir
-// 5. temp INDEX file that resides in the temp .git dir
-// 6. temp exe file (used to validate that walk can ignore/skip entire directories)
-func setup() (string, error) {
-	pathName, err := os.MkdirTemp("", "temp-git-project")
-	if err != nil {
-		return "", err
-	}
-
-	if err = buildSrc(pathName); err != nil {
-		return "", err
-	}
-
-	return pathName, err
-}
-
-// produces a go implementation file that utilizes
-// single line comments with a mock annotation.
-// it is used to help assert that the PendingIssue Scan
-// implementation behaves as expected. There are two
-// valid issue annotations in the bytes buffer returned
-// from this function. There are also 2 additonal single
-// line comments that should be ignored.
-func generateSingleLineCommentImplFileGo() []byte {
-	return []byte(`package scm
-
-		import (
-			"bufio"
-			"bytes"
-			"io"
-			"regexp"
-			"unicode"
-		)
-
-		type IgnorePattern = regexp.Regexp
-
-		// @TEST_TODO add ! (not) operator support for ignoring specific files/directories
-		func ParseIgnorePatterns(r io.Reader) ([]IgnorePattern, error) {
-			regexps := make([]IgnorePattern, 0)
-			buf := &bytes.Buffer{}
-			scanner := bufio.NewScanner(r)
-
-			for scanner.Scan() {
-				line := scanner.Bytes()
-				if len(line) == 0 {
-					continue
-				}
-
-				// @TEST_TODO update the formatIgnoreExpression expression to include ! operator support
-				if err := formatIgnoreExpression(buf, line); err != nil {
-					return regexps, err
-				}
-
-				// a single line comment that should be ignored
-				if buf.Len() > 0 {
-					re := regexp.MustCompile(buf.String())
-					regexps = append(regexps, *re)
-					buf.Reset()
-				}
-			}
-
-			// another single line comment that should be ignored
-			return regexps, scanner.Err()
-		}
-	`)
-}
-
-// creates temp source code files for our temporary dir
-// this will be used to test the Walk func.
-func buildSrc(path string) error {
-	tempPkg, err := os.MkdirTemp(path, "pkg")
-	if err != nil {
-		return err
-	}
-
-	// we add a temp .git dir to ensure that our walk func
-	// does not parse the files inside a .git dir
-	tempGitDir, err := os.MkdirTemp(path, ".git")
-	if err != nil {
-		return err
-	}
-
-	gitIndex, err := os.CreateTemp(tempGitDir, "INDEX")
-	if err != nil {
-		return err
-	}
-
-	gitIndexBytes := []byte("git index file")
-	_, err = gitIndex.Write(gitIndexBytes)
-	if err != nil {
-		return err
-	}
-
-	// another ignored file. This is to test the ignore pattern
-	// functionality of the walk func
-	_, err = os.CreateTemp(path, ".exe")
-	if err != nil {
-		return err
-	}
-
-	issueGo, err := os.CreateTemp(tempPkg, "issue")
-	if err != nil {
-		return err
-	}
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	issueSrc, err := os.Open(filepath.Join(wd, "issue.go"))
-	if err != nil {
-		return err
-	}
-
-	sourceBytes, err := io.ReadAll(issueSrc)
-	if err != nil {
-		return err
-	}
-
-	_, err = issueGo.Write(sourceBytes)
-	if err != nil {
-		return err
-	}
-
-	newFileName := issueGo.Name() + ".go"
-	err = os.Rename(issueGo.Name(), newFileName)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func teardown(path string) error {
-	return os.RemoveAll(path)
 }

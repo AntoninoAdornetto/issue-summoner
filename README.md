@@ -126,17 +126,29 @@ go install github.com/AntoninoAdornetto/issue-summoner@latest
 
 ## Usage
 
+### Authorize Command
+
+In order to publish issues to a source code management system, we must first authorize the program to allow this. Authorizing will look different for each provider. As of now, I have added support for GitHub. I will be adding more in the near future.
+
+- `-s`, `--scm` The source code management platform to authorize. (default is GitHub).
+
+#### Authorize for GitHub
+
+The [device-flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) is utilized to create an access token. The only thing you really need to know here is that when you run the command, you will be given a `user code` in the terminal and your default browser will open to https://github.com/login/device You will then be prompted to enter the user code while the program polls the authorization service for an access token. Once the steps are complete, the program will have all scopes it needs to report issues for you. **Note**: this does grant the program access to both public and private repositories.
+
+```sh
+issue-summoner authorize -s github
+```
+
 ### Scan Command
 
-Scans your local git project for comments that contain an issue annotation. Issues are objects that are built when scanning the project. In short, they describe a task, concern, or area of code that requires attention. The scan command is a preliminary command that may be used prior to the `report` command. This will give you an idea of the issue annotations that reside in your project. Heck, even if you did not want to use the tool to publish the issues to a source code platform, you could utilize the tool by running the scan command locally to keep track of what items need attention.
+Scans your local git project for comments that are denoted with an annotation. Details about the comment are constructed through lexical analysis. Each programming language uses it's own lexer to gather the comment tokens and parse information about the comment. Scan is a preliminary command that may be used prior to the `report` command. This will give you an idea of the issue annotations that reside in your project.
 
 - `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
 
 - `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
 
-- `-g`, `--gitignore` The path to your .gitignore file. This is optional, and will default to your current working directory or to the gitignore located at the path you provided from the flag above. You can provide the gitignore file path for projects that you are not scanning. This may be a very niche use case, but it is supported.
-
-- `-m`, `--mode` The two modes are `pending` and `processed`. Meaning that you can scan for annotations that have not been uploaded to a source code management platform, I.E pending, or you can scan for annotations that have been published, I.E processed. Processed annotations will look differently than pending annotations because when issues are reported, the program will update the annotation to include a unique id so the comment can be removed by the program once it has been marked as resolved. (default mode is pending)
+- `-m`, `--mode` The two modes are `pending` and `processed`. Meaning, you can scan for annotations that have not been uploaded to a source code management platform, I.E pending, or you can scan for annotations that have been published, I.E processed. Processed annotations will look differently than pending annotations because when issues are reported, the program will update the comment, write to the file at the location of the comment, and append the issue id that is tied to the comment. This is so the comment can be removed after it's been resolved.
 
 - `-v`, `--verbose` Logs detailed information about each issue annotation that was located during the scan.
 
@@ -186,18 +198,44 @@ The new result using a multi line comment:
 
 ![issue-summoner-scan-verbose-multi-line](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/09313924-2a02-4000-898e-09b2aeca07a1)
 
-### Authorize Command
+### Report Command
 
-In order to publish issues to a source code management system, we must first authorize the program to allow this. Authorizing will look different for each provider. As of now, I have added support for GitHub. I will be adding more in the near future.
+Report is similar to the scan command but with added functionality. It allows you to report the discovered comments, that contain an issue annotation, to a source code management platform. Upon selecting an issue to upload to a source code platform, a template is used to format the data.
 
-- `-s`, `--scm` The source code management platform to authorize. (default is GitHub).
+- `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
 
-#### Authorize for GitHub
+- `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
 
-The [device-flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) is utilized to create an access token. The only thing you really need to know here is that when you run the command, you will be given a `user code` in the terminal and your default browser will open to https://github.com/login/device You will then be prompted to enter the user code while the program polls the authorization service for an access token. Once the steps are complete, the program will have all scopes it needs to report issues for you. **Note**: this does grant the program access to both public and private repositories.
+- `-s`, `--scm` The souce code management platform you would like to upload issues to. Such as, github, gitlab, or bitbucket (default "github")
+
+#### Report usage
 
 ```sh
-issue-summoner authorize -s github
+issue-summoner report
+```
+
+You are then presented with a list of discovered issues that you can select to report.
+
+`j` - navigate down the list
+
+`k` - navigate up the list
+
+`space` - select an item
+
+`y` - confirm and report the selected issues
+
+![Screenshot_05-Jun_01-18-10_15255](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/68769010-031f-4b73-84c0-1d2b59072490)
+
+`Feature note for report command:`
+
+- I plan to take the id returned from each issue that is reported and write the id to the file of where it was discovered. This will allow issue-summoner to programatically remove comments once issues have been marked as resolved. This is one of the next features I plan to implement. The result would be something like this:
+
+```c
+int main() {
+  // @TODO(1999): do something usefull
+  return 0;
+  // the id: 1999 can be used to check the status and remove the comment once marked as "resolved"
+}
 ```
 
 <!-- _For more examples, please refer to the [Documentation](https://example.com)_ -->

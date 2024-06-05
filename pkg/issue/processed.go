@@ -1,9 +1,5 @@
 package issue
 
-import (
-	"regexp"
-)
-
 /*
 * @TODO implement the processed issues logic
 * The functions implementations should satisfy the IssueManager interface and allow the
@@ -17,7 +13,7 @@ type ProcessedIssue struct {
 	Issues     []Issue
 }
 
-func (pi *ProcessedIssue) Walk(root string, ignore []regexp.Regexp) (int, error) {
+func (pi *ProcessedIssue) Walk(root string) (int, error) {
 	n := 0
 	return n, nil
 }

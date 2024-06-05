@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	ignore "github.com/AntoninoAdornetto/go-gitignore"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
 )
 
@@ -16,9 +16,14 @@ type PendingIssue struct {
 	Issues     []Issue
 }
 
-func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error) {
+func (pi *PendingIssue) Walk(root string) (int, error) {
 	n := 0
-	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+	ignorer, err := ignore.NewIgnorer(root)
+	if err != nil {
+		return n, err
+	}
+
+	err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -28,10 +33,25 @@ func (pi *PendingIssue) Walk(root string, gitIgnore []regexp.Regexp) (int, error
 			if strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
+
+			isIgnored, err := ignorer.Match(path)
+			if err != nil {
+				return err
+			}
+
+			if isIgnored {
+				return filepath.SkipDir
+			}
+
 			return nil
 		}
 
-		if skip := skipIgnoreMatch(path, gitIgnore); skip {
+		isIgnored, err := ignorer.Match(path)
+		if err != nil {
+			return err
+		}
+
+		if isIgnored {
 			return nil
 		}
 

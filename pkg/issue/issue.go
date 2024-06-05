@@ -3,7 +3,6 @@ package issue
 import (
 	"bytes"
 	"errors"
-	"regexp"
 	"runtime"
 	"text/template"
 )
@@ -26,7 +25,7 @@ type Issue struct {
 type IssueManager interface {
 	GetIssues() []Issue
 	Scan(src []byte, path string) error
-	Walk(root string, ignore []regexp.Regexp) (int, error)
+	Walk(root string) (int, error)
 }
 
 // NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
@@ -53,13 +52,4 @@ func (issue *Issue) ExecuteIssueTemplate(tmpl *template.Template) ([]byte, error
 	issue.Environment = runtime.GOOS
 	err := tmpl.Execute(&buf, issue)
 	return buf.Bytes(), err
-}
-
-func skipIgnoreMatch(path string, patterns []regexp.Regexp) bool {
-	for _, re := range patterns {
-		if matched := re.MatchString(path); matched {
-			return true
-		}
-	}
-	return false
 }
