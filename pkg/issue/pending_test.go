@@ -122,13 +122,16 @@ func TestWalkCountStepsWithIgnorePatterns(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		ignoreFile.Seek(0, 0)
-		ignoreFile.Truncate(0)
+		_, err := ignoreFile.Seek(0, 0)
+		require.NoError(t, err)
+		err = ignoreFile.Truncate(0)
+		require.NoError(t, err)
 		_, err = ignoreFile.Write(originalBytes)
 		if err != nil {
 			t.Fatalf("Failed to restore .gitignore contents: %s", err.Error())
 		}
-		ignoreFile.Sync()
+		err = ignoreFile.Sync()
+		require.NoError(t, err)
 	}()
 
 	// walk should call scan one time for test.c and one test for .gitignore
