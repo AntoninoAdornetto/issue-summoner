@@ -1,7 +1,10 @@
 package issue
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -106,7 +109,69 @@ func (pi *PendingIssue) Scan(src []byte, path string) error {
 			FileName:    base,
 			FilePath:    path,
 			LineNumber:  token.Line,
+			StartIndex:  token.StartByteIndex,
+			EndIndex:    token.EndByteIndex,
 		})
+	}
+
+	return nil
+}
+
+func (pi *PendingIssue) WriteIssueID(id int64, issueIndex int) error {
+	if len(pi.Issues) == 0 {
+		return errors.New("cannot write issue_id with an empty issue slice")
+	}
+
+	if issueIndex < 0 || issueIndex > len(pi.Issues) {
+		return fmt.Errorf(
+			"issue index %d out of range. issue slice len: %d",
+			issueIndex,
+			len(pi.Issues),
+		)
+	}
+
+	currentIssue := pi.Issues[issueIndex]
+	file, err := os.OpenFile(currentIssue.FilePath, os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+	src, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	start, end := currentIssue.StartIndex, currentIssue.EndIndex+1
+	comment := src[start:end]
+	annotationId := fmt.Sprintf("(%d)", id)
+	newAnnotation := pi.Annotation + annotationId
+	comment = bytes.Replace(comment, []byte(pi.Annotation), []byte(newAnnotation), 1)
+	buf := make([]byte, 0)
+
+	for i := 0; i < len(src); i++ {
+		if i == start {
+			for j, rn := range comment {
+				buf = append(buf, rn)
+				if j == len(newAnnotation)-1 {
+					i = end
+				}
+			}
+		} else {
+			buf = append(buf, src[i])
+		}
+	}
+
+	if _, err = file.Seek(0, 0); err != nil {
+		return err
+	}
+
+	if err = file.Truncate(0); err != nil {
+		return err
+	}
+
+	if _, err = file.Write(buf); err != nil {
+		return err
 	}
 
 	return nil
