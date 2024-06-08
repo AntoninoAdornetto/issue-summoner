@@ -20,12 +20,15 @@ type Issue struct {
 	FileName    string
 	LineNumber  int
 	Environment string
+	StartIndex  int
+	EndIndex    int
 }
 
 type IssueManager interface {
 	GetIssues() []Issue
 	Scan(src []byte, path string) error
 	Walk(root string) (int, error)
+	WriteIssueID(id int64, issueIndex int) error
 }
 
 // NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct

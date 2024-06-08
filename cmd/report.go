@@ -93,16 +93,16 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		stagedIssues := make([]scm.GitIssue, 0)
-		for _, is := range issues {
+		reportQueue := make([]scm.GitIssue, 0)
+		for i, is := range issues {
 			if selections.Options[is.ID] {
 				md, err := is.ExecuteIssueTemplate(tmpl)
 				if err != nil {
 					ui.LogFatal(err.Error())
 				}
-				stagedIssues = append(
-					stagedIssues,
-					scm.GitIssue{Title: is.Title, Body: string(md)},
+				reportQueue = append(
+					reportQueue,
+					scm.GitIssue{Title: is.Title, Body: string(md), QueueIndex: i},
 				)
 			}
 		}
@@ -124,21 +124,30 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		idChan := gitManager.Report(stagedIssues)
-		for id := range idChan {
-			/*
-			* @TODO Write the issue ID to it's corresponding comment
-			* The final piece to publishing an issue on a scm (Github, GitLab, BitBucket etc..)
-			* is writing the id to the source code file where we discovered the issue annotation.
-			* For example, if we have a source code file with a comment such as:
-			* // @TODO: fix bug
-			* We would want to append the id to the annotation. The result would be:
-			* // @TODO(1234): fix bug
-			* This allows the program to perform clean up work and remove the comment once the issue
-			* has been marked as resolved.
-			 */
-			fmt.Println("ID ", id)
+		reported := gitManager.Report(reportQueue)
+		for ch := range reported {
+			if err := issueManager.WriteIssueID(ch.ID, ch.QueueIndex); err != nil {
+				ui.LogFatal(err.Error())
+			}
 		}
+
+		if len(reportQueue) == 0 {
+			return
+		}
+
+		fmt.Println(
+			ui.SuccessTextStyle.Render(
+				fmt.Sprintf(
+					"Success! Uploaded %d issue(s) to %s",
+					len(reportQueue),
+					sourceCodeManager,
+				),
+			),
+		)
+
+		fmt.Println(
+			ui.SecondaryTextStyle.Render("make sure to commit and push the annotation updates!"),
+		)
 	},
 }
 

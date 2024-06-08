@@ -33,8 +33,13 @@ type GitHubManager struct {
 	userName string
 }
 
-func (gh *GitHubManager) Report(issues []GitIssue) <-chan int64 {
-	idChan := make(chan int64)
+type Reporter struct {
+	ID         int64
+	QueueIndex int
+}
+
+func (gh *GitHubManager) Report(issues []GitIssue) <-chan Reporter {
+	res := make(chan Reporter)
 	wg := sync.WaitGroup{}
 	wg.Add(len(issues))
 
@@ -46,16 +51,17 @@ func (gh *GitHubManager) Report(issues []GitIssue) <-chan int64 {
 				fmt.Println(err.Error())
 				return
 			}
-			idChan <- resp.ID
+			rc := Reporter{ID: resp.ID, QueueIndex: is.QueueIndex}
+			res <- rc
 		}(issue)
 	}
 
 	go func() {
 		wg.Wait()
-		close(idChan)
+		close(res)
 	}()
 
-	return idChan
+	return res
 }
 
 type createIssueResponse struct {
