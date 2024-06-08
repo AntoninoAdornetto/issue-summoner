@@ -200,7 +200,7 @@ The new result using a multi line comment:
 
 ### Report Command
 
-Report is similar to the scan command but with added functionality. It allows you to report the discovered comments, that contain an issue annotation, to a source code management platform. Upon selecting an issue to upload to a source code platform, a template is used to format the data.
+Report is similar to the scan command but with added functionality. It allows you to report selected comments to a source code management platform. After all selections are uploaded, the issue id is written to the same location that the comment token is located. Meaning, your todo annotation will be transformed so that issue summoner can be used to remove the entire comment once the issue has been marked as resolved.
 
 - `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
 
@@ -226,15 +226,23 @@ You are then presented with a list of discovered issues that you can select to r
 
 ![Screenshot_05-Jun_01-18-10_15255](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/68769010-031f-4b73-84c0-1d2b59072490)
 
-`Feature note for report command:`
+After the new issue is published, you will notice that your todo annotation is changed to `@ISSUE(issue_id)`, here is an example of how it may look:
 
-- I plan to take the id returned from each issue that is reported and write the id to the file of where it was discovered. This will allow issue-summoner to programatically remove comments once issues have been marked as resolved. This is one of the next features I plan to implement. The result would be something like this:
+#### Before Report command
 
 ```c
 int main() {
-  // @TODO(1999): do something usefull
+  // @TODO do something usefull
   return 0;
-  // the id: 1999 can be used to check the status and remove the comment once marked as "resolved"
+}
+```
+
+#### After Report command
+
+```c
+int main() {
+  // @ISSUE(1999): do something usefull
+  return 0;
 }
 ```
 
@@ -246,7 +254,11 @@ int main() {
 
 ## Roadmap
 
-- [x] `Comment/Tag-Annotation Scanning Engine`: Develop the core engine that scans source code files for user defined tag annotations, such as @TODO for to-do items. It can recognize the file's extension and appropriately handle language specific syntax for both single and multi-line comments.
+- [ ] `Lexical Analysis`: Develop the core engine that scans source code for comment tokens.
+
+  - [x] `C Lexer`: scan & build comment tokens for c like languages
+  - [ ] `Python Lexer`: scan & build comment tokens for python
+        <br></br>
 
 - [ ] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
 
