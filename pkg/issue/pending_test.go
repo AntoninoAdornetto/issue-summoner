@@ -37,6 +37,8 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			LineNumber:  5,
 			FileName:    "test.c",
 			FilePath:    "../../testdata/test.c",
+			StartIndex:  62,
+			EndIndex:    95,
 		},
 		{
 			ID:          "test.c-115:148",
@@ -45,6 +47,8 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			LineNumber:  6,
 			FileName:    "test.c",
 			FilePath:    "../../testdata/test.c",
+			StartIndex:  115,
+			EndIndex:    148,
 		},
 		{
 			ID:          "test.c-192:252",
@@ -53,6 +57,8 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			FileName:    "test.c",
 			FilePath:    "../../testdata/test.c",
 			LineNumber:  10,
+			StartIndex:  192,
+			EndIndex:    252,
 		},
 		{
 			ID:          "test.c-269:561",
@@ -61,7 +67,8 @@ func TestScanSingleLineCommentsGo(t *testing.T) {
 			FileName:    "test.c",
 			FilePath:    "../../testdata/test.c",
 			LineNumber:  19,
-			Environment: "",
+			StartIndex:  269,
+			EndIndex:    561,
 		},
 	}
 
