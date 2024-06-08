@@ -17,15 +17,16 @@ const (
 )
 
 type GitIssue struct {
-	Title string `json:"title"`
-	Body  string `json:"body"`
+	Title      string `json:"title"`
+	Body       string `json:"body"`
+	QueueIndex int
 }
 
 // GitConfigManager provides flexibility to have different implementations
 // of Authorize and Report for each source code management platform supported
 type GitConfigManager interface {
 	Authorize() error
-	Report(issues []GitIssue) <-chan int64
+	Report(issues []GitIssue) <-chan Reporter
 }
 
 // @TODO add other source code management structs to NewGitManager once their implementations are created
