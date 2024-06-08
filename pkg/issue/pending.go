@@ -142,10 +142,10 @@ func (pi *PendingIssue) WriteIssueID(id int64, issueIndex int) error {
 		return err
 	}
 
-	start, end := currentIssue.StartIndex, currentIssue.EndIndex+1
-	comment := src[start:end]
+	start, end := currentIssue.StartIndex, currentIssue.EndIndex
+	comment := src[start : end+1]
 	annotationId := fmt.Sprintf("(%d)", id)
-	newAnnotation := pi.Annotation + annotationId
+	newAnnotation := "@ISSUE" + annotationId
 	comment = bytes.Replace(comment, []byte(pi.Annotation), []byte(newAnnotation), 1)
 	buf := make([]byte, 0)
 
