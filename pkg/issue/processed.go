@@ -25,3 +25,7 @@ func (pi *ProcessedIssue) Scan(src []byte, path string) error {
 func (pi *ProcessedIssue) GetIssues() []Issue {
 	return pi.Issues
 }
+
+func (pi *ProcessedIssue) WriteIssueID(id int64, issueIndex int) error {
+	return nil
+}
