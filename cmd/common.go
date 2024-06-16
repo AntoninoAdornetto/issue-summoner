@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -52,5 +53,10 @@ func handleCommonFlags(cmd *cobra.Command) (annotation string, path string) {
 		path = wd
 	}
 
-	return annotation, path
+	repo, err := scm.FindRepository(path)
+	if err != nil {
+		ui.LogFatal(err.Error())
+	}
+
+	return annotation, repo.WorkTree
 }
