@@ -83,6 +83,7 @@ func (repo *Repository) parseGitConfig() error {
 }
 
 func (repo *Repository) getConfigDetails(line string) error {
+	// split on strs -> e.g. "url = https://github.com/..."
 	sep := strings.Split(line, "=")
 	if len(sep) < 2 {
 		return nil

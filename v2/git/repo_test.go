@@ -24,3 +24,7 @@ func TestNewRepositoryWorkDirPath(t *testing.T) {
 	require.Equal(t, "AntoninoAdornetto", actual.UserName)
 	require.Equal(t, "issue-summoner", actual.RepoName)
 }
+
+func TestNewRepositorySubDirPath(t *testing.T) {
+
+}
