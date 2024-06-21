@@ -6,8 +6,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	"github.com/AntoninoAdornetto/issue-summoner/v2/git"
+	"github.com/AntoninoAdornetto/issue-summoner/v2/issue"
 	"github.com/spf13/cobra"
 )
 
@@ -30,32 +31,37 @@ that reside in your code base.`,
 			ui.LogFatal(err.Error())
 		}
 
-		mode, err := cmd.Flags().GetString(flag_mode)
+		// @TODO do we even need mode anymore?
+		// mode, err := cmd.Flags().GetString(flag_mode)
+		// if err != nil {
+		// 	ui.LogFatal(err.Error())
+		// }
+
+		repo, err := git.NewRepository(path)
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		issueManager, err := issue.NewIssueManager(mode, annotation)
-		if err != nil {
+		iMan := issue.NewIssueManager(annotation)
+		if err := iMan.Walk(repo.WorkTree); err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		_, err = issueManager.Walk(path)
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		issues := issueManager.GetIssues()
-		if len(issues) > 0 {
-			success := fmt.Sprintf("Found %d issue annotations using %s", len(issues), annotation)
-			fmt.Println(ui.SuccessTextStyle.Render(success))
+		if len(iMan.Issues) > 0 {
+			fmt.Println(ui.SuccessTextStyle.Render(
+				fmt.Sprintf(
+					"Found %d issue annotations using %s",
+					len(iMan.Issues),
+					annotation,
+				),
+			))
 		} else {
 			fmt.Println(ui.SecondaryTextStyle.Render(fmt.Sprintf("%s %s", no_issues, annotation)))
 			return
 		}
 
 		if verbose {
-			issue.PrintIssueDetails(issues, ui.DimTextStyle, ui.PrimaryTextStyle)
+			iMan.Print(ui.DimTextStyle, ui.PrimaryTextStyle)
 		} else {
 			fmt.Println(ui.SecondaryTextStyle.Render(tip_verbose))
 		}
@@ -65,7 +71,7 @@ that reside in your code base.`,
 func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.PENDING_ISSUE, flag_desc_mode)
+	scanCmd.Flags().StringP(flag_mode, shortflag_mode, "pending", flag_desc_mode)
 	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
 }
