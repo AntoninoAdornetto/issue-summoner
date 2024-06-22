@@ -10,13 +10,9 @@ import (
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/AntoninoAdornetto/issue-summoner/v2/git"
 	"github.com/spf13/cobra"
 )
-
-// We only support GitHub, at the moment, but eventually I want to support all that are contained
-// in the `allowedPlatforms` slice.
-var allowedPlatforms = []string{scm.GITHUB, scm.GITLAB, scm.BITBUCKET}
 
 // authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
@@ -29,38 +25,33 @@ var authorizeCmd = &cobra.Command{
 	repo scopes to grant read/write access to code, and issues. 
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
+		var err error
+
 		sourceCodeManager, err := cmd.Flags().GetString("scm")
 		if err != nil {
 			ui.LogFatal(fmt.Errorf("Failed to read 'scm' flag\n%s", err).Error())
 		}
 
-		found := false
-		for _, v := range allowedPlatforms {
-			if found {
-				break
-			}
-			found = v == sourceCodeManager
-		}
-
-		if !found {
-			ui.LogFatal(
-				fmt.Sprintf(
-					"%s is an unsupported source code management platform.\n",
-					sourceCodeManager,
-				),
-			)
-		}
-
-		accessToken, err := scm.ReadAccessToken(sourceCodeManager)
-		if err != nil && !os.IsNotExist(err) {
+		wd, err := os.Getwd()
+		if err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		if accessToken != "" {
+		repo, err := git.NewRepository(wd)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		gitManager, err := git.NewGitManager(sourceCodeManager, repo)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		if gitManager.IsAuthorized() {
 			fmt.Println(
 				ui.PrimaryTextStyle.Render(
 					fmt.Sprintf(
-						"Looks like you are authorized for %s's platform already. Do you want to create a new access token?",
+						"you are authorized for %s for already. Do you want to create a new access token?",
 						sourceCodeManager,
 					),
 				),
@@ -68,7 +59,7 @@ var authorizeCmd = &cobra.Command{
 
 			fmt.Print(
 				ui.PrimaryTextStyle.Italic(true).
-					Render("Type 'y' to continue or type 'n' to cancel the request: "),
+					Render("Type y to create a new token or type n to cancel the request: "),
 			)
 
 			scanner := bufio.NewScanner(os.Stdin)
@@ -80,29 +71,7 @@ var authorizeCmd = &cobra.Command{
 			}
 		}
 
-		spinner := &tea.Program{}
-		go func() {
-			spinner = tea.NewProgram(ui.InitialModelNew("Pending Authorization..."))
-			if _, err := spinner.Run(); err != nil {
-				ui.LogFatal(err.Error())
-			}
-		}()
-
-		gitManager, err := scm.NewGitManager(sourceCodeManager, "", "")
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		err = gitManager.Authorize()
-		if err != nil {
-			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
-				ui.ErrorTextStyle.Render("Error releasing terminal\n%s", releaseErr.Error())
-			}
-			ui.LogFatal(fmt.Errorf("Authorization failed.\n%s", err).Error())
-		}
-
-		err = spinner.ReleaseTerminal()
-		if err != nil {
+		if err := gitManager.Authorize(); err != nil {
 			ui.LogFatal(err.Error())
 		}
 
