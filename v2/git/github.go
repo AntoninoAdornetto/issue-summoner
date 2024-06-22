@@ -190,7 +190,6 @@ func onCreateTokenError(data []byte) createTokenErrorResposne {
 // interval specified at `interval` in `deviceVerificationResponse`. An error is returned
 // if the user does not enter the user code within the alloted time frame
 func (github *githubManager) pollAuthService(res chan createTokenResponse, err chan error) {
-
 	expireTime := time.Now().Add(time.Duration(github.device.ExpiresIn) * time.Second)
 	ticker := time.NewTicker(time.Duration(github.device.Interval+1) * time.Second)
 	defer ticker.Stop()
