@@ -56,6 +56,10 @@ func (iMan *IssueManager) Walk(root string) error {
 	}
 
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
 		if d.IsDir() && strings.HasPrefix(d.Name(), ".") {
 			return filepath.SkipDir
 		}

@@ -135,7 +135,7 @@ func (repo *Repository) handleRepoUrl(val string) error {
 }
 
 func (repo *Repository) extractRepoAndUserName() error {
-	splitBuf := make([]byte, 0, 5)
+	var splitBuf []byte
 
 	switch {
 	case strings.HasPrefix(repo.remoteUrl, "https"):
