@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 )
 
 type sourceCodeManager = string
@@ -20,11 +19,12 @@ type GitManager interface {
 	Authorize() error
 }
 
-type gitAccessToken struct {
-	AccessToken string    `json:"accessToken"`
-	CreatedAt   time.Time `json:"createdAt"`
-	ExpiresAt   time.Time `json:"expiresAt"`
-}
+// @TODO use this once ready for implementation
+// type gitAccessToken struct {
+// 	AccessToken string    `json:"accessToken"`
+// 	CreatedAt   time.Time `json:"createdAt"`
+// 	ExpiresAt   time.Time `json:"expiresAt"`
+// }
 
 func NewGitManager(scm sourceCodeManager, repo *Repository) (GitManager, error) {
 	switch scm {
