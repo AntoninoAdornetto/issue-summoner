@@ -23,7 +23,16 @@ func WriteIssueSummonerConfig(data []byte) error {
 	}
 
 	defer conf.Close()
-	_, err = conf.WriteAt(data, 0)
+
+	if _, err = conf.Seek(0, 0); err != nil {
+		return err
+	}
+
+	if err = conf.Truncate(0); err != nil {
+		return err
+	}
+
+	_, err = conf.Write(data)
 	return err
 }
 
