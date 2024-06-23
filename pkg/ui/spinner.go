@@ -19,7 +19,7 @@ type spinnerModel struct {
 
 func InitialModelNew(str string) spinnerModel {
 	s := spinner.New()
-	s.Spinner = spinner.Line
+	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(AccentTextStyle.GetForeground())
 	return spinnerModel{spinner: s, msg: str}
 }
