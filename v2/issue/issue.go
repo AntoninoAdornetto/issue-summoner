@@ -24,6 +24,7 @@ type Issue struct {
 	ID          string
 	Title       string
 	Description string
+	Environment string
 	FilePath    string
 	FileName    string
 	LineNumber  int
