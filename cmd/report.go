@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"runtime"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
@@ -43,7 +44,7 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		_, err = git.NewGitManager(sourceCodeManager, repo)
+		gitManager, err := git.NewGitManager(sourceCodeManager, repo)
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}
@@ -76,18 +77,53 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		env := runtime.GOOS
-		queue := make([]git.ScmIssue, 0, 5)
-		for i, iss := range iMan.Issues {
-			if selections.Options[iss.ID] {
-				buf := bytes.Buffer{}
-				iss.Environment = env
-				if err := tmpl.Execute(&buf, iss); err != nil {
-					ui.LogFatal(err.Error())
-				}
-				queue = append(queue, git.ScmIssue{Title: iss.Title, Body: buf.String(), Index: i})
+		queue := make([]issue.Issue, 0, len(iMan.Issues))
+		for _, codeIssue := range iMan.Issues {
+			if selections.Options[codeIssue.ID] {
+				queue = append(queue, codeIssue)
 			}
 		}
+
+		reportedChan := make(chan git.ReportedIssue)
+		for i, codeIssue := range queue {
+			go func(item issue.Issue, index int) {
+				buf := bytes.Buffer{}
+				item.Environment = runtime.GOOS
+				_ = tmpl.Execute(&buf, item)
+
+				toReport := git.CodeIssue{Title: item.Title, Body: buf.String(), Index: index}
+				res, err := gitManager.Report(toReport)
+				if err != nil {
+					ui.ErrorTextStyle.Render(
+						fmt.Sprintf("Error: failed to report issue (%s)", item.Title),
+					)
+					return
+				}
+
+				reportedChan <- res
+			}(codeIssue, i)
+		}
+
+		done := make(chan bool)
+		go func() {
+			for range queue {
+				rp := <-reportedChan
+				fmt.Println(rp.Index)
+				fmt.Println(rp.ID)
+			}
+			done <- true
+		}()
+
+		<-done
+		fmt.Println(
+			ui.SuccessTextStyle.Render(
+				fmt.Sprintf(
+					"Reported %d issues to %s successfully\n",
+					len(queue),
+					sourceCodeManager,
+				),
+			),
+		)
 	},
 }
 
