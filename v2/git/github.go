@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,9 +20,41 @@ const (
 )
 
 type githubManager struct {
-	config map[string]IssueSummonerConfig
-	repo   *Repository
-	device deviceVerificationResponse
+	config         map[string]IssueSummonerConfig
+	repo           *Repository
+	device         deviceVerificationResponse
+	issueReqParams *createIssueRequest
+}
+
+func (github *githubManager) Report(issue CodeIssue) (ReportedIssue, error) {
+	var res ReportedIssue
+
+	if github.issueReqParams == nil {
+		params, err := github.prepareReportRequest()
+		if err != nil {
+			return res, err
+		}
+		github.issueReqParams = &params
+	}
+
+	data, err := json.Marshal(issue)
+	if err != nil {
+		return res, err
+	}
+
+	url, headers := github.issueReqParams.url, github.issueReqParams.headers
+	body := bytes.NewBuffer(data)
+	resp, err := makeRequest("POST", url, body, headers)
+	if err != nil {
+		return res, err
+	}
+
+	if err = json.Unmarshal(resp, &res); err != nil {
+		return res, err
+	}
+
+	res.Index = issue.Index
+	return res, nil
 }
 
 type createIssueRequest struct {
