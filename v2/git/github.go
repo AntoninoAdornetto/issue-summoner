@@ -113,8 +113,9 @@ func (github *githubManager) print() error {
 	}
 
 	fmt.Printf(
-		"User Code: %s\n",
+		"Enter User Code: %s at %s\n",
 		github.device.UserCode,
+		github.device.VerificationUri,
 	)
 
 	if err := utils.OpenBrowser(github.device.VerificationUri); err != nil {
