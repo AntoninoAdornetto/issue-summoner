@@ -194,7 +194,6 @@ func (github *githubManager) pollAuthService(res chan createTokenResponse, err c
 	ticker := time.NewTicker(time.Duration(github.device.Interval+1) * time.Second)
 	defer ticker.Stop()
 
-	fmt.Println(expireTime)
 	for {
 		if time.Now().After(expireTime) {
 			err <- errors.New(
