@@ -5,14 +5,13 @@ package cmd
 
 import (
 	"bytes"
-	"fmt"
-	"os"
-	"os/exec"
+	"runtime"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/AntoninoAdornetto/issue-summoner/templates"
+	"github.com/AntoninoAdornetto/issue-summoner/v2/git"
+	"github.com/AntoninoAdornetto/issue-summoner/v2/issue"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
@@ -34,120 +33,61 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		_, err = scm.ReadAccessToken(sourceCodeManager)
+		repo, err := git.NewRepository(path)
 		if err != nil {
-			if os.IsNotExist(err) {
-				ui.LogFatal(
-					"configuration file does not exist. please run <issue-summoner authorize> or see <issue-summoner authorize --help>",
-				)
-			} else {
-				ui.LogFatal(err.Error())
+			ui.LogFatal(err.Error())
+		}
+
+		iMan := issue.NewIssueManager(annotation)
+		if err := iMan.Walk(repo.WorkTree); err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		_, err = git.NewGitManager(sourceCodeManager, repo)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		options := make([]ui.Item, len(iMan.Issues))
+		for i, iss := range iMan.Issues {
+			options[i] = ui.Item{
+				Title: iss.Title,
+				Desc:  iss.Description,
+				ID:    iss.ID,
 			}
-		}
-
-		issueManager, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		_, err = issueManager.Walk(path)
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		issues := issueManager.GetIssues()
-		if len(issues) == 0 {
-			fmt.Println(ui.ErrorTextStyle.Render(no_issues))
-			return
 		}
 
 		selections := ui.Selection{
 			Options: make(map[string]bool),
 		}
 
-		options := make([]ui.Item, len(issues))
-		for i, is := range issues {
-			options[i] = ui.Item{
-				Title: is.Title,
-				Desc:  is.Description,
-				ID:    is.ID,
-			}
-		}
-
 		var quit bool
 		teaProgram := tea.NewProgram(
-			ui.InitialModelMultiSelect(
-				options,
-				&selections,
-				select_issues,
-				&quit,
-			),
+			ui.InitialModelMultiSelect(options, &selections, select_issues, &quit),
 		)
 
 		if _, err := teaProgram.Run(); err != nil {
 			ui.LogFatal(err.Error())
 		}
 
+		// @TODO remove embedded template, no real need for it. Just create an inline template in the v2 issue package
 		tmpl, err := templates.LoadIssueTemplate()
 		if err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		reportQueue := make([]scm.GitIssue, 0)
-		for i, is := range issues {
-			if selections.Options[is.ID] {
-				md, err := is.ExecuteIssueTemplate(tmpl)
-				if err != nil {
+		env := runtime.GOOS
+		queue := make([]git.ScmIssue, 0, 5)
+		for i, iss := range iMan.Issues {
+			if selections.Options[iss.ID] {
+				buf := bytes.Buffer{}
+				iss.Environment = env
+				if err := tmpl.Execute(&buf, iss); err != nil {
 					ui.LogFatal(err.Error())
 				}
-				reportQueue = append(
-					reportQueue,
-					scm.GitIssue{Title: is.Title, Body: string(md), QueueIndex: i},
-				)
+				queue = append(queue, git.ScmIssue{Title: iss.Title, Body: buf.String(), Index: i})
 			}
 		}
-
-		out := bytes.Buffer{}
-		remoteCmd := exec.Command("git", "remote", "-v")
-		remoteCmd.Stdout = &out
-		if err := remoteCmd.Run(); err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		userName, repoName, err := scm.ExtractUserRepoName(out.Bytes())
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		gitManager, err := scm.NewGitManager(sourceCodeManager, userName, repoName)
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		reported := gitManager.Report(reportQueue)
-		for ch := range reported {
-			if err := issueManager.WriteIssueID(ch.ID, ch.QueueIndex); err != nil {
-				ui.LogFatal(err.Error())
-			}
-		}
-
-		if len(reportQueue) == 0 {
-			return
-		}
-
-		fmt.Println(
-			ui.SuccessTextStyle.Render(
-				fmt.Sprintf(
-					"Success! Uploaded %d issue(s) to %s",
-					len(reportQueue),
-					sourceCodeManager,
-				),
-			),
-		)
-
-		fmt.Println(
-			ui.SecondaryTextStyle.Render("make sure to commit and push the annotation updates!"),
-		)
 	},
 }
 
