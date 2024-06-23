@@ -13,6 +13,7 @@ import (
 const (
 	github_base_url     = "https://github.com"
 	github_api_base_url = "https://api.github.com"
+	github_api_version  = "2022-11-28"
 	github_client_id    = "ca711ca70149e4948032"
 	github_grant_type   = "urn:ietf:params:oauth:grant-type:device_code"
 )
@@ -21,6 +22,29 @@ type githubManager struct {
 	config map[string]IssueSummonerConfig
 	repo   *Repository
 	device deviceVerificationResponse
+}
+
+type createIssueRequest struct {
+	url     string
+	headers http.Header
+}
+
+func (github *githubManager) prepareReportRequest() (createIssueRequest, error) {
+	req := createIssueRequest{headers: http.Header{}}
+
+	accessToken := github.config[GITHUB].Auth.AccessToken
+	paths := []string{"repos", github.repo.UserName, github.repo.RepoName, "issues"}
+
+	url, err := buildURL(github_api_base_url, nil, paths...)
+	if err != nil {
+		return req, err
+	}
+
+	req.headers.Add("Accept", "application/vnd.github+json")
+	req.headers.Add("Authorization", "Bearer "+accessToken)
+	req.headers.Add("X-GitHub-Api-Version", github_api_version)
+	req.url = url
+	return req, nil
 }
 
 // @TODO check for other services that can properly validate a bearer/access token versus checking for empty string
