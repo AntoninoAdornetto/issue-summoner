@@ -30,17 +30,16 @@ var (
 type GitManager interface {
 	Authorize() error
 	IsAuthorized() bool
-	Report(issues []ScmIssue) (chan publishedIssue, chan error)
+	Report(issue CodeIssue) (ReportedIssue, error)
 }
 
-type ScmIssue struct {
+type CodeIssue struct {
 	Title string `json:"title"`
 	Body  string `json:"body"`
-	ID    int64
 	Index int
 }
 
-type publishedIssue struct {
+type ReportedIssue struct {
 	ID    int64 `json:"id"`
 	Index int
 }
