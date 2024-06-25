@@ -1,12 +1,15 @@
 package issue
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"text/template"
 
 	ignore "github.com/AntoninoAdornetto/go-gitignore"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
@@ -17,37 +20,67 @@ type IssueManager struct {
 	annotation  string
 	currentPath string
 	currentBase string
+	template    *template.Template
+	os          string
 	Issues      []Issue
 }
 
 type Issue struct {
 	ID          string
 	Title       string
+	Body        string
 	Description string
-	Environment string
+	Environment string // @TODO change Environment to os -> operating system
 	FilePath    string
 	FileName    string
 	LineNumber  int
-	ColStart    int
-	ColEnd      int
+	ColStart    int // not really the column index, a more accurate description is the start byte index
+	ColEnd      int // not really the column index, a more accurate description is the end byte index
 }
 
-func NewIssueManager(annotation string) *IssueManager {
-	return &IssueManager{annotation: annotation, Issues: make([]Issue, 0, 10)}
+func NewIssueManager(annotation string, isReporting bool) (*IssueManager, error) {
+	iMan := &IssueManager{annotation: annotation, Issues: make([]Issue, 0, 10)}
+	if !isReporting {
+		return iMan, nil
+	}
+
+	template, err := generateIssueTemplate()
+	if err != nil {
+		return nil, err
+	}
+
+	iMan.os = runtime.GOOS
+	iMan.template = template
+	return iMan, nil
 }
 
-func (iMan *IssueManager) NewIssue(com lexer.Comment, token lexer.Token) Issue {
+func (iMan *IssueManager) NewIssue(com lexer.Comment, token lexer.Token) (Issue, error) {
 	id := fmt.Sprintf("%s-%d:%d", iMan.currentBase, token.StartByteIndex, token.EndByteIndex)
-	return Issue{
+
+	issue := Issue{
 		ID:          id,
 		Title:       string(com.Title),
 		Description: string(com.Description),
+		Environment: iMan.os,
 		FileName:    iMan.currentBase,
 		FilePath:    iMan.currentPath,
 		LineNumber:  token.Line,
 		ColStart:    token.StartByteIndex,
 		ColEnd:      token.EndByteIndex,
 	}
+
+	// will not be nil if running the scan command. See params to NewIssueManager func
+	if iMan.template == nil {
+		return issue, nil
+	}
+
+	buf := bytes.Buffer{}
+	if err := iMan.template.Execute(&buf, issue); err != nil {
+		return issue, err
+	}
+
+	issue.Body = buf.String()
+	return issue, nil
 }
 
 func (iMan *IssueManager) Walk(root string) error {
@@ -118,12 +151,17 @@ func (iMan *IssueManager) scan(path string) error {
 
 	for _, com := range comments {
 		token := tokens[com.TokenIndex]
-		iMan.Issues = append(iMan.Issues, iMan.NewIssue(com, token))
+		issue, err := iMan.NewIssue(com, token)
+		if err != nil {
+			return err
+		}
+		iMan.Issues = append(iMan.Issues, issue)
 	}
 
 	return nil
 }
 
+// Print is invoked used when the verbose flag is passed to the scan command
 func (iMan *IssueManager) Print(propStyle, valStyle lipgloss.Style) {
 	for _, issue := range iMan.Issues {
 		fmt.Printf("\n\n")
