@@ -4,13 +4,10 @@ Copyright © 2024 AntoninoAdornetto
 package cmd
 
 import (
-	"bytes"
 	"fmt"
-	"runtime"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
-	"github.com/AntoninoAdornetto/issue-summoner/templates"
 	"github.com/AntoninoAdornetto/issue-summoner/v2/git"
 	"github.com/AntoninoAdornetto/issue-summoner/v2/issue"
 	tea "github.com/charmbracelet/bubbletea"
@@ -39,7 +36,11 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		iMan := issue.NewIssueManager(annotation)
+		iMan, err := issue.NewIssueManager(annotation, true)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		if err := iMan.Walk(repo.WorkTree); err != nil {
 			ui.LogFatal(err.Error())
 		}
@@ -71,12 +72,6 @@ platform.`,
 			ui.LogFatal(err.Error())
 		}
 
-		// @TODO remove embedded template, no real need for it. Just create an inline template in the v2 issue package
-		tmpl, err := templates.LoadIssueTemplate()
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
 		queue := make([]issue.Issue, 0, len(iMan.Issues))
 		for _, codeIssue := range iMan.Issues {
 			if selections.Options[codeIssue.ID] {
@@ -87,11 +82,7 @@ platform.`,
 		reportedChan := make(chan git.ReportedIssue)
 		for i, codeIssue := range queue {
 			go func(item issue.Issue, index int) {
-				buf := bytes.Buffer{}
-				item.Environment = runtime.GOOS
-				_ = tmpl.Execute(&buf, item)
-
-				toReport := git.CodeIssue{Title: item.Title, Body: buf.String(), Index: index}
+				toReport := git.CodeIssue{Title: item.Title, Body: item.Body, Index: index}
 				res, err := gitManager.Report(toReport)
 				if err != nil {
 					ui.ErrorTextStyle.Render(
