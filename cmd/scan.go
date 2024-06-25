@@ -42,7 +42,11 @@ that reside in your code base.`,
 			ui.LogFatal(err.Error())
 		}
 
-		iMan := issue.NewIssueManager(annotation)
+		iMan, err := issue.NewIssueManager(annotation, false)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
 		if err := iMan.Walk(repo.WorkTree); err != nil {
 			ui.LogFatal(err.Error())
 		}
