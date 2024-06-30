@@ -8,67 +8,50 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
-// We only support GitHub, at the moment, but eventually I want to support all that are contained
-// in the `allowedPlatforms` slice.
-var allowedPlatforms = []string{scm.GITHUB, scm.GITLAB, scm.BITBUCKET}
-
-// authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
 	Use:   "authorize",
 	Short: "Create access tokens for the source code management platform you want to use for issue creation",
-	Long: `Authorize will help the program create issues for both public and private
-	repositories. Depending on the source code management platform you would like to authorize,
-	we will need to verify your device with scopes that give the program access to opening new 
-	issues. For example, when you Authorize with GitHub, we will need to create an access token with 
-	repo scopes to grant read/write access to code, and issues. 
-	`,
+	Long: `Authorize command is used to create tokens that will allow issue summoner to report issues on your
+	behalf.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sourceCodeManager, err := cmd.Flags().GetString("scm")
+		srcCodeManager, err := cmd.Flags().GetString("scm")
 		if err != nil {
 			ui.LogFatal(fmt.Errorf("Failed to read 'scm' flag\n%s", err).Error())
 		}
 
-		found := false
-		for _, v := range allowedPlatforms {
-			if found {
-				break
-			}
-			found = v == sourceCodeManager
-		}
-
-		if !found {
-			ui.LogFatal(
-				fmt.Sprintf(
-					"%s is an unsupported source code management platform.\n",
-					sourceCodeManager,
-				),
-			)
-		}
-
-		accessToken, err := scm.ReadAccessToken(sourceCodeManager)
-		if err != nil && !os.IsNotExist(err) {
+		wd, err := os.Getwd()
+		if err != nil {
 			ui.LogFatal(err.Error())
 		}
 
-		if accessToken != "" {
+		repo, err := git.NewRepository(wd)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		gitManager, err := git.NewGitManager(srcCodeManager, repo)
+		if err != nil {
+			ui.LogFatal(err.Error())
+		}
+
+		if gitManager.IsAuthorized() {
 			fmt.Println(
 				ui.PrimaryTextStyle.Render(
 					fmt.Sprintf(
-						"Looks like you are authorized for %s's platform already. Do you want to create a new access token?",
-						sourceCodeManager,
+						"you are authorized for %s for already. Do you want to create a new access token?",
+						srcCodeManager,
 					),
 				),
 			)
-
 			fmt.Print(
 				ui.PrimaryTextStyle.Italic(true).
-					Render("Type 'y' to continue or type 'n' to cancel the request: "),
+					Render("Type y to create a new token or type n to cancel the request: "),
 			)
 
 			scanner := bufio.NewScanner(os.Stdin)
@@ -88,27 +71,13 @@ var authorizeCmd = &cobra.Command{
 			}
 		}()
 
-		gitManager, err := scm.NewGitManager(sourceCodeManager, "", "")
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		err = gitManager.Authorize()
-		if err != nil {
-			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
-				ui.ErrorTextStyle.Render("Error releasing terminal\n%s", releaseErr.Error())
-			}
-			ui.LogFatal(fmt.Errorf("Authorization failed.\n%s", err).Error())
-		}
-
-		err = spinner.ReleaseTerminal()
-		if err != nil {
+		if err := gitManager.Authorize(); err != nil {
 			ui.LogFatal(err.Error())
 		}
 
 		fmt.Println(
 			ui.SuccessTextStyle.Render(
-				fmt.Sprintf("Authorization for %s succeeded!", sourceCodeManager),
+				fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager),
 			),
 		)
 	},
@@ -116,5 +85,5 @@ var authorizeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(authorizeCmd)
-	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GITHUB, flag_desc_scm)
+	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, git.GITHUB, flag_desc_scm)
 }
