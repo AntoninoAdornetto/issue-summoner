@@ -30,8 +30,7 @@ func NewLogger(debugIndicator bool) *Logger {
 func (l *Logger) LogFatal(message string) {
 	ts := getTimeStamp()
 	errLog := l.errorStyle.Render(fmt.Sprintf("[ERROR %s]", ts))
-	err := fmt.Sprintf("%s %s", errLog, message)
-	fmt.Fprintf(os.Stderr, err)
+	fmt.Fprintf(os.Stderr, errLog, message)
 
 	if l.debugIndicator {
 		fmt.Printf("\n%s\n", string(debug.Stack()))
