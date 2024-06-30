@@ -17,7 +17,7 @@ type spinnerModel struct {
 	msg     string
 }
 
-func InitialModelNew(str string) spinnerModel {
+func InitSpinner(str string) spinnerModel {
 	s := spinner.New()
 	s.Spinner = spinner.Line
 	s.Style = lipgloss.NewStyle().Foreground(AccentTextStyle.GetForeground())

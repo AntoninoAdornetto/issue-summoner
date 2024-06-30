@@ -10,6 +10,7 @@ import (
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -64,11 +65,27 @@ var authorizeCmd = &cobra.Command{
 			}
 		}
 
+		spinner := tea.NewProgram(
+			ui.InitSpinner(fmt.Sprintf("Pending authorization for %s", srcCodeManager)),
+		)
+
+		go func() {
+			if _, err := spinner.Run(); err != nil {
+				logger.LogFatal(err.Error())
+			}
+		}()
+
 		if err := gitManager.Authorize(); err != nil {
+			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
+				logger.LogFatal(releaseErr.Error())
+			}
 			logger.LogFatal(err.Error())
 		}
 
 		logger.LogSuccess(fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager))
+		if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
+			logger.LogFatal(releaseErr.Error())
+		}
 	},
 }
 
