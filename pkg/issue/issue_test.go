@@ -8,23 +8,17 @@ import (
 )
 
 const (
-	annotation = "@TEST_TODO"
+	test_annotation = "@TEST_TODO"
 )
 
-func TestNewIssueManagerUnsupported(t *testing.T) {
-	im, err := issue.NewIssueManager("unsupported", annotation)
-	require.Errorf(t, err, "Unsupported issue type. Use 'pending' or 'processed'")
-	require.Nil(t, im)
+func TestNewIssueManagerNotReporting(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, false)
+	require.NoError(t, err)
+	require.NotNil(t, manager)
 }
 
-func TestNewIssueManagerPending(t *testing.T) {
-	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+func TestNewIssueManagerReporting(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, true)
 	require.NoError(t, err)
-	require.IsType(t, &issue.PendingIssue{}, im)
-}
-
-func TestNewIssueManagerProcessed(t *testing.T) {
-	im, err := issue.NewIssueManager(issue.PROCESSED_ISSUE, annotation)
-	require.NoError(t, err)
-	require.IsType(t, &issue.ProcessedIssue{}, im)
+	require.NotNil(t, manager)
 }
