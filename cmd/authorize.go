@@ -24,44 +24,35 @@ var authorizeCmd = &cobra.Command{
 
 		srcCodeManager, err := cmd.Flags().GetString("scm")
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		wd, err := os.Getwd()
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		repo, err := git.NewRepository(wd)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		gitManager, err := git.NewGitManager(srcCodeManager, repo)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		if gitManager.IsAuthorized() {
-			msg := fmt.Sprintf(
-				"you are authorized for %s for already. Do you want to create a new access token?",
-				srcCodeManager,
-			)
-
-			logger.LogWarning(msg)
-
-			// can't use logger for below message, need to scan input from the user
-			fmt.Print(
-				ui.NoteTextStyle.Italic(true).
-					Render("Type y to create a new token or type n to cancel the request: "),
-			)
+			logger.Warning(fmt.Sprintf("You are authorized for %s already", srcCodeManager))
+			logger.PrintStdout("Do you want to create a new access token? (y/n): ")
 
 			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
 			proceed := scanner.Text()
 			fmt.Printf("\n\n")
+
 			if proceed != "y" {
-				logger.LogFatal("Authorization process aborted")
+				logger.Fatal("Authorization process aborted")
 			}
 		}
 
@@ -71,20 +62,20 @@ var authorizeCmd = &cobra.Command{
 
 		go func() {
 			if _, err := spinner.Run(); err != nil {
-				logger.LogFatal(err.Error())
+				logger.Fatal(err.Error())
 			}
 		}()
 
 		if err := gitManager.Authorize(); err != nil {
 			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
-				logger.LogFatal(releaseErr.Error())
+				logger.Fatal(releaseErr.Error())
 			}
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		logger.LogSuccess(fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager))
+		logger.Success(fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager))
 		if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
-			logger.LogFatal(releaseErr.Error())
+			logger.Fatal(releaseErr.Error())
 		}
 	},
 }

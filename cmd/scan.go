@@ -29,27 +29,27 @@ that reside in your code base.`,
 
 		verbose, err := cmd.Flags().GetBool(flag_verbose)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		mode, err := cmd.Flags().GetString(flag_mode)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		repo, err := git.NewRepository(path)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		manager, err := issue.NewIssueManager(annotation, mode, false)
 		if err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 
 		}
 
 		if err := manager.Walk(repo.WorkTree); err != nil {
-			logger.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		if len(manager.Issues) == 0 {
@@ -66,10 +66,10 @@ that reside in your code base.`,
 		fmt.Printf("\n")
 		if verbose {
 			manager.Print(ui.DimTextStyle, ui.PrimaryTextStyle)
-			logger.LogSuccess(msg)
+			logger.Success(msg)
 		} else {
-			logger.LogSuccess(msg)
-			logger.LogTip(tip_verbose)
+			logger.Success(msg)
+			logger.Hint(tip_verbose)
 		}
 	},
 }
