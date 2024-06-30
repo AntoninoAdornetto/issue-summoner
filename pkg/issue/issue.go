@@ -1,8 +1,12 @@
 package issue
 
 import (
+	"bytes"
+	"fmt"
 	"runtime"
 	"text/template"
+
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/lexer"
 )
 
 type IssueManager struct {
@@ -43,4 +47,34 @@ func NewIssueManager(annotation string, isReporting bool) (*IssueManager, error)
 	manager.os = runtime.GOOS
 	manager.template = tmpl
 	return manager, nil
+}
+
+func (manager *IssueManager) NewIssue(cmnt lexer.Comment, token lexer.Token) (Issue, error) {
+	id := fmt.Sprintf("%s-%d:%d", manager.CurrentPath, token.StartByteIndex, token.EndByteIndex)
+
+	issue := Issue{
+		ID:          id,
+		Title:       string(cmnt.Title),
+		Description: string(cmnt.Description),
+		OS:          manager.os,
+		FileName:    manager.CurrentBase,
+		FilePath:    manager.CurrentPath,
+		LineNumber:  token.Line,
+		StartIndex:  token.StartByteIndex,
+		EndIndex:    token.EndByteIndex,
+		IssueIndex:  manager.RecordCount,
+	}
+
+	if manager.template == nil {
+		return issue, nil
+	}
+
+	buf := bytes.Buffer{}
+	if err := manager.template.Execute(&buf, issue); err != nil {
+		return issue, err
+	}
+
+	manager.RecordCount++
+	issue.Body = buf.String()
+	return issue, nil
 }
