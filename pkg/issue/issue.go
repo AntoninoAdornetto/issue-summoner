@@ -7,12 +7,12 @@ import (
 
 type IssueManager struct {
 	Issues      []Issue
+	CurrentPath string
+	CurrentBase string
+	RecordCount int
 	annotation  string
-	currentPath string
-	currentBase string
 	template    *template.Template
 	os          string
-	recordCount int
 }
 
 type Issue struct {
@@ -22,6 +22,7 @@ type Issue struct {
 	Description string
 	FilePath    string
 	FileName    string
+	OS          string
 	LineNumber  int
 	IssueIndex  int
 	StartIndex  int
