@@ -1,6 +1,7 @@
 package issue_test
 
 import (
+	"runtime"
 	"testing"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
@@ -12,14 +13,14 @@ const (
 	test_annotation = "@TEST_TODO"
 )
 
-func TestNewIssueManagerNotReporting(t *testing.T) {
-	manager, err := issue.NewIssueManager(test_annotation, false)
+func TestNewIssueManagerNotReportingPendMode(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, false)
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 }
 
-func TestNewIssueManagerReporting(t *testing.T) {
-	manager, err := issue.NewIssueManager(test_annotation, true)
+func TestNewIssueManagerReportingPendMode(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, true)
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 }
@@ -100,7 +101,7 @@ func TestNewIssue(t *testing.T) {
 }
 
 func TestNewIssueWithTemplate(t *testing.T) {
-	manager, err := issue.NewIssueManager(test_annotation, true)
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, true)
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 
@@ -139,4 +140,81 @@ func TestNewIssueWithTemplate(t *testing.T) {
 	actual, err := manager.NewIssue(comment, token)
 	require.NoError(t, err)
 	require.Equal(t, expected, actual)
+}
+
+func TestScanPendMode(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, false)
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	require.NoError(t, err)
+
+	// actual implementation will use abs paths and not relative
+	manager.CurrentPath = "../../testdata/test.c"
+	manager.CurrentBase = "test.c"
+
+	err = manager.Scan("../../testdata/test.c")
+	require.NoError(t, err)
+
+	os := runtime.GOOS
+
+	// see test.c in the testdata directory for how the file looks prior
+	// to scanning. The file contains c source code with comments that
+	// are parsed. All comments that are annotated with @TEST_TODO should
+	// appear in the expected slice. Also, wanted to mention that the
+	// paths shown in ID & FilePath are not how they normally look. I am
+	// using relative paths for tests so that you guys can't see the name
+	// of my directories :)
+	expected := []issue.Issue{
+		{
+			ID:          "../../testdata/test.c-62:95",
+			Title:       "inline comment #1",
+			Description: "",
+			LineNumber:  5,
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			StartIndex:  62,
+			EndIndex:    95,
+			IssueIndex:  0,
+			OS:          os,
+		},
+		{
+			ID:          "../../testdata/test.c-115:148",
+			Title:       "inline comment #2",
+			Description: "",
+			LineNumber:  6,
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			StartIndex:  115,
+			EndIndex:    148,
+			IssueIndex:  1,
+			OS:          os,
+		},
+		{
+			ID:          "../../testdata/test.c-192:252",
+			Title:       "decode the message and clean up after yourself!",
+			Description: "",
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			LineNumber:  10,
+			StartIndex:  192,
+			EndIndex:    252,
+			IssueIndex:  2,
+			OS:          os,
+		},
+		{
+			ID:          "../../testdata/test.c-269:561",
+			Title:       "drop a star if you know about this code wars challenge",
+			Description: "Digital Cypher assigns to each letter of the alphabet unique number. Instead of letters in encrypted word we write the corresponding number Then we add to each obtained digit consecutive digits from the key",
+			FileName:    "test.c",
+			FilePath:    "../../testdata/test.c",
+			LineNumber:  19,
+			StartIndex:  269,
+			EndIndex:    561,
+			IssueIndex:  3,
+			OS:          os,
+		},
+	}
+
+	require.Equal(t, expected, manager.Issues)
 }
