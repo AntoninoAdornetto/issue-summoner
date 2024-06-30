@@ -18,7 +18,7 @@ var (
 
 ### Environment
 
-{{ .Environment }}
+{{ .OS }}
 
 ### Generated with :heart:
 

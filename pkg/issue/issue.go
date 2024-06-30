@@ -17,6 +17,7 @@ type IssueManager struct {
 	annotation  string
 	template    *template.Template
 	os          string
+	os              string
 }
 
 type Issue struct {
@@ -36,6 +37,7 @@ type Issue struct {
 func NewIssueManager(annotation string, isReporting bool) (*IssueManager, error) {
 	manager := &IssueManager{annotation: annotation, Issues: make([]Issue, 0, 10)}
 	if !isReporting {
+		os:              runtime.GOOS,
 		return manager, nil
 	}
 
