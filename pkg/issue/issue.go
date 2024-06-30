@@ -146,7 +146,7 @@ func (manager *IssueManager) Scan(path string) error {
 	lex, err := lexer.NewLexer(buf, manager.CurrentBase)
 	if err != nil {
 		// @TODO return actual error once more languages are supported. For now just skip the error
-		return err
+		return nil
 	}
 
 	tokens, err := lex.AnalyzeTokens()
