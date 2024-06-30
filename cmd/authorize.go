@@ -10,7 +10,6 @@ import (
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
 
@@ -62,14 +61,6 @@ var authorizeCmd = &cobra.Command{
 				ui.LogFatal("Authorization process aborted")
 			}
 		}
-
-		spinner := &tea.Program{}
-		go func() {
-			spinner = tea.NewProgram(ui.InitialModelNew("Pending Authorization..."))
-			if _, err := spinner.Run(); err != nil {
-				ui.LogFatal(err.Error())
-			}
-		}()
 
 		if err := gitManager.Authorize(); err != nil {
 			ui.LogFatal(err.Error())
