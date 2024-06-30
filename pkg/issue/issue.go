@@ -7,29 +7,29 @@ import (
 	"text/template"
 )
 
-const (
-	PENDING_ISSUE   = "pending"
-	PROCESSED_ISSUE = "processed"
-)
+type IssueManager struct {
+	Issues      []Issue
+	annotation  string
+	currentPath string
+	currentBase string
+	template    *template.Template
+	os          string
+	recordCount int
+}
 
 type Issue struct {
 	ID          string
 	Title       string
+	Body        string
 	Description string
 	FilePath    string
 	FileName    string
 	LineNumber  int
-	Environment string
+	IssueIndex  int
 	StartIndex  int
 	EndIndex    int
 }
 
-type IssueManager interface {
-	GetIssues() []Issue
-	Scan(src []byte, path string) error
-	Walk(root string) (int, error)
-	WriteIssueID(id int64, issueIndex int) error
-}
 
 // NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
 // that satisfies the methods defined in the IssueManager interface. The methods in
