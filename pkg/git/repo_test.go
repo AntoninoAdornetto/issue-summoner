@@ -1,10 +1,10 @@
-package scm_test
+package git_test
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/stretchr/testify/require"
 )
 
@@ -12,7 +12,7 @@ func TestNewRepositoryWorkDirPath(t *testing.T) {
 	path, err := filepath.Abs("../../")
 	require.NoError(t, err)
 
-	actual, err := scm.NewRepository(path)
+	actual, err := git.NewRepository(path)
 	require.NoError(t, err)
 	require.NotNil(t, actual)
 
