@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
 )
@@ -18,6 +17,7 @@ const (
 	flag_path            = "path"
 	flag_mode            = "mode"
 	flag_scm             = "scm"
+	flag_debug           = "debug"
 	flag_verbose         = "verbose"
 	flag_annotation      = "annotation"
 	shortflag_path       = "p"
@@ -25,38 +25,44 @@ const (
 	shortflag_mode       = "m"
 	shortflag_verbose    = "v"
 	shortflag_annotation = "a"
+	shortflag_debug      = "d"
 	flag_desc_path       = "the path to your local git repository"
 	flag_desc_scm        = "The source code management platform you would like to use. Such as, github, gitlab, or bitbucket"
 	flag_desc_mode       = "'processed' is for issues that have already been pushed to a scm. 'pending' is for issues that have not yet been published"
 	flag_desc_verbose    = "log detailed information about each issue annotation that is located during the scan"
 	flag_desc_annotation = "The issue annotation to search for. Example: @TODO:"
+	flag_desc_debug      = "Log the stack trace when errors occur"
 )
 
-// both the scan and report command will use similar flags
-func handleCommonFlags(cmd *cobra.Command) (annotation string, path string) {
+func getCommonFlags(cmd *cobra.Command) (annotation string, path string) {
 	var err error
+
 	annotation, err = cmd.Flags().GetString(flag_annotation)
 	if err != nil {
-		ui.LogFatal(err.Error())
+		cobra.CheckErr(err)
 	}
 
 	path, err = cmd.Flags().GetString(flag_path)
 	if err != nil {
-		ui.LogFatal(err.Error())
+		cobra.CheckErr(err)
 	}
 
 	if path == "" {
 		wd, err := os.Getwd()
 		if err != nil {
-			ui.LogFatal(err.Error())
+			cobra.CheckErr(err)
 		}
 		path = wd
 	}
 
-	repo, err := scm.FindRepository(path)
+	return annotation, path
+}
+
+func getLogger(cmd *cobra.Command) (logger *ui.Logger) {
+	debugIndicator, err := cmd.Flags().GetBool(flag_debug)
 	if err != nil {
-		ui.LogFatal(err.Error())
+		cobra.CheckErr(err)
 	}
 
-	return annotation, repo.WorkTree
+	return ui.NewLogger(debugIndicator)
 }
