@@ -1,8 +1,6 @@
 package issue
 
 import (
-	"bytes"
-	"errors"
 	"runtime"
 	"text/template"
 )
@@ -30,29 +28,18 @@ type Issue struct {
 	EndIndex    int
 }
 
-
-// NewIssueManager will return either a PendingIssue struct or ProcessedIssue struct
-// that satisfies the methods defined in the IssueManager interface. The methods in
-// said interface are used to report new issues an SCM or locate issues that have been
-// reported to an SCM. Each struct will implement methods for walking the project directory
-// and parsing source code files. The main difference is that pending issues will have an
-// annotation with no id, since they haven't been pushed to an scm yet, and processed issues
-// will have their original annotation plus an id so they can be located and removed from the
-// source code file at a later time.
-func NewIssueManager(issueType string, annotation string) (IssueManager, error) {
-	switch issueType {
-	case PENDING_ISSUE:
-		return &PendingIssue{Annotation: annotation}, nil
-	case PROCESSED_ISSUE:
-		return &ProcessedIssue{Annotation: annotation}, nil
-	default:
-		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
+func NewIssueManager(annotation string, isReporting bool) (*IssueManager, error) {
+	manager := &IssueManager{annotation: annotation, Issues: make([]Issue, 0, 10)}
+	if !isReporting {
+		return manager, nil
 	}
-}
 
-func (issue *Issue) ExecuteIssueTemplate(tmpl *template.Template) ([]byte, error) {
-	buf := bytes.Buffer{}
-	issue.Environment = runtime.GOOS
-	err := tmpl.Execute(&buf, issue)
-	return buf.Bytes(), err
+	tmpl, err := generateIssueTemplate()
+	if err != nil {
+		return nil, err
+	}
+
+	manager.os = runtime.GOOS
+	manager.template = tmpl
+	return manager, nil
 }
