@@ -25,21 +25,27 @@ func BuildURL(base string, queryParams map[string]string, paths ...string) (stri
 	return u, nil
 }
 
-func MakeRequest(method, url string, body io.Reader, h http.Header) ([]byte, error) {
+// executes an http request and returns unmarshalled resp body data,
+// a pointer to the http response object and an error
+func MakeRequest(
+	method, url string,
+	body io.Reader,
+	h http.Header,
+) (*http.Response, []byte, error) {
 	var res []byte
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return res, err
+		return nil, res, err
 	}
 
 	req.Header = h
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return res, err
+		return nil, res, err
 	}
 
 	defer resp.Body.Close()
-	res, err = io.ReadAll(resp.Body)
-	return res, err
+	data, err := io.ReadAll(resp.Body)
+	return resp, data, nil
 }
