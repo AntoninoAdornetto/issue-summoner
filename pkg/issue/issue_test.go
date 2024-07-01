@@ -165,7 +165,7 @@ func TestScanPendMode(t *testing.T) {
 	// paths shown in ID & FilePath are not how they normally look. I am
 	// using relative paths for tests so that you guys can't see the name
 	// of my directories :)
-	expected := []issue.Issue{
+	expectedIssues := []issue.Issue{
 		{
 			ID:          "../../testdata/test.c-62:95",
 			Title:       "inline comment #1",
@@ -216,5 +216,21 @@ func TestScanPendMode(t *testing.T) {
 		},
 	}
 
-	require.Equal(t, expected, manager.Issues)
+	expectedIssueManager := &issue.IssueManager{
+		Issues:      expectedIssues,
+		CurrentPath: "../../testdata/test.c",
+		CurrentBase: "test.c",
+		RecordCount: len(expectedIssues),
+		ReportMap: map[string][]issue.Issue{
+			"../../testdata/test.c": expectedIssues,
+		},
+	}
+
+	require.Equal(t, expectedIssues, manager.Issues)
+	require.Equal(t, expectedIssueManager.Issues, manager.Issues)
+	require.Equal(t, expectedIssueManager.ReportMap, manager.ReportMap)
+	require.Equal(t, expectedIssueManager.CurrentBase, manager.CurrentBase)
+	require.Equal(t, expectedIssueManager.CurrentPath, manager.CurrentPath)
+	require.Equal(t, expectedIssueManager.ReportMap, manager.ReportMap)
+	require.Equal(t, expectedIssueManager.RecordCount, manager.RecordCount)
 }
