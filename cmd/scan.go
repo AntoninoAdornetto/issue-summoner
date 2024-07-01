@@ -37,6 +37,8 @@ that reside in your code base.`,
 			logger.Fatal(err.Error())
 		}
 
+		logger.Log(fmt.Sprintf("Scanning for comments with %s annotation", annotation))
+
 		repo, err := git.NewRepository(path)
 		if err != nil {
 			logger.Fatal(err.Error())
@@ -45,7 +47,6 @@ that reside in your code base.`,
 		manager, err := issue.NewIssueManager(annotation, mode, false)
 		if err != nil {
 			logger.Fatal(err.Error())
-
 		}
 
 		if err := manager.Walk(repo.WorkTree); err != nil {
@@ -63,7 +64,6 @@ that reside in your code base.`,
 			annotation,
 		)
 
-		fmt.Printf("\n")
 		if verbose {
 			manager.Print(ui.DimTextStyle, ui.PrimaryTextStyle)
 			logger.Success(msg)
