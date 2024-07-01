@@ -28,6 +28,7 @@ type IssueManager struct {
 	CurrentPath     string
 	CurrentBase     string
 	RecordCount     int
+	ReportMap       map[string][]Issue
 	annotation      string
 	reportIndicator bool
 	mode            IssueMode
@@ -53,6 +54,7 @@ func NewIssueManager(annotation string, mode IssueMode, report bool) (*IssueMana
 	manager := &IssueManager{
 		annotation:      annotation,
 		Issues:          make([]Issue, 0, 10),
+		ReportMap:       make(map[string][]Issue),
 		reportIndicator: report,
 		os:              runtime.GOOS,
 		mode:            mode,
@@ -161,12 +163,18 @@ func (manager *IssueManager) Scan(path string) error {
 
 	for _, comment := range comments {
 		token := tokens[comment.TokenIndex]
-		if _, err := manager.NewIssue(comment, token); err != nil {
+		newIssue, err := manager.NewIssue(comment, token)
+		if err != nil {
 			return err
 		}
+		manager.appendReportMap(newIssue)
 	}
 
 	return nil
+}
+
+func (manager *IssueManager) appendReportMap(issue Issue) {
+	manager.ReportMap[issue.FilePath] = append(manager.ReportMap[issue.FilePath], issue)
 }
 
 func (manager *IssueManager) Print(propertyStyle, valueStyle lipgloss.Style) {
