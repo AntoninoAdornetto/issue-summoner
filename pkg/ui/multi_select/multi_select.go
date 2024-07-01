@@ -2,6 +2,7 @@ package multiselect
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	tea "github.com/charmbracelet/bubbletea"
@@ -58,7 +59,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c", "q", "esc":
 			*m.exit = true
 			return m, tea.Quit
 		case "up", "k":
@@ -88,7 +89,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := m.header + "\n\n"
+	s := strings.Builder{}
+	s.WriteString(m.header + "\n\n")
 
 	for i, option := range m.options {
 		cursor := " "
@@ -106,9 +108,24 @@ func (m model) View() string {
 		title := ui.DimTextStyle.Render(option.Title)
 		description := ui.DimTextStyle.Render(option.Desc)
 
-		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, description)
+		s.WriteString(fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, description))
 	}
 
-	s += fmt.Sprintf("Press %s to confirm choice.\n", ui.AccentTextStyle.Render("y"))
-	return s
+	s.WriteString(ui.AccentTextStyle.Render("\u2191 "))
+	s.WriteString("or ")
+	s.WriteString(ui.AccentTextStyle.Render("k "))
+	s.WriteString("= move up list")
+
+	s.WriteString(ui.AccentTextStyle.Render("\n\u2193 "))
+	s.WriteString("or ")
+	s.WriteString(ui.AccentTextStyle.Render("j "))
+	s.WriteString("= move down list")
+
+	s.WriteString(ui.AccentTextStyle.Render("\nspace "))
+	s.WriteString("= select/deselect")
+
+	s.WriteString(ui.AccentTextStyle.Render("\ny "))
+	s.WriteString("= confirm choices\n")
+
+	return s.String()
 }
