@@ -13,7 +13,7 @@ const (
 	found_issues         = "Number of issues found: "
 	select_issues        = "Select the issues you wish to report"
 	issue_template_path  = "./templates/issue.tmpl"
-	tip_verbose          = "Tip: run issue-summoner scan -v (verbose) for more details about the tag annotations that were found"
+	tip_verbose          = "run issue-summoner scan -v (verbose) for more details about the tag annotations that were found"
 	flag_path            = "path"
 	flag_mode            = "mode"
 	flag_scm             = "scm"
