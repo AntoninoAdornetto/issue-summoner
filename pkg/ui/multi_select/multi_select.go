@@ -1,8 +1,9 @@
-package ui
+package multiselect
 
 import (
 	"fmt"
 
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -48,7 +49,7 @@ func InitialModelMultiSelect(
 		options:  options,
 		selected: make(map[int]struct{}),
 		choices:  selection,
-		header:   AccentTextStyle.Render(header),
+		header:   ui.AccentTextStyle.Render(header),
 		exit:     program,
 	}
 }
@@ -92,22 +93,22 @@ func (m model) View() string {
 	for i, option := range m.options {
 		cursor := " "
 		if m.cursor == i {
-			cursor = SuccessTextStyle.Render(">")
-			option.Title = PrimaryTextStyle.Render(option.Title)
-			option.Desc = PrimaryTextStyle.Render(option.Desc)
+			cursor = ui.SuccessTextStyle.Render(">")
+			option.Title = ui.PrimaryTextStyle.Render(option.Title)
+			option.Desc = ui.PrimaryTextStyle.Render(option.Desc)
 		}
 
 		checked := " "
 		if _, ok := m.selected[i]; ok {
-			checked = SecondaryTextStyle.Render("*")
+			checked = ui.SecondaryTextStyle.Render("*")
 		}
 
-		title := DimTextStyle.Render(option.Title)
-		description := DimTextStyle.Render(option.Desc)
+		title := ui.DimTextStyle.Render(option.Title)
+		description := ui.DimTextStyle.Render(option.Desc)
 
 		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, description)
 	}
 
-	s += fmt.Sprintf("Press %s to confirm choice.\n", AccentTextStyle.Render("y"))
+	s += fmt.Sprintf("Press %s to confirm choice.\n", ui.AccentTextStyle.Render("y"))
 	return s
 }
