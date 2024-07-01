@@ -7,9 +7,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
@@ -49,34 +50,39 @@ var authorizeCmd = &cobra.Command{
 			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
 			proceed := scanner.Text()
-			fmt.Printf("\n\n")
-
+			fmt.Printf("\n")
 			if proceed != "y" {
 				logger.Fatal("Authorization process aborted")
 			}
 		}
 
 		spinner := tea.NewProgram(
-			ui.InitSpinner(fmt.Sprintf("Pending authorization for %s", srcCodeManager)),
+			spinner.InitialModelNew(fmt.Sprintf("Pending %s authentication", srcCodeManager)),
 		)
 
+		defer func() {
+			if err := spinner.ReleaseTerminal(); err != nil {
+				logger.Fatal(err.Error())
+			}
+		}()
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			if _, err := spinner.Run(); err != nil {
 				logger.Fatal(err.Error())
 			}
 		}()
 
 		if err := gitManager.Authorize(); err != nil {
-			if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
+			if releaseErr := spinner.ReleaseTerminal(); err != nil {
 				logger.Fatal(releaseErr.Error())
 			}
 			logger.Fatal(err.Error())
 		}
 
 		logger.Success(fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager))
-		if releaseErr := spinner.ReleaseTerminal(); releaseErr != nil {
-			logger.Fatal(releaseErr.Error())
-		}
 	},
 }
 
