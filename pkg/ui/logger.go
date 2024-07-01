@@ -11,9 +11,10 @@ import (
 
 const (
 	warn_level    = "[WARNING %s]"
-	fatal_level   = "[ERROR %s]"
+	fatal_level   = "[ERROR   %s]"
 	success_level = "[SUCCESS %s]"
-	hint_level    = "[HINT %s]"
+	hint_level    = "[HINT    %s]"
+	info_level    = "[INFO    %s]"
 )
 
 type Logger struct {
@@ -21,7 +22,7 @@ type Logger struct {
 	successStyle   lipgloss.Style
 	warningStyle   lipgloss.Style
 	hintStyle      lipgloss.Style
-	standardStyle  lipgloss.Style
+	infoStyle      lipgloss.Style
 	debugIndicator bool
 }
 
@@ -31,7 +32,7 @@ func NewLogger(debugIndicator bool) *Logger {
 		successStyle:   SuccessTextStyle,
 		warningStyle:   NoteTextStyle,
 		hintStyle:      SecondaryTextStyle,
-		standardStyle:  PrimaryTextStyle,
+		infoStyle:      DimTextStyle,
 		debugIndicator: debugIndicator,
 	}
 }
@@ -64,6 +65,11 @@ func (l *Logger) Hint(message string) {
 
 func (l *Logger) Print(message string) {
 	fmt.Println(message)
+}
+
+func (l *Logger) Log(message string) {
+	level := l.infoStyle.Render(fmt.Sprintf(info_level, getTimeStamp()))
+	fmt.Printf("%s %s\n", level, message)
 }
 
 func (l *Logger) PrintStdout(message string) {
