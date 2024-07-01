@@ -37,7 +37,7 @@ that reside in your code base.`,
 			logger.Fatal(err.Error())
 		}
 
-		logger.Log(fmt.Sprintf("Scanning for comments with %s annotation", annotation))
+		logger.Info(fmt.Sprintf("Scanning for comments with %s annotation", annotation))
 
 		repo, err := git.NewRepository(path)
 		if err != nil {

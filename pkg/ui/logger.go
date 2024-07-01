@@ -67,7 +67,7 @@ func (l *Logger) Print(message string) {
 	fmt.Println(message)
 }
 
-func (l *Logger) Log(message string) {
+func (l *Logger) Info(message string) {
 	level := l.infoStyle.Render(fmt.Sprintf(info_level, getTimeStamp()))
 	fmt.Printf("%s %s\n", level, message)
 }
