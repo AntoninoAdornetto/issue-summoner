@@ -1,6 +1,7 @@
 package git
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,13 +20,111 @@ const (
 )
 
 type githubManager struct {
-	config map[string]utils.IssueSummonerConfig
-	repo   *Repository
-	device deviceVerificationResponse
+	config       map[string]utils.IssueSummonerConfig
+	repo         *Repository
+	device       deviceVerificationResponse
+	reportParams *createIssueRequest
 }
 
-func (ghub *githubManager) Report(issue CodeIssue) (ReportedIssue, error) {
-	return ReportedIssue{}, nil
+func (ghub *githubManager) Report(req ReportRequest, res chan ReportResponse) {
+	result := ReportResponse{Index: req.Index}
+
+	if ghub.reportParams == nil {
+		params, err := ghub.prepareReportRequest()
+		if err != nil {
+			result.Err = err
+			res <- result
+			return
+		}
+		ghub.reportParams = &params
+	}
+
+	data, err := json.Marshal(req)
+	if err != nil {
+		result.Err = err
+		res <- result
+		return
+	}
+
+	url, headers := ghub.reportParams.url, ghub.reportParams.headers
+	body := bytes.NewBuffer(data)
+
+	resp, data, err := utils.MakeRequest("POST", url, body, headers)
+	if err != nil {
+		result.Err = err
+		res <- result
+		return
+	}
+
+	if resp.StatusCode != 201 {
+		err := handleCreateIssueErr(data, resp.StatusCode, req.Title)
+		result.Err = err
+		res <- result
+		return
+	}
+
+	if err := json.Unmarshal(data, &result); err != nil {
+		result.Err = err
+		res <- result
+		return
+	}
+
+	res <- result
+}
+
+type createIssueRequest struct {
+	url     string
+	headers http.Header
+}
+
+func (ghub *githubManager) prepareReportRequest() (createIssueRequest, error) {
+	req := createIssueRequest{headers: http.Header{}}
+
+	accessToken := ghub.config[GITHUB].Auth.AccessToken
+	paths := []string{"repos", ghub.repo.UserName, ghub.repo.RepoName, "issues"}
+
+	url, err := utils.BuildURL(github_api_base_url, nil, paths...)
+	if err != nil {
+		return req, err
+	}
+
+	req.headers.Add("Accept", "application/vnd.github+json")
+	req.headers.Add("Authorization", "Bearer "+accessToken)
+	req.headers.Add("X-GitHub-Api-Version", github_api_version)
+	req.url = url
+	return req, nil
+}
+
+type createIssueErrorResponse struct {
+	Message string `json:"message"`
+}
+
+func handleCreateIssueErr(data []byte, statusCode int, title string) error {
+	var res createIssueErrorResponse
+	err := json.Unmarshal(data, &res)
+	if err != nil {
+		return fmt.Errorf(
+			"failed to create issue <%s> with status code: %d\terror: %s",
+			title,
+			statusCode,
+			err.Error(),
+		)
+	}
+
+	if statusCode == 404 {
+		return fmt.Errorf(
+			"failed to create issue <%s> with status code: %d\terror: check that you are authorized to report issues. <issue-summoner authorize> command",
+			title,
+			statusCode,
+		)
+	}
+
+	return fmt.Errorf(
+		"failed to create issue <%s> with status code: %d\terror: %s",
+		title,
+		statusCode,
+		res.Message,
+	)
 }
 
 func (ghub *githubManager) Authorize() error {
@@ -100,12 +199,12 @@ func requestDeviceVerification() (deviceVerificationResponse, error) {
 		return res, err
 	}
 
-	resp, err := utils.MakeRequest("POST", url, nil, headers)
+	_, data, err := utils.MakeRequest("POST", url, nil, headers)
 	if err != nil {
 		return res, err
 	}
 
-	if err = json.Unmarshal(resp, &res); err != nil {
+	if err = json.Unmarshal(data, &res); err != nil {
 		return res, err
 	}
 
@@ -138,16 +237,16 @@ func (ghub *githubManager) createToken() (createTokenResponse, error) {
 		return res, err
 	}
 
-	resp, err := utils.MakeRequest("POST", url, nil, headers)
+	_, data, err := utils.MakeRequest("POST", url, nil, headers)
 	if err != nil {
 		return res, err
 	}
 
-	if createTokenErr := onCreateTokenError(resp); createTokenErr.Error != "" {
+	if createTokenErr := onCreateTokenError(data); createTokenErr.Error != "" {
 		return res, errors.New(createTokenErr.ErrorDesc)
 	}
 
-	if err = json.Unmarshal(resp, &res); err != nil {
+	if err = json.Unmarshal(data, &res); err != nil {
 		return res, err
 	}
 
