@@ -333,15 +333,15 @@ func TestScanPendModeWithReporting(t *testing.T) {
 
 func TestConsolidateMap(t *testing.T) {
 	issueManager := issue.IssueManager{
-		ReportMap: map[string][]*issue.Issue{
+		ReportMap: map[string][]issue.Issue{
 			"../../testdata/test.c": {
-				&issue.Issue{Title: "Submission 1", SubmissionID: -1},
-				&issue.Issue{Title: "Submission 2", SubmissionID: -1},
-				&issue.Issue{Title: "Submission 3", SubmissionID: 8912},
-				&issue.Issue{Title: "Submission 4", SubmissionID: -1},
-				&issue.Issue{Title: "Submission 5", SubmissionID: 83234},
-				&issue.Issue{Title: "Submission 6", SubmissionID: -1},
-				&issue.Issue{Title: "Submission 7", SubmissionID: 100},
+				issue.Issue{Title: "Submission 1", SubmissionID: -1},
+				issue.Issue{Title: "Submission 2", SubmissionID: -1},
+				issue.Issue{Title: "Submission 3", SubmissionID: 8912},
+				issue.Issue{Title: "Submission 4", SubmissionID: -1},
+				issue.Issue{Title: "Submission 5", SubmissionID: 83234},
+				issue.Issue{Title: "Submission 6", SubmissionID: -1},
+				issue.Issue{Title: "Submission 7", SubmissionID: 100},
 			},
 		},
 	}
