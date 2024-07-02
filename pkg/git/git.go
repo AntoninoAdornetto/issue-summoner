@@ -19,18 +19,19 @@ const (
 type GitManager interface {
 	Authorize() error
 	IsAuthorized() bool
-	Report(issue CodeIssue) (ReportedIssue, error)
+	Report(req ReportRequest, res chan ReportResponse)
 }
 
-type CodeIssue struct {
+type ReportRequest struct {
 	Title string `json:"title"`
 	Body  string `json:"body"`
-	Index int    // @TODO do we need the index field on CodeIssue struct?
+	Index int
 }
 
-type ReportedIssue struct {
+type ReportResponse struct {
 	ID    int64 `json:"id"`
-	Index int   // @TODO would the ReportedIssue index be sufficient in replacing CodeIssue index property?
+	Index int
+	Err   error
 }
 
 // NewGitManager allows each source code management platform to support the methods in the GitManager
