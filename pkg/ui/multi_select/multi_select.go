@@ -20,10 +20,11 @@ type Step struct {
 }
 
 type Item struct {
-	ID, Title, Desc string
+	ID          int
+	Title, Desc string
 }
 
-func (s *Selection) OnSelect(option string, value bool) {
+func (s *Selection) OnSelect(option int, value bool) {
 	s.Options[option] = value
 }
 
