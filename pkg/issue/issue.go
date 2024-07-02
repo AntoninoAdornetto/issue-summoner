@@ -52,17 +52,16 @@ type Issue struct {
 	Index        int    // Index location in IssueManager Issues slice
 }
 
-func NewIssueManager(annotation string, mode IssueMode, report bool) (*IssueManager, error) {
+func NewIssueManager(annotation string, mode IssueMode, isReporting bool) (*IssueManager, error) {
 	manager := &IssueManager{
 		annotation:      annotation,
 		Issues:          make([]Issue, 0, 10),
-		ReportMap:       make(map[string][]Issue),
-		reportIndicator: report,
+		reportIndicator: isReporting,
 		os:              runtime.GOOS,
 		mode:            mode,
 	}
 
-	if !report {
+	if !isReporting {
 		return manager, nil
 	}
 
@@ -72,6 +71,7 @@ func NewIssueManager(annotation string, mode IssueMode, report bool) (*IssueMana
 	}
 
 	manager.template = tmpl
+	manager.ReportMap = make(map[string][]Issue)
 	return manager, nil
 }
 
@@ -79,16 +79,17 @@ func (manager *IssueManager) NewIssue(cmnt lexer.Comment, token lexer.Token) (Is
 	id := fmt.Sprintf("%s-%d:%d", manager.CurrentPath, token.StartByteIndex, token.EndByteIndex)
 
 	issue := Issue{
-		ID:          id,
-		Title:       string(cmnt.Title),
-		Description: string(cmnt.Description),
-		OS:          manager.os,
-		FileName:    manager.CurrentBase,
-		FilePath:    manager.CurrentPath,
-		LineNumber:  token.Line,
-		StartIndex:  token.StartByteIndex,
-		EndIndex:    token.EndByteIndex,
-		IssueIndex:  manager.RecordCount,
+		ID:           id,
+		Title:        string(cmnt.Title),
+		Description:  string(cmnt.Description),
+		OS:           manager.os,
+		FileName:     manager.CurrentBase,
+		FilePath:     manager.CurrentPath,
+		LineNumber:   token.Line,
+		StartIndex:   token.StartByteIndex,
+		EndIndex:     token.EndByteIndex,
+		IssueIndex:   manager.RecordCount,
+		SubmissionID: -1,
 	}
 
 	if manager.reportIndicator && manager.template != nil {
@@ -99,8 +100,9 @@ func (manager *IssueManager) NewIssue(cmnt lexer.Comment, token lexer.Token) (Is
 		issue.Body = buf.String()
 	}
 
-	manager.Issues = append(manager.Issues, issue)
 	manager.RecordCount++
+	issue.Index = manager.RecordCount - 1
+	manager.Issues = append(manager.Issues, issue)
 	return issue, nil
 }
 
@@ -169,7 +171,10 @@ func (manager *IssueManager) Scan(path string) error {
 		if err != nil {
 			return err
 		}
-		manager.appendReportMap(newIssue)
+
+		if manager.reportIndicator {
+			manager.appendReportMap(newIssue)
+		}
 	}
 
 	return nil
@@ -177,6 +182,21 @@ func (manager *IssueManager) Scan(path string) error {
 
 func (manager *IssueManager) appendReportMap(issue Issue) {
 	manager.ReportMap[issue.FilePath] = append(manager.ReportMap[issue.FilePath], issue)
+}
+
+// Issues that have successfully been reported will not have a submission id of -1, we want to remove
+// all non negative submission ids so we can group the report id write operation into a single operation
+func (manager *IssueManager) ConsolidateMap() {
+	reportedIssues := make([]Issue, 0, 10)
+	for key, issues := range manager.ReportMap {
+		for _, issue := range issues {
+			if issue.SubmissionID != -1 {
+				reportedIssues = append(reportedIssues, issue)
+			}
+		}
+		manager.ReportMap[key] = reportedIssues
+		reportedIssues = reportedIssues[:0]
+	}
 }
 
 func (manager *IssueManager) Print(propertyStyle, valueStyle lipgloss.Style) {
