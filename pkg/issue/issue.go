@@ -167,36 +167,18 @@ func (manager *IssueManager) Scan(path string) error {
 
 	for _, comment := range comments {
 		token := tokens[comment.TokenIndex]
-		newIssue, err := manager.NewIssue(comment, token)
-		if err != nil {
+		if _, err := manager.NewIssue(comment, token); err != nil {
 			return err
-		}
-
-		if manager.reportIndicator {
-			manager.appendReportMap(newIssue)
 		}
 	}
 
 	return nil
 }
 
-func (manager *IssueManager) appendReportMap(issue Issue) {
+func (manager *IssueManager) SetSubmissionID(index int, id int64) {
+	issue := manager.Issues[index] // @TODO check out of range error
+	issue.SubmissionID = id
 	manager.ReportMap[issue.FilePath] = append(manager.ReportMap[issue.FilePath], issue)
-}
-
-// Issues that have successfully been reported will not have a submission id of -1, we want to remove
-// all non negative submission ids so we can group the report id write operation into a single operation
-func (manager *IssueManager) ConsolidateMap() {
-	reportedIssues := make([]Issue, 0, 10)
-	for key, issues := range manager.ReportMap {
-		for _, issue := range issues {
-			if issue.SubmissionID != -1 {
-				reportedIssues = append(reportedIssues, issue)
-			}
-		}
-		manager.ReportMap[key] = reportedIssues
-		reportedIssues = reportedIssues[:0]
-	}
 }
 
 func (manager *IssueManager) Print(propertyStyle, valueStyle lipgloss.Style) {
