@@ -9,7 +9,7 @@ import (
 )
 
 type Selection struct {
-	Options map[string]bool
+	Options map[int]bool
 }
 
 type Step struct {
@@ -82,6 +82,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.choices.OnSelect(m.options[selectedKey].ID, true)
 				m.cursor = selectedKey
 			}
+			*m.exit = true
 			return m, tea.Quit
 		}
 	}
