@@ -49,14 +49,16 @@ func TestNewIssue(t *testing.T) {
 				Description: []byte(""),
 			},
 			expected: issue.Issue{
-				ID:         "/project/test-project/src/module.c-100:120",
-				Title:      "test me",
-				IssueIndex: 0,
-				StartIndex: 100,
-				EndIndex:   120,
-				LineNumber: 15,
-				FilePath:   "/project/test-project/src/module.c",
-				FileName:   "module.c",
+				ID:           "/project/test-project/src/module.c-100:120",
+				Title:        "test me",
+				IssueIndex:   0,
+				StartIndex:   100,
+				EndIndex:     120,
+				LineNumber:   15,
+				FilePath:     "/project/test-project/src/module.c",
+				FileName:     "module.c",
+				SubmissionID: -1,
+				Index:        0,
 			},
 		},
 		{
@@ -80,15 +82,17 @@ func TestNewIssue(t *testing.T) {
 				Description: []byte("to ensure correct functionality for our users"),
 			},
 			expected: issue.Issue{
-				ID:          "/project/test-project/src/next-module.c-300:390",
-				Title:       "write more tests",
-				Description: "to ensure correct functionality for our users",
-				IssueIndex:  1,
-				StartIndex:  300,
-				EndIndex:    390,
-				LineNumber:  50,
-				FilePath:    "/project/test-project/src/next-module.c",
-				FileName:    "next-module.c",
+				ID:           "/project/test-project/src/next-module.c-300:390",
+				Title:        "write more tests",
+				Description:  "to ensure correct functionality for our users",
+				IssueIndex:   1,
+				StartIndex:   300,
+				EndIndex:     390,
+				LineNumber:   50,
+				FilePath:     "/project/test-project/src/next-module.c",
+				FileName:     "next-module.c",
+				SubmissionID: -1,
+				Index:        1,
 			},
 		},
 	}
@@ -122,19 +126,19 @@ func TestNewIssueWithTemplate(t *testing.T) {
 		Normally the ID, FilePath, FileName properties will have proper values.
 		They do not populate during this test because we have not scanned the source files
 	*/
-
 	expected := issue.Issue{
-		ID:          "-100:120",
-		Title:       string(comment.Title),
-		Description: string(comment.Description),
-		OS:          "linux",
-		FilePath:    "",
-		FileName:    "",
-		LineNumber:  token.Line,
-		IssueIndex:  0,
-		StartIndex:  token.StartByteIndex,
-		EndIndex:    token.EndByteIndex,
-		Body:        "### Description\nfound a bug\n\n### Location\n\n***File name:***  ***Line number:*** 15\n\n### Environment\n\nlinux\n\n### Generated with :heart:\n\ncreated by [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)\n\t",
+		ID:           "-100:120",
+		Title:        string(comment.Title),
+		Description:  string(comment.Description),
+		OS:           "linux",
+		FilePath:     "",
+		FileName:     "",
+		LineNumber:   token.Line,
+		IssueIndex:   0,
+		StartIndex:   token.StartByteIndex,
+		EndIndex:     token.EndByteIndex,
+		SubmissionID: -1,
+		Body:         "### Description\nfound a bug\n\n### Location\n\n***File name:***  ***Line number:*** 15\n\n### Environment\n\nlinux\n\n### Generated with :heart:\n\ncreated by [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)\n\t",
 	}
 
 	actual, err := manager.NewIssue(comment, token)
@@ -167,70 +171,194 @@ func TestScanPendMode(t *testing.T) {
 	// of my directories :)
 	expectedIssues := []issue.Issue{
 		{
-			ID:          "../../testdata/test.c-62:95",
-			Title:       "inline comment #1",
-			Description: "",
-			LineNumber:  5,
-			FileName:    "test.c",
-			FilePath:    "../../testdata/test.c",
-			StartIndex:  62,
-			EndIndex:    95,
-			IssueIndex:  0,
-			OS:          os,
+			ID:           "../../testdata/test.c-62:95",
+			Title:        "inline comment #1",
+			Description:  "",
+			LineNumber:   5,
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			StartIndex:   62,
+			EndIndex:     95,
+			IssueIndex:   0,
+			OS:           os,
+			Index:        0,
+			SubmissionID: -1,
 		},
 		{
-			ID:          "../../testdata/test.c-115:148",
-			Title:       "inline comment #2",
-			Description: "",
-			LineNumber:  6,
-			FileName:    "test.c",
-			FilePath:    "../../testdata/test.c",
-			StartIndex:  115,
-			EndIndex:    148,
-			IssueIndex:  1,
-			OS:          os,
+			ID:           "../../testdata/test.c-115:148",
+			Title:        "inline comment #2",
+			Description:  "",
+			LineNumber:   6,
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			StartIndex:   115,
+			EndIndex:     148,
+			IssueIndex:   1,
+			OS:           os,
+			Index:        1,
+			SubmissionID: -1,
 		},
 		{
-			ID:          "../../testdata/test.c-192:252",
-			Title:       "decode the message and clean up after yourself!",
-			Description: "",
-			FileName:    "test.c",
-			FilePath:    "../../testdata/test.c",
-			LineNumber:  10,
-			StartIndex:  192,
-			EndIndex:    252,
-			IssueIndex:  2,
-			OS:          os,
+			ID:           "../../testdata/test.c-192:252",
+			Title:        "decode the message and clean up after yourself!",
+			Description:  "",
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			LineNumber:   10,
+			StartIndex:   192,
+			EndIndex:     252,
+			IssueIndex:   2,
+			OS:           os,
+			Index:        2,
+			SubmissionID: -1,
 		},
 		{
-			ID:          "../../testdata/test.c-269:561",
-			Title:       "drop a star if you know about this code wars challenge",
-			Description: "Digital Cypher assigns to each letter of the alphabet unique number. Instead of letters in encrypted word we write the corresponding number Then we add to each obtained digit consecutive digits from the key",
-			FileName:    "test.c",
-			FilePath:    "../../testdata/test.c",
-			LineNumber:  19,
-			StartIndex:  269,
-			EndIndex:    561,
-			IssueIndex:  3,
-			OS:          os,
+			ID:           "../../testdata/test.c-269:561",
+			Title:        "drop a star if you know about this code wars challenge",
+			Description:  "Digital Cypher assigns to each letter of the alphabet unique number. Instead of letters in encrypted word we write the corresponding number Then we add to each obtained digit consecutive digits from the key",
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			LineNumber:   19,
+			StartIndex:   269,
+			EndIndex:     561,
+			IssueIndex:   3,
+			OS:           os,
+			Index:        3,
+			SubmissionID: -1,
 		},
 	}
 
 	expectedIssueManager := &issue.IssueManager{
-		Issues:      expectedIssues,
 		CurrentPath: "../../testdata/test.c",
 		CurrentBase: "test.c",
 		RecordCount: len(expectedIssues),
-		ReportMap: map[string][]issue.Issue{
-			"../../testdata/test.c": expectedIssues,
-		},
 	}
 
 	require.Equal(t, expectedIssues, manager.Issues)
-	require.Equal(t, expectedIssueManager.Issues, manager.Issues)
 	require.Equal(t, expectedIssueManager.ReportMap, manager.ReportMap)
 	require.Equal(t, expectedIssueManager.CurrentBase, manager.CurrentBase)
 	require.Equal(t, expectedIssueManager.CurrentPath, manager.CurrentPath)
-	require.Equal(t, expectedIssueManager.ReportMap, manager.ReportMap)
 	require.Equal(t, expectedIssueManager.RecordCount, manager.RecordCount)
+}
+
+func TestScanPendModeWithReporting(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, true)
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	require.NoError(t, err)
+
+	// actual implementation will use abs paths and not relative
+	manager.CurrentPath = "../../testdata/test.c"
+	manager.CurrentBase = "test.c"
+
+	err = manager.Scan("../../testdata/test.c")
+	require.NoError(t, err)
+
+	os := runtime.GOOS
+
+	// see test.c in the testdata directory for how the file looks prior
+	// to scanning. The file contains c source code with comments that
+	// are parsed. All comments that are annotated with @TEST_TODO should
+	// appear in the expected slice. Also, wanted to mention that the
+	// paths shown in ID & FilePath are not how they normally look. I am
+	// using relative paths for tests so that you guys can't see the name
+	// of my directories :)
+	expectedIssues := []issue.Issue{
+		{
+			ID:           "../../testdata/test.c-62:95",
+			Title:        "inline comment #1",
+			Description:  "",
+			LineNumber:   5,
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			StartIndex:   62,
+			EndIndex:     95,
+			IssueIndex:   0,
+			OS:           os,
+			SubmissionID: -1,
+		},
+		{
+			ID:           "../../testdata/test.c-115:148",
+			Title:        "inline comment #2",
+			Description:  "",
+			LineNumber:   6,
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			StartIndex:   115,
+			EndIndex:     148,
+			IssueIndex:   1,
+			OS:           os,
+			SubmissionID: -1,
+		},
+		{
+			ID:           "../../testdata/test.c-192:252",
+			Title:        "decode the message and clean up after yourself!",
+			Description:  "",
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			LineNumber:   10,
+			StartIndex:   192,
+			EndIndex:     252,
+			IssueIndex:   2,
+			OS:           os,
+			SubmissionID: -1,
+		},
+		{
+			ID:           "../../testdata/test.c-269:561",
+			Title:        "drop a star if you know about this code wars challenge",
+			Description:  "Digital Cypher assigns to each letter of the alphabet unique number. Instead of letters in encrypted word we write the corresponding number Then we add to each obtained digit consecutive digits from the key",
+			FileName:     "test.c",
+			FilePath:     "../../testdata/test.c",
+			LineNumber:   19,
+			StartIndex:   269,
+			EndIndex:     561,
+			IssueIndex:   3,
+			OS:           os,
+			SubmissionID: -1,
+		},
+	}
+
+	expectedIssueManager := &issue.IssueManager{
+		CurrentPath: "../../testdata/test.c",
+		CurrentBase: "test.c",
+		RecordCount: len(expectedIssues),
+	}
+
+	require.Equal(t, expectedIssueManager.CurrentBase, manager.CurrentBase)
+	require.Equal(t, expectedIssueManager.CurrentPath, manager.CurrentPath)
+	require.Len(t, manager.ReportMap["../../testdata/test.c"], len(expectedIssues))
+	require.Equal(t, expectedIssueManager.RecordCount, manager.RecordCount)
+}
+
+func TestConsolidateMap(t *testing.T) {
+	issueManager := issue.IssueManager{
+		ReportMap: map[string][]*issue.Issue{
+			"../../testdata/test.c": {
+				&issue.Issue{Title: "Submission 1", SubmissionID: -1},
+				&issue.Issue{Title: "Submission 2", SubmissionID: -1},
+				&issue.Issue{Title: "Submission 3", SubmissionID: 8912},
+				&issue.Issue{Title: "Submission 4", SubmissionID: -1},
+				&issue.Issue{Title: "Submission 5", SubmissionID: 83234},
+				&issue.Issue{Title: "Submission 6", SubmissionID: -1},
+				&issue.Issue{Title: "Submission 7", SubmissionID: 100},
+			},
+		},
+	}
+
+	issueManager.ConsolidateMap()
+
+	expected := map[string][]*issue.Issue{
+		"../../testdata/test.c": {
+			&issue.Issue{Title: "Submission 3", SubmissionID: 8912},
+			&issue.Issue{Title: "Submission 5", SubmissionID: 83234},
+			&issue.Issue{Title: "Submission 7", SubmissionID: 100},
+		},
+	}
+
+	for key, issues := range issueManager.ReportMap {
+		for i, actual := range issues {
+			require.Equal(t, expected[key][i], actual)
+		}
+	}
 }
