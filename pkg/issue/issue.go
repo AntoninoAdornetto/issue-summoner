@@ -37,17 +37,19 @@ type IssueManager struct {
 }
 
 type Issue struct {
-	ID          string
-	Title       string
-	Body        string
-	Description string
-	FilePath    string
-	FileName    string
-	OS          string
-	LineNumber  int
-	IssueIndex  int
-	StartIndex  int
-	EndIndex    int
+	ID           string // Used as a key for the multi select tui component to know what issues have been queued for reporting
+	Title        string // Title for the issue filing
+	Body         string // Body/Description for the issue filing
+	Description  string // Extracted from multi line comments
+	FilePath     string
+	FileName     string
+	OS           string // Used for Environment section of the issue markdown template
+	LineNumber   int    // LineNumber of the comment
+	IssueIndex   int    // @TODO is this even needed anymore?
+	StartIndex   int    // Starting byte index of the comment. See lexer package for more details
+	EndIndex     int    // Ending byte index of the comment. See lexer package for more details
+	SubmissionID int64  // Set to a non negative int64 only when selecting as an issue via report cmd after a successfull submission
+	Index        int    // Index location in IssueManager Issues slice
 }
 
 func NewIssueManager(annotation string, mode IssueMode, report bool) (*IssueManager, error) {
