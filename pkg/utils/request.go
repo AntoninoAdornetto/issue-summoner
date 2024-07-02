@@ -47,5 +47,5 @@ func MakeRequest(
 
 	defer resp.Body.Close()
 	data, err := io.ReadAll(resp.Body)
-	return resp, data, nil
+	return resp, data, err
 }
