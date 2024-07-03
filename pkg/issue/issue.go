@@ -28,7 +28,7 @@ type IssueManager struct {
 	CurrentPath     string
 	CurrentBase     string
 	RecordCount     int
-	ReportMap       map[string][]Issue
+	ReportMap       map[string][]*Issue
 	annotation      string
 	reportIndicator bool
 	mode            IssueMode
@@ -71,7 +71,7 @@ func NewIssueManager(annotation string, mode IssueMode, isReporting bool) (*Issu
 	}
 
 	manager.template = tmpl
-	manager.ReportMap = make(map[string][]Issue)
+	manager.ReportMap = make(map[string][]*Issue)
 	return manager, nil
 }
 
@@ -167,18 +167,57 @@ func (manager *IssueManager) Scan(path string) error {
 
 	for _, comment := range comments {
 		token := tokens[comment.TokenIndex]
-		if _, err := manager.NewIssue(comment, token); err != nil {
+		newIssue, err := manager.NewIssue(comment, token)
+		if err != nil {
 			return err
+		}
+
+		if manager.reportIndicator {
+			manager.appendMap(newIssue)
 		}
 	}
 
 	return nil
 }
 
-func (manager *IssueManager) SetSubmissionID(index int, id int64) {
-	issue := manager.Issues[index] // @TODO check out of range error
-	issue.SubmissionID = id
-	manager.ReportMap[issue.FilePath] = append(manager.ReportMap[issue.FilePath], issue)
+func (manager *IssueManager) appendMap(issue Issue) {
+	manager.ReportMap[issue.FilePath] = append(manager.ReportMap[issue.FilePath], &issue)
+}
+
+func (manager *IssueManager) UpdateMapVal(key string, index int, reportID int64) {
+	for _, issue := range manager.ReportMap[key] {
+		if issue.Index == index && issue.SubmissionID == -1 {
+			issue.SubmissionID = reportID
+			break
+		}
+	}
+}
+
+func (manager *IssueManager) ConsolidateMap() {
+	cleaned := make([]*Issue, 0, len(manager.Issues))
+	for key, issues := range manager.ReportMap {
+		for _, issue := range issues {
+			if issue.SubmissionID != -1 {
+				cleaned = append(cleaned, issue)
+			}
+		}
+
+		if len(cleaned) > 0 {
+			manager.ReportMap[key] = cleaned
+			cleaned = cleaned[:0]
+		} else {
+			delete(manager.ReportMap, key)
+		}
+	}
+}
+
+func (manager *IssueManager) WriteIssueIDs(key string) error {
+	if _, ok := manager.ReportMap[key]; !ok {
+		return fmt.Errorf("Expected key %s to be present in report map", key)
+	}
+
+	// toWrite := manager.ReportMap[key]
+	return nil
 }
 
 func (manager *IssueManager) Print(propertyStyle, valueStyle lipgloss.Style) {
