@@ -152,7 +152,8 @@ platform.`,
 					index int
 				}{err: result.Err, index: result.Index})
 			} else {
-				manager.SetSubmissionID(result.Index, result.ID)
+				currentIssue := manager.Issues[result.Index]
+				manager.UpdateMapVal(currentIssue.FilePath, result.Index, result.ID)
 			}
 		}
 
