@@ -204,19 +204,83 @@ func (manager *IssueManager) ConsolidateMap() {
 
 		if len(cleaned) > 0 {
 			manager.ReportMap[key] = cleaned
-			cleaned = cleaned[:0]
 		} else {
 			delete(manager.ReportMap, key)
 		}
+		cleaned = cleaned[:0]
 	}
 }
 
-func (manager *IssueManager) WriteIssueIDs(key string) error {
-	if _, ok := manager.ReportMap[key]; !ok {
-		return fmt.Errorf("Expected key %s to be present in report map", key)
+func (manager *IssueManager) WriteIssueIDs(filePath string) error {
+	if _, ok := manager.ReportMap[filePath]; !ok {
+		return fmt.Errorf("Expected key %s to be present in report map", filePath)
 	}
 
-	// toWrite := manager.ReportMap[key]
+	issues := manager.ReportMap[filePath]
+	if len(issues) == 0 {
+		return fmt.Errorf(
+			"Expected key in report map %s to contain a non-empty slice of issues",
+			filePath,
+		)
+	}
+
+	srcFile, err := os.OpenFile(filePath, os.O_RDWR, 0666)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	ids := make([]string, len(issues))
+	for i := range issues {
+		ids[i] = fmt.Sprintf("(#%d)", issues[i].SubmissionID)
+	}
+
+	srcContent, err := io.ReadAll(srcFile)
+	if err != nil {
+		return err
+	}
+
+	var buffer bytes.Buffer
+
+	currentPos := 0
+
+	for i, issue := range issues {
+		id := ids[i]
+
+		if err = srcFile.Truncate(int64(len(id))); err != nil {
+			return err
+		}
+
+		buffer.Write(srcContent[currentPos:issue.StartIndex])
+		oldComment := srcContent[issue.StartIndex : issue.EndIndex+1]
+
+		newComment := bytes.Replace(
+			oldComment,
+			[]byte(manager.annotation),
+			[]byte(manager.annotation+id),
+			1,
+		)
+
+		buffer.Write(newComment)
+		currentPos = issue.EndIndex + 1
+	}
+
+	if currentPos < len(srcContent) {
+		buffer.Write(srcContent[currentPos:])
+	}
+
+	if _, err := srcFile.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Write(buffer.Bytes()); err != nil {
+		return err
+	}
+
+	if err = srcFile.Sync(); err != nil {
+		return err
+	}
+
 	return nil
 }
 

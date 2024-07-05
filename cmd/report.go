@@ -174,17 +174,18 @@ platform.`,
 			}
 
 			logger.Fatal(
-				"All selected issues have failed to report. Try running <issue-summoner authorize> before reporting again to refresh access token & repo scope",
+				"Failed to report issue(s). Try running <issue-summoner authorize>",
 			)
 		}
 
-		logger.Info("Updating src code comments with published issue ids")
+		logger.Info("Writing reported ids to src code comments")
+
+		manager.ConsolidateMap()
 
 		// @TODO implement the bulk write operations based on issues that are in the same file
-		for filePath, issues := range manager.ReportMap {
-			fmt.Println(filePath)
-			for _, is := range issues {
-				fmt.Println(is.Title)
+		for filePath := range manager.ReportMap {
+			if err := manager.WriteIssueIDs(filePath); err != nil {
+				logger.Fatal(err.Error())
 			}
 		}
 

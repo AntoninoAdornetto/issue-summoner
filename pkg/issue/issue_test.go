@@ -1,6 +1,8 @@
 package issue_test
 
 import (
+	"io"
+	"os"
 	"runtime"
 	"testing"
 
@@ -395,4 +397,87 @@ func TestConsolidateMap(t *testing.T) {
 			require.Equal(t, expected[key][i], actual)
 		}
 	}
+}
+
+func TestWriteIssueIDs(t *testing.T) {
+	manager, err := issue.NewIssueManager(test_annotation, issue.ISSUE_MODE_PEND, true)
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+
+	require.NoError(t, err)
+
+	// actual implementation will use abs paths and not relative
+	manager.CurrentPath = "../../testdata/test.c"
+	manager.CurrentBase = "test.c"
+
+	err = manager.Scan("../../testdata/test.c")
+	require.NoError(t, err)
+
+	file, err := os.OpenFile("../../testdata/test.c", os.O_RDWR, 0666)
+	require.NoError(t, err)
+
+	originalData, err := io.ReadAll(file)
+	require.NoError(t, err)
+	err = file.Close()
+	require.NoError(t, err)
+
+	// restore original test file contents
+	defer func() {
+		file, err := os.OpenFile("../../testdata/test.c", os.O_RDWR, 0666)
+		require.NoError(t, err)
+		_, err = file.Write(originalData)
+		require.NoError(t, err)
+	}()
+
+	for i, issue := range manager.ReportMap["../../testdata/test.c"] {
+		issue.SubmissionID = int64(i + 1)
+		// simulate a report request and update submission ids that will be written to the src file
+		// normally the submissionID is updated after reporting to a src code manager but we want
+		// our test to be deterministic
+	}
+
+	err = manager.WriteIssueIDs("../../testdata/test.c")
+	require.NoError(t, err)
+
+	expectedSourceCode := `#include <stdio.h>
+#include <stdlib.h>
+
+struct Person {
+  int /* @TEST_TODO(#1) inline comment #1 */ age;
+  char *name /* @TEST_TODO(#2) inline comment #2 */;
+};
+
+int main(int argc, char *argv[]) {
+  // @TEST_TODO(#3) decode the message and clean up after yourself!
+  return 0;
+}
+
+/*
+ * @TEST_TODO(#4) drop a star if you know about this code wars challenge
+ * Digital Cypher assigns to each letter of the alphabet unique number.
+ * Instead of letters in encrypted word we write the corresponding number
+ * Then we add to each obtained digit consecutive digits from the key
+ * */
+char *decode(const unsigned char *code, size_t n, unsigned key) {
+  char *msg = calloc(n + 1, 1);
+  char buf[64];
+  int key_len = sprintf(buf, "%d", key);
+
+  for (size_t i = 0; i < n; i++) {
+    msg[i] = code[i] - buf[i % key_len] + '0' + 'a' - 1;
+  }
+
+  return msg;
+}
+
+// This comment should not be parsed since it does not have an annotation
+	`
+
+	newVersion, err := os.Open("../../testdata/test.c")
+	require.NoError(t, err)
+
+	newSrcCode, err := io.ReadAll(newVersion)
+	require.NoError(t, err)
+	require.NoError(t, newVersion.Close())
+	require.Equal(t, expectedSourceCode, string(newSrcCode))
 }
