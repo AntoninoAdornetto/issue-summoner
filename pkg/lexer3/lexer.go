@@ -1,6 +1,7 @@
-package lexer2
+package lexer3
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 )
@@ -9,12 +10,7 @@ const (
 	byte_null = 0
 )
 
-// Lexer acts as the base lexer for other lexers that are specific
-// to different programming languages. Each programming language may
-// have a different way to denote comment syntax for single and multi
-// line comments. Each lexer that we satisfy, depending on the programming
-// language can utilize the various receiver methods from the base lexer
-// to assist with scanning through the src code to parse comments and annotations
+// @DOCS write descriptions about some of the properties in the Lexer struct
 type Lexer struct {
 	Src        []byte
 	FileName   string
@@ -25,18 +21,14 @@ type Lexer struct {
 	Annotation []byte
 }
 
-// @DOCS_TODO update LexicalAnalyzer comment, it doesn't make much sense right now
-// LexicalAnalyzer - each programming language that we build comment/annotation
-// Analyzers for must satisfy the methods contained in this interface. The end
-// result of properly implementing these methods will allow the program to support
-// a wide variety of programming lanaguages and the comment syntax those languages
-// require
+// @DOCS write descriptions about some of the properties in the LexicalAnalyzer interface
 type LexicalAnalyzer interface {
 	AnaylzeToken() error
 	String(delim byte) error
 	Comment() error
 }
 
+// @DOCS write descriptions about the responsibilities of the Base Lexer
 func NewBaseLexer(annotation, src []byte, fileName string) *Lexer {
 	return &Lexer{
 		Src:        src,
@@ -105,16 +97,31 @@ func (base *Lexer) end() bool {
 }
 
 func (base *Lexer) extractRange(offset int) ([]byte, error) {
-	start, end := base.Current-offset, base.Current
-	if start < 0 || end > len(base.Src) {
-		return nil, fmt.Errorf(
-			"Failed to extract token, out of range (start: %d), (end: %d) with length of %d",
-			start,
-			end,
+	startPos := base.Current - offset
+	endPos := base.Current
+
+	if startPos < 0 || endPos > len(base.Src) {
+		msg := fmt.Sprintf(
+			"Failed to extract token: out of range (start position: %d), (end position: %d) with length of %d",
+			startPos,
+			endPos,
 			len(base.Src),
 		)
+		return nil, errors.New(msg)
 	}
-	return base.Src[start:end], nil
+
+	return base.Src[startPos:endPos], nil
+}
+
+// @BUG off by 1 error in the makeToken func
+func (base *Lexer) makeToken(tokenType TokenType, lexeme []byte) Token {
+	return Token{
+		Type:   tokenType,
+		Lexeme: lexeme,
+		Line:   base.Line,
+		Start:  base.Current - len(lexeme),
+		End:    base.Current - 1,
+	}
 }
 
 func (base *Lexer) report(msg string) error {

@@ -7,7 +7,6 @@ struct Person {
 };
 
 int main(int argc, char *argv[]) {
-  // @TEST_TODO decode the message and clean up after yourself!
   char *no_comment_token =
       "This should not end up in the comment token / /* */ @TEST_TODO";
   printf("%s\n", no_comment_token);
