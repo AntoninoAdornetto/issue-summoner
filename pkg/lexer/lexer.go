@@ -55,33 +55,28 @@ type LexicalTokenizer interface {
 	Comment() error
 }
 
-func NewLexer(src []byte, fileName string) (*Lexer, error) {
-	ext := filepath.Ext(fileName)
-	manger, err := NewLexingManager(ext)
-	if err != nil {
-		return nil, err
-	}
-
+func NewLexer(annotation, src []byte, filePath string) *Lexer {
 	return &Lexer{
-		Source:   src,
-		FileName: fileName,
-		Start:    0,
-		Current:  0,
-		Line:     1,
-		Manager:  manger,
-		Tokens:   make([]Token, 0),
-	}, nil
+		Src:        src,
+		FilePath:   filePath,
+		FileName:   filepath.Base(filePath),
+		Tokens:     make([]Token, 0, 100),
+		Start:      0,
+		Current:    0,
+		Line:       1,
+		Annotation: annotation,
+	}
 }
 
-func NewLexingManager(ext string) (LexingManager, error) {
+func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
+	ext := filepath.Ext(base.FileName)
+	tokens := make([]Token, 0, 100)
+
 	switch {
-	case IsAdoptedFromC(ext):
-		return &CLexer{}, nil
+	case ext == ".c":
+		return &Clexer{Base: base, DraftTokens: tokens}, nil
 	default:
-		return nil, fmt.Errorf(
-			"unsupported file type of %s. please open a feature request if you would like support.",
-			ext,
-		)
+		return nil, fmt.Errorf("unsupported file extension (%s)", ext)
 	}
 }
 
