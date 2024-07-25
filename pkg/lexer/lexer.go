@@ -74,9 +74,11 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 	tokens := make([]Token, 0, 100)
 
 	switch {
+	// @TODO create sep util funcs for matching file extensions to determine which target lexer to return
 	case ext == ".c":
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
 	default:
+		// @TODO return a list of supported programming languages when an error is returned from invoking NewTargetLexer
 		return nil, fmt.Errorf("unsupported file extension (%s)", ext)
 	}
 }
