@@ -80,21 +80,18 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 	}
 }
 
-func (l *Lexer) AnalyzeTokens() ([]Token, error) {
-	for range l.Source {
-		l.Start = l.Current
-		err := l.Manager.AnalyzeToken(l)
-		if err != nil {
+func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
+	for base.Current < len(base.Src) {
+		base.Start = base.Current
+		if err := target.AnalyzeToken(); err != nil {
 			return nil, err
+		} else {
+			base.next()
 		}
-		l.next()
 	}
-	l.Tokens = append(l.Tokens, Token{TokenType: EOF})
-	return l.Tokens, nil
-}
 
-func (l *Lexer) isEnd() bool {
-	return l.Current >= len(l.Source)-1
+	base.Tokens = append(base.Tokens, newEofToken(base))
+	return base.Tokens, nil
 }
 
 func (l *Lexer) next() byte {
@@ -107,6 +104,10 @@ func (l *Lexer) next() byte {
 
 func (l *Lexer) peek() byte {
 	if l.isEnd() {
+func (base *Lexer) pastEnd() bool {
+	return base.Current > len(base.Src)-1
+}
+
 		return 0
 	}
 	return l.Source[l.Current]
