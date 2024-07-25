@@ -36,6 +36,7 @@ package lexer
 import (
 	"fmt"
 	"path/filepath"
+	"unicode"
 )
 
 type Lexer struct {
@@ -120,14 +121,24 @@ func (base *Lexer) peekNext() byte {
 	return base.Src[base.Current+1]
 }
 
-func (l *Lexer) addToken(tokenType TokenType, value []byte) {
-	l.Tokens = append(l.Tokens, Token{
-		TokenType:      tokenType,
-		Lexeme:         value,
-		Line:           l.Line,
-		StartByteIndex: l.Start,
-		EndByteIndex:   l.Current,
-	})
+func (base *Lexer) nextLexeme() []byte {
+	base.Start = base.Current
+	lexeme := make([]byte, 0, 10)
+
+	for !unicode.IsSpace(rune(base.peek())) {
+		lexeme = append(lexeme, base.peek())
+		if base.breakLexemeIter() {
+			break
+		} else {
+			base.next()
+		}
+	}
+
+	return lexeme
+}
+
+func (base *Lexer) breakLexemeIter() bool {
+	return base.pastEnd() || unicode.IsSpace(rune(base.peekNext()))
 }
 
 func (l *Lexer) report(msg string) error {
