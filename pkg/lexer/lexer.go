@@ -141,6 +141,6 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.pastEnd() || unicode.IsSpace(rune(base.peekNext()))
 }
 
-func (l *Lexer) report(msg string) error {
-	return fmt.Errorf("[%s line %d]: Error: %s", l.FileName, l.Line, msg)
+func (base *Lexer) reportError(msg string) error {
+	return fmt.Errorf("[%s line %d]: Error: %s", base.FileName, base.Line, msg)
 }
