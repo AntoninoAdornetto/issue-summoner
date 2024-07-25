@@ -39,20 +39,20 @@ import (
 )
 
 type Lexer struct {
-	Source   []byte
-	FileName string
-	Tokens   []Token
-	Start    int
-	Current  int
-	Line     int
-	Manager  LexingManager
+	FilePath   string
+	FileName   string
+	Src        []byte  // source code bytes
+	Tokens     []Token // comment tokens after lexical analysis has been complete
+	Start      int     // byte index
+	Current    int     // byte index, used in conjunction with Start to construct tokens
+	Line       int     // Line number
+	Annotation []byte  // issue annotation to search for within comments
 }
 
-type LexingManager interface {
-	AnalyzeToken(lexer *Lexer) error
-	String(lexer *Lexer, delim byte) error
-	Comment(lexer *Lexer) error
-	ParseCommentTokens(lexer *Lexer, annotation []byte) ([]Comment, error)
+type LexicalTokenizer interface {
+	AnalyzeToken() error
+	String(delim byte) error
+	Comment() error
 }
 
 func NewLexer(src []byte, fileName string) (*Lexer, error) {
