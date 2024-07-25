@@ -94,30 +94,30 @@ func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
 	return base.Tokens, nil
 }
 
-func (l *Lexer) next() byte {
-	if l.isEnd() {
+func (base *Lexer) next() byte {
+	base.Current++
+	if base.pastEnd() {
 		return 0
 	}
-	l.Current++
-	return l.Source[l.Current]
+	return base.Src[base.Current]
 }
 
-func (l *Lexer) peek() byte {
-	if l.isEnd() {
 func (base *Lexer) pastEnd() bool {
 	return base.Current > len(base.Src)-1
 }
 
+func (base *Lexer) peek() byte {
+	if base.pastEnd() {
 		return 0
 	}
-	return l.Source[l.Current]
+	return base.Src[base.Current]
 }
 
-func (l *Lexer) peekNext() byte {
-	if l.Current+1 >= len(l.Source) {
+func (base *Lexer) peekNext() byte {
+	if base.Current+1 > len(base.Src)-1 {
 		return 0
 	}
-	return l.Source[l.Current+1]
+	return base.Src[base.Current+1]
 }
 
 func (l *Lexer) addToken(tokenType TokenType, value []byte) {
