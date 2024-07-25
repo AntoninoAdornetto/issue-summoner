@@ -1,22 +1,35 @@
 /*
-The goal for our lexer is not to create a compiler or intrepreter. It's primary purpose
-is to scan the raw source code as a series of characters and group them into tokens.
-The implementation will ignore many tokens that other scanner/lexers would not.
+Copyright © 2024 AntoninoAdornetto
 
-The types of tokens that we are concered about:
-Single line comment tokens (such as // for languages that have adopted c like comment syntax or # for python)
-Multi line comment tokens (such as /* for c adopted languages and ”' & """ for python)
-End of file tokens
+The lexer.go file is responsible for creating a `Base` Lexer, consuming and iterating through bytes
+of source code, and determining which `Target` Lexer to use for the Tokenization process.
 
-We should check for string tokens, but we do not need to create the token or store the lexeme.
-The reason for checking strings is so we can prevent certain edge cases from happening.
-One example could be where a string contains characters that could be denoted as a comment.
-For C like languages that could be a string such as "/*" or "//".
-We don't want the lexer to create tokens for strings that may contain comment syntax.
+Base Lexer:
+The name Lexer may be a bit misleading for the Base Lexer. There is no strict rule set baked into
+the receiver methods. However, the `Base` Lexer has a very important role of sharing byte consumption
+methods to `Target` Lexers. For example, we don't want to re-write .next(), .peek() or .nextLexeme()
+multiple times for Target Lexers since the logic for said methods are not specific to the Target Lexer
+and won't change.
 
-Each language that is supported will need to satisfy the LexingManager interface and support tokenizing
-methods for Comments and Strings. This will allow each implementation to utilize the comment notation that
-is specific to a language.
+Target Lexer:
+Simply put, a `Target` Lexer is the Lexer that handles the Tokenization rule set. For this application,
+we are only concerned with creating single and multi line comments. More specifically, we are concerned
+with single and multi line comments that contain an issue annotation.
+
+`Target` Lexers are created via the `NewTargetLexer` method. The `Base` Lexer is passed to the function,
+via dependency injection, as input and is stored within each `Target` Lexer so that targets can access the
+shared byte consumption methods. `Target` Lexers must satisfy the methods contained in the `LexicalTokenizer`
+interface. I know I mentioned we are only concerned with Comments in source code but you will notice a requirement
+for a `String` method in the interface. We must account for strings to combat an edge case. Let me explain, if we
+are lexing a python string that contains a hash character "#" (comment notation symbol), our lexer could very well-
+explode. Same could be said for c or go strings that contain 1 or more forward slashes "/". String tokens are not
+persisted, just consumed until the closing delimiter is located.
+
+Lastly, it's important to mention how `Target` Lexers are created. When instantiating a new `Base` Lexer,
+the src code file path is provided. This path is utilized to read the base file extension.
+If the file extension is .c, .go, .cpp, .h ect, then we would return a Target Lexer that supports c-like comment
+syntax since they all denote single and multi line comments with the same notation. For .py files, we would return
+a PythonLexer and so on.
 */
 package lexer
 
