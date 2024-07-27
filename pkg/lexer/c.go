@@ -118,6 +118,15 @@ func (c *Clexer) closeSingleLineCommentToken() {
 	c.DraftTokens = append(c.DraftTokens, token)
 }
 
+func (c *Clexer) reportTokenTypeError(tokenType TokenType) error {
+	msg := fmt.Sprintf(
+		"expected token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT but got %s",
+		decodeTokenType(tokenType),
+	)
+	return c.Base.reportError(msg)
 }
 
+func (c *Clexer) reset() {
+	c.annotated = false
+	c.DraftTokens = c.DraftTokens[:0]
 }
