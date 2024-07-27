@@ -14,6 +14,10 @@ import (
 	"fmt"
 )
 
+type Clexer struct {
+	Base        *Lexer  // stores utility methods for consuming bytes
+	DraftTokens []Token // if a token contains the issue annotation, DraftTokens are appended to base.Tokens
+	annotated   bool    // indicator to denote when an issue annotation is located
 }
 
 	case FORWARD_SLASH:
