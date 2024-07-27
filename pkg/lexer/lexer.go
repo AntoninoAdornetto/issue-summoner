@@ -85,7 +85,7 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 
 func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
 	for base.Current < len(base.Src) {
-		base.Start = base.Current
+		base.resetStartIndex()
 		if err := target.AnalyzeToken(); err != nil {
 			return nil, err
 		} else {
@@ -124,7 +124,7 @@ func (base *Lexer) peekNext() byte {
 }
 
 func (base *Lexer) nextLexeme() []byte {
-	base.Start = base.Current
+	base.resetStartIndex()
 	lexeme := make([]byte, 0, 10)
 
 	for !unicode.IsSpace(rune(base.peek())) {
@@ -142,6 +142,10 @@ func (base *Lexer) nextLexeme() []byte {
 func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
+
+// base.Start & base.Current work in tandem to construct a lexeme.
+func (base *Lexer) resetStartIndex() {
+	base.Start = base.Current
 }
 
 func (base *Lexer) reportError(msg string) error {
