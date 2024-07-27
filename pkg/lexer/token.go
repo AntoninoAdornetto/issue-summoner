@@ -30,11 +30,11 @@ const (
 )
 
 type Token struct {
-	TokenType      TokenType
-	Lexeme         []byte
-	Line           int
-	StartByteIndex int
-	EndByteIndex   int
+	Type   TokenType
+	Lexeme []byte // token value
+	Line   int    // Line number
+	Start  int    // Starting byte index of the token in Lexer Src slice
+	End    int    // Ending byte index of the token in Lexer Src slice
 }
 
 func (t *Token) ParseSingleLineCommentToken(annotation []byte, trim func(r rune) bool) Comment {
