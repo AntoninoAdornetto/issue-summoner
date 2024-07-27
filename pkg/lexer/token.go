@@ -37,42 +37,54 @@ type Token struct {
 	End    int    // Ending byte index of the token in Lexer Src slice
 }
 
-func (t *Token) ParseSingleLineCommentToken(annotation []byte, trim func(r rune) bool) Comment {
-	loc := findAnnotationLocations(annotation, t.Lexeme)
-	if loc == nil {
-		return Comment{}
-	}
-	end := loc[1]
-	title := bytes.TrimFunc(t.Lexeme[end:], trim)
-	return Comment{
-		Title:  title,
-		Source: t.Lexeme,
+func NewToken(tokenType TokenType, lexeme []byte, lexer *Lexer) Token {
+	return Token{
+		Type:   tokenType,
+		Lexeme: lexeme,
+		Line:   lexer.Line,
+		Start:  lexer.Start,
+		End:    lexer.Current,
 	}
 }
 
-func (t *Token) ParseMultiLineCommentToken(annotation []byte, trim func(r rune) bool) Comment {
-	loc := findAnnotationLocations(annotation, t.Lexeme)
-	if loc == nil {
-		return Comment{}
+func newEofToken(lexer *Lexer) Token {
+	pos := len(lexer.Src) - 1
+	return Token{
+		Lexeme: []byte{0},
+		Type:   TOKEN_EOF,
+		Line:   lexer.Line,
+		Start:  pos,
+		End:    pos,
 	}
-	end := loc[1]
-	content := bytes.TrimFunc(t.Lexeme[end:], trim)
-	newLines := bytes.Split(content, []byte("\n"))
+}
 
-	comment := Comment{
-		Title:  bytes.TrimFunc(newLines[0], trim),
-		Source: t.Lexeme,
+func decodeTokenType(tokenType TokenType) string {
+	switch {
+	case containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START):
+		return "TOKEN_SINGLE_LINE_COMMENT_START"
+	case containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_END):
+		return "TOKEN_SINGLE_LINE_COMMENT_END"
+	case containsBits(tokenType, TOKEN_MULTI_LINE_COMMENT_START):
+		return "TOKEN_MULTI_LINE_COMMENT_START"
+	case containsBits(tokenType, TOKEN_MULTI_LINE_COMMENT_END):
+		return "TOKEN_MULTI_LINE_COMMENT_END"
+	case containsBits(tokenType, TOKEN_COMMENT_ANNOTATION):
+		return "TOKEN_COMMENT_ANNOTATION"
+	case containsBits(tokenType, TOKEN_COMMENT_TITLE):
+		return "TOKEN_COMMENT_TITLE"
+	case containsBits(tokenType, TOKEN_COMMENT_DESCRIPTION):
+		return "TOKEN_COMMENT_DESCRIPTION"
+	case containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT):
+		return "TOKEN_SINGLE_LINE_COMMENT"
+	case containsBits(tokenType, TOKEN_MULTI_LINE_COMMENT):
+		return "TOKEN_MULTI_LINE_COMMENT"
+	case containsBits(tokenType, TOKEN_EOF):
+		return "TOKEN_EOF"
+	default:
+		return "TOKEN_UNKNOWN"
 	}
+}
 
-	for i := 1; i < len(newLines); i++ {
-		comment.Description = append(
-			comment.Description,
-			bytes.TrimLeftFunc(newLines[i], trim)...)
-
-		if i != len(newLines)-1 {
-			comment.Description = append(comment.Description, ' ')
-		}
-	}
-
-	return comment
+func containsBits(a, b TokenType) bool {
+	return a&b != 0
 }
