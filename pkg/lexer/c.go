@@ -40,7 +40,6 @@ func (c *Clexer) String(delim byte) error {
 }
 
 func (c *Clexer) Comment() error {
-	c.reset()
 	switch c.Base.peekNext() {
 	case FORWARD_SLASH:
 		return c.tokenizeSingleLineComment()
@@ -68,6 +67,7 @@ func (c *Clexer) tokenizeSingleLineComment() error {
 		c.Base.resetStartIndex()
 		c.closeSingleLineCommentToken()
 		c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
+		c.reset()
 	}
 
 	return nil
