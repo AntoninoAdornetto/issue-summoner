@@ -140,7 +140,8 @@ func (base *Lexer) nextLexeme() []byte {
 }
 
 func (base *Lexer) breakLexemeIter() bool {
-	return base.pastEnd() || unicode.IsSpace(rune(base.peekNext()))
+	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
+}
 }
 
 func (base *Lexer) reportError(msg string) error {
