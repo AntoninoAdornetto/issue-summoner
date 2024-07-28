@@ -149,5 +149,5 @@ func (base *Lexer) resetStartIndex() {
 }
 
 func (base *Lexer) reportError(msg string) error {
-	return fmt.Errorf("[%s line %d]: Error: %s", base.FileName, base.Line, msg)
+	return fmt.Errorf("[%s line %d]: Error: %s", base.FilePath, base.Line, msg)
 }
