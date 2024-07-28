@@ -58,7 +58,7 @@ func (c *Clexer) tokenizeSingleLineComment() error {
 
 		token := NewToken(TOKEN_UNKNOWN, lexeme, c.Base)
 		if err := c.annotateTokenType(&token, TOKEN_SINGLE_LINE_COMMENT); err != nil {
-			return err
+			return c.Base.reportError(err.Error())
 		}
 		c.Base.next()
 	}
