@@ -246,3 +246,27 @@ func (c *Clexer) reset() {
 	c.DraftTokens = c.DraftTokens[:0]
 	c.line = 0
 }
+
+func derivedFromC(ext string) bool {
+	switch ext {
+	case ".c",
+		".h",
+		".cpp",
+		".java",
+		".js",
+		".jsx",
+		".ts",
+		".tsx",
+		".cs",
+		".go",
+		".php",
+		".swift",
+		".kt",
+		".rs",
+		".m",
+		".scala":
+		return true
+	default:
+		return false
+	}
+}
