@@ -18,6 +18,7 @@ type Clexer struct {
 	Base        *Lexer  // stores utility methods for consuming bytes
 	DraftTokens []Token // if a token contains the issue annotation, DraftTokens are appended to base.Tokens
 	annotated   bool    // indicator to denote when an issue annotation is located
+	line        int     // current line number when consuming a single/multi line opening byte
 }
 
 func (c *Clexer) AnalyzeToken() error {
@@ -43,6 +44,8 @@ func (c *Clexer) Comment() error {
 	switch c.Base.peekNext() {
 	case FORWARD_SLASH:
 		return c.tokenizeSingleLineComment()
+	case ASTERISK:
+		return c.tokenizeMultiLineComment()
 	default:
 		return nil
 	}
@@ -73,6 +76,46 @@ func (c *Clexer) tokenizeSingleLineComment() error {
 	return nil
 }
 
+func (c *Clexer) tokenizeMultiLineComment() error {
+	c.line = c.Base.Line
+
+	for !c.Base.pastEnd() {
+		if c.Base.peek() == NEWLINE {
+			c.Base.Line++
+		}
+
+		lexeme := c.Base.nextLexeme()
+		if len(lexeme) == 0 || bytes.Equal(lexeme, []byte("*")) {
+			c.Base.next()
+			continue
+		}
+
+		token := NewToken(TOKEN_UNKNOWN, lexeme, c.Base)
+		if err := c.annotateTokenType(&token, TOKEN_MULTI_LINE_COMMENT); err != nil {
+			return c.Base.reportError(err.Error())
+		}
+
+		if containsBits(token.Type, TOKEN_MULTI_LINE_COMMENT_END) {
+			break
+		} else {
+			c.Base.next()
+		}
+	}
+
+	if c.Base.pastEnd() &&
+		!containsBits(c.DraftTokens[len(c.DraftTokens)-1].Type, TOKEN_MULTI_LINE_COMMENT_END) {
+		return c.Base.reportError("Failed to find closing notation for multi line comment")
+	}
+
+	if c.annotated {
+		c.Base.resetStartIndex()
+		c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
+		c.reset()
+	}
+
+	return nil
+}
+
 func (c *Clexer) annotateTokenType(token *Token, tokenType TokenType) error {
 	isSingle := containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT)
 	isMulti := !isSingle && containsBits(tokenType, TOKEN_MULTI_LINE_COMMENT)
@@ -81,6 +124,7 @@ func (c *Clexer) annotateTokenType(token *Token, tokenType TokenType) error {
 	case isSingle:
 		c.annotateSingleLineComment(token)
 	case isMulti:
+		c.annotateMultiLineComment(token)
 	default:
 		return c.reportTokenTypeError(tokenType)
 	}
@@ -90,7 +134,9 @@ func (c *Clexer) annotateTokenType(token *Token, tokenType TokenType) error {
 }
 
 var (
-	cSingleLineCommentNotation = []byte("//")
+	cSingleLineCommentNotation     = []byte("//")
+	cMultiLineCommentNotationStart = []byte("/*")
+	cMultiLineCommentNotationEnd   = []byte("*/")
 )
 
 func (c *Clexer) annotateSingleLineComment(token *Token) {
@@ -102,6 +148,24 @@ func (c *Clexer) annotateSingleLineComment(token *Token) {
 		token.Type = TOKEN_SINGLE_LINE_COMMENT_START
 	default:
 		token.Type = TOKEN_COMMENT_TITLE
+	}
+}
+
+func (c *Clexer) annotateMultiLineComment(token *Token) {
+	lineDelta := c.Base.Line - c.line
+
+	switch {
+	case !c.annotated && bytes.Equal(c.Base.Annotation, token.Lexeme):
+		token.Type = TOKEN_COMMENT_ANNOTATION
+		c.annotated = true
+	case bytes.Equal(cMultiLineCommentNotationStart, token.Lexeme):
+		token.Type = TOKEN_MULTI_LINE_COMMENT_START
+	case bytes.Equal(cMultiLineCommentNotationEnd, token.Lexeme):
+		token.Type = TOKEN_MULTI_LINE_COMMENT_END
+	case lineDelta == 0 || lineDelta == 1:
+		token.Type = TOKEN_COMMENT_TITLE
+	default:
+		token.Type = TOKEN_COMMENT_DESCRIPTION
 	}
 }
 
@@ -129,4 +193,5 @@ func (c *Clexer) reportTokenTypeError(tokenType TokenType) error {
 func (c *Clexer) reset() {
 	c.annotated = false
 	c.DraftTokens = c.DraftTokens[:0]
+	c.line = 0
 }
