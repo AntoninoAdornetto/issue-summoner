@@ -7,42 +7,111 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var annotation = []byte("@TEST_TODO")
+var (
+	testAnnotation = []byte("@TEST_ANNOTATION")
+)
 
-// should return a valid lexer when using a c file
-func TestNewLexerC(t *testing.T) {
-	lm, err := lexer.NewLexer([]byte{}, "main.c")
-	require.NoError(t, err)
-	require.IsType(t, &lexer.Lexer{}, lm)
+func TestNewLexer(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     string
+		expected *lexer.Lexer
+	}{
+		{
+			name: "should create a new base lexer using c source code",
+			path: "../../testdata/fixtures/c/no-comments.c",
+			expected: &lexer.Lexer{
+				FilePath:   "../../testdata/fixtures/c/no-comments.c",
+				FileName:   "no-comments.c",
+				Tokens:     make([]lexer.Token, 0),
+				Start:      0,
+				Current:    0,
+				Line:       1,
+				Annotation: testAnnotation,
+			},
+		},
+		{
+			name: "should create a new base lexer using go source code",
+			path: "../../testdata/fixtures/go/no-comments.go",
+			expected: &lexer.Lexer{
+				FilePath:   "../../testdata/fixtures/go/no-comments.go",
+				FileName:   "no-comments.go",
+				Tokens:     make([]lexer.Token, 0),
+				Start:      0,
+				Current:    0,
+				Line:       1,
+				Annotation: testAnnotation,
+			},
+		},
+		{
+			name: "should create a new base lexer using js source code",
+			path: "../../testdata/fixtures/js/no-comments.js",
+			expected: &lexer.Lexer{
+				FilePath:   "../../testdata/fixtures/js/no-comments.js",
+				FileName:   "no-comments.js",
+				Tokens:     make([]lexer.Token, 0),
+				Start:      0,
+				Current:    0,
+				Line:       1,
+				Annotation: testAnnotation,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			src := getSrcCode(t, tc.path)
+			tc.expected.Src = src
+			actual := lexer.NewLexer(testAnnotation, src, tc.path)
+			require.Equal(t, tc.expected, actual)
+		})
+	}
 }
 
-// should return a valid lexer when using a cpp file
-func TestNewLexerCPP(t *testing.T) {
-	lm, err := lexer.NewLexer([]byte{}, "main.cpp")
-	require.NoError(t, err)
-	require.IsType(t, &lexer.Lexer{}, lm)
+func TestNewTargetLexer(t *testing.T) {
+	testCases := []struct {
+		name     string
+		base     *lexer.Lexer
+		expected lexer.LexicalTokenizer
+	}{
+		{
+			name: "Should create a c-lexer (target lexer) when provided c source code",
+			base: lexer.NewLexer(
+				testAnnotation,
+				getSrcCode(t, "../../testdata/fixtures/c/no-comments.c"),
+				"../../testdata/fixtures/c/no-comments.c",
+			),
+			expected: &lexer.Clexer{},
+		},
+		{
+			name: "Should create a c-lexer (target lexer) when provided go source code",
+			base: lexer.NewLexer(
+				testAnnotation,
+				getSrcCode(t, "../../testdata/fixtures/go/no-comments.go"),
+				"../../testdata/fixtures/go/no-comments.go",
+			),
+			expected: &lexer.Clexer{},
+		},
+		{
+			name: "Should create a c-lexer (target lexer) when provided js source code",
+			base: lexer.NewLexer(
+				testAnnotation,
+				getSrcCode(t, "../../testdata/fixtures/js/no-comments.js"),
+				"../../testdata/fixtures/js/no-comments.js",
+			),
+			expected: &lexer.Clexer{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual, err := lexer.NewTargetLexer(tc.base)
+			require.NoError(t, err)
+			require.IsType(t, tc.expected, actual)
+		})
+	}
 }
 
-// should return a valid lexer when using a java file
-func TestNewLexerJava(t *testing.T) {
-	lm, err := lexer.NewLexer([]byte{}, "main.java")
-	require.NoError(t, err)
-	require.IsType(t, &lexer.Lexer{}, lm)
-}
-
-// should return a valid lexer when using a go file
-func TestNewLexerGo(t *testing.T) {
-	lm, err := lexer.NewLexer([]byte{}, "main.go")
-	require.NoError(t, err)
-	require.IsType(t, &lexer.Lexer{}, lm)
-}
-
-// should return an error when an unsupported file is passed in
-func TestNewLexerUnsupported(t *testing.T) {
-	lm, err := lexer.NewLexer([]byte{}, "main.unsupported")
-	require.Error(t, err)
-	require.Nil(t, lm)
-}
 
 // should return the lexing manager for c file extension
 func TestNewLexingManagerC(t *testing.T) {
