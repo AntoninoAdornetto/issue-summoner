@@ -114,11 +114,13 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
-		cLexer := lexer.Clexer{Base: baseLexer}
-		err := cLexer.AnalyzeToken()
-		require.NoError(t, err)
-		require.Equal(t, tc.expected, baseLexer.Tokens)
+		t.Run(tc.name, func(t *testing.T) {
+			baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
+			cLexer := lexer.Clexer{Base: baseLexer}
+			err := cLexer.AnalyzeToken()
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, baseLexer.Tokens)
+		})
 	}
 }
 
@@ -311,10 +313,12 @@ func TestAnalyzeTokenMultiLineComments(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
-		cLexer := lexer.Clexer{Base: baseLexer}
-		err := cLexer.AnalyzeToken()
-		require.NoError(t, err)
-		require.Equal(t, tc.expected, baseLexer.Tokens)
+		t.Run(tc.name, func(t *testing.T) {
+			baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
+			cLexer := lexer.Clexer{Base: baseLexer}
+			err := cLexer.AnalyzeToken()
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, baseLexer.Tokens)
+		})
 	}
 }
