@@ -142,7 +142,6 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
 
-// base.Start & base.Current work in tandem to construct a lexeme.
 func (base *Lexer) resetStartIndex() {
 	base.Start = base.Current
 }
