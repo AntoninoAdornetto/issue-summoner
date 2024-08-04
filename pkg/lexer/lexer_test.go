@@ -216,10 +216,10 @@ func TestAnalyzeTokensCSrcCode(t *testing.T) {
 				},
 				{
 					Type:   lexer.TOKEN_MULTI_LINE_COMMENT_END,
-					Lexeme: []byte("*/;"),
+					Lexeme: []byte("*/"),
 					Line:   6,
 					Start:  159,
-					End:    161,
+					End:    160,
 				},
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
@@ -293,10 +293,10 @@ func TestAnalyzeTokensCSrcCode(t *testing.T) {
 				},
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_END,
-					Lexeme: []byte{0},
+					Lexeme: []byte{'\n'},
 					Line:   11,
-					Start:  272,
-					End:    272,
+					Start:  271,
+					End:    271,
 				},
 				{
 					Type:   lexer.TOKEN_MULTI_LINE_COMMENT_START,
