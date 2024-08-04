@@ -16,17 +16,16 @@ import (
 
 var (
 	cSLCommentNotation      = []byte("//") // Single Line Comment notation for c-like languages
-	cMLCommentNotationStart = []byte("/*") // opening Multi Line Comment notation
-	cMLCommentNotationEnd   = []byte("*/") // closing Multi Line Comment notation
-	// new lines of an Multi Line Comment usually start with an asterisk
-	cMLCommentSeparator = []byte("*")
+	cMLCommentNotationStart = []byte("/*") // Multi Line Comment prefix notation
+	cMLCommentNotationEnd   = []byte("*/") // Multi Line Comment suffix notation
+	cMLCommentSeparator     = []byte("*")  // Multi Line Comment separator
 )
 
 type Clexer struct {
-	Base        *Lexer  // stores utility methods for consuming bytes
-	DraftTokens []Token // if a token contains the issue annotation, DraftTokens are appended to base.Tokens
-	annotated   bool    // indicator to denote when an issue annotation is located
-	line        int     // current line number when consuming a single/multi line opening byte
+	Base        *Lexer  // holds shared byte consumption methods
+	DraftTokens []Token // Unvalidated tokens
+	annotated   bool    // Issue annotation indicator
+	line        int     // Current Line number
 }
 
 func (c *Clexer) AnalyzeToken() error {
@@ -136,8 +135,8 @@ func (c *Clexer) classifyTokenType(token *Token, target TokenType) error {
 	case isSLComment:
 		c.classifySLComment(token)
 	case isMLComment:
-		// for now, we are not going to make separator tokens (*)
 		if bytes.Equal(cMLCommentSeparator, token.Lexeme) {
+		// not concerned with separators... for now at least
 			return nil
 		} else {
 			c.classifyMLComment(token)
@@ -165,6 +164,10 @@ func (c *Clexer) classifyMLComment(token *Token) {
 
 	lineDelta := c.Base.Line - c.line
 	if lineDelta == 0 || lineDelta == 1 {
+	// lineDelta remains at 0 until an issue annotation is located.
+	// this is helpful because we know that subsequent lines will
+	// part of the comments description and thus allow us to classify
+	// it's type correctly
 		token.Type = TOKEN_COMMENT_TITLE
 	} else {
 		token.Type = TOKEN_COMMENT_DESCRIPTION
@@ -224,9 +227,9 @@ func (c *Clexer) breakTokenization() bool {
 		containsBits(last.Type, TOKEN_MULTI_LINE_COMMENT_END)
 }
 
-// promoteTokens is only called when we have found an issue annotation.
-// all draft tokens are promoted to the Base Lexers token slice and are
-// considered valid comment tokens that the program can safely use
+// promoteTokens is invoked when c.annotated is true. Meaning, an issue
+// annotation was discovered within the comment and it is safe to append all
+// current DraftTokens into the Base Lexers primary token slice.
 func (c *Clexer) promoteTokens() {
 	c.Base.resetStartIndex()
 	c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
