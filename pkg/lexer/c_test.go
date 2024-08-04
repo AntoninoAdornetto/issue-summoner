@@ -29,7 +29,7 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 		},
 		{
 			name:     "should create the comment start, comment annotation and comment end tokens",
-			srcCode:  []byte("// @TEST_ANNOTATION"),
+			srcCode:  []byte("// @TEST_ANNOTATION\n"),
 			fileName: "main.c",
 			expected: []lexer.Token{
 				{
@@ -48,10 +48,10 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 				},
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_END,
-					Lexeme: []byte{0},
+					Lexeme: []byte{'\n'},
 					Start:  19,
 					End:    19,
-					Line:   1,
+					Line:   2,
 				},
 			},
 		},
