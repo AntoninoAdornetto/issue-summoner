@@ -1,30 +1,70 @@
-package issue_test
+package issue
 
 import (
+	"runtime"
 	"testing"
 
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	annotation = "@TEST_TODO"
+var (
+	testAnnotation = []byte("@TEST_ANNOTATION")
 )
 
-func TestNewIssueManagerUnsupported(t *testing.T) {
-	im, err := issue.NewIssueManager("unsupported", annotation)
-	require.Errorf(t, err, "Unsupported issue type. Use 'pending' or 'processed'")
-	require.Nil(t, im)
-}
+func TestNewIssueManager(t *testing.T) {
+	testCases := []struct {
+		name     string
+		expected *IssueManager
+		mode     IssueMode
+		err      bool
+	}{
+		{
+			name: "Create a new issue manager with the correct mode and annotation fields when invoked with scan mode",
+			expected: &IssueManager{
+				annotation: testAnnotation,
+				Issues:     []Issue{},
+				mode:       IssueModeScan,
+				os:         runtime.GOOS,
+			},
+			mode: IssueModeScan,
+			err:  false,
+		},
+		{
+			name: "Create a new issue manager with the correct mode and annotation when invoked with purge mode",
+			expected: &IssueManager{
+				// when purging comments, the annotation is constructed in a way that will allow the lexer package
+				// to discover annotations that have an issue id, enclosed within parans, appended to the annotation.
+				annotation: []byte("@TEST_ANNOTATION\\(\\d+\\)"),
+				Issues:     []Issue{},
+				mode:       IssueModePurge,
+				os:         runtime.GOOS,
+			},
+			mode: IssueModePurge,
+			err:  false,
+		},
+		{
+			name:     "Returns an error when provided a mode that is not supported",
+			expected: nil,
+			mode:     "unsupported-mode",
+			err:      true,
+		},
+	}
 
-func TestNewIssueManagerPending(t *testing.T) {
-	im, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
-	require.NoError(t, err)
-	require.IsType(t, &issue.PendingIssue{}, im)
-}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			manager, err := NewIssueManager(testAnnotation, tc.mode)
 
-func TestNewIssueManagerProcessed(t *testing.T) {
-	im, err := issue.NewIssueManager(issue.PROCESSED_ISSUE, annotation)
-	require.NoError(t, err)
-	require.IsType(t, &issue.ProcessedIssue{}, im)
+			if tc.err {
+				require.Error(t, err)
+				require.Nil(t, manager)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.expected, manager)
+
+				if tc.mode == IssueModePurge {
+					require.Equal(t, `@TEST_ANNOTATION\(\d+\)`, string(tc.expected.annotation))
+				}
+			}
+		})
+	}
 }
