@@ -77,6 +77,7 @@ func (c *Clexer) tokenizeSLComment() error {
 		c.promoteTokens()
 	}
 
+	c.reset()
 	return nil
 }
 
@@ -105,6 +106,7 @@ func (c *Clexer) tokenizeMLComment() error {
 		c.promoteTokens()
 	}
 
+	c.reset()
 	return nil
 }
 
@@ -207,7 +209,6 @@ func (c *Clexer) closeMLComment() {
 func (c *Clexer) promoteTokens() {
 	c.Base.resetStartIndex()
 	c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
-	c.reset()
 }
 
 func (c *Clexer) reportClassificationError(target TokenType) error {
