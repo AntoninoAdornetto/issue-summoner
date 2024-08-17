@@ -10,15 +10,10 @@ import (
 	"sync"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui/spinner"
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
-
-// We only support GitHub, at the moment, but eventually I want to support all that are contained
-// in the `allowedPlatforms` slice.
-var allowedPlatforms = []string{scm.GITHUB, scm.GITLAB, scm.BITBUCKET}
 
 // authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
@@ -67,7 +62,7 @@ Issue Summoner to submit issues to a specified source code management platform o
 		}
 
 		spinner := tea.NewProgram(
-			spinner.InitialModelNew(fmt.Sprintf("Pending %s authorization", srcCodeManager)),
+			ui.InitSpinner(fmt.Sprintf("Pending %s authorization", srcCodeManager)),
 		)
 
 		defer func() {
