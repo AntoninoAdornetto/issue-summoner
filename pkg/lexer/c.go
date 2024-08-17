@@ -171,7 +171,7 @@ func (c *Clexer) classifyMLComment(token *Token) {
 
 func (c *Clexer) isCommonTokenType(token *Token) bool {
 	switch {
-	case !c.annotated && bytes.Equal(token.Lexeme, c.Base.Annotation):
+	case !c.annotated && c.Base.matchAnnotation(token):
 		c.line = c.Base.Line
 		token.Type = TOKEN_COMMENT_ANNOTATION
 		c.annotated = true
