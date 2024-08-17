@@ -9,28 +9,36 @@ import (
 
 func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 	testCases := []struct {
-		name     string
-		srcCode  []byte
-		fileName string
-		expected []lexer.Token
+		name       string
+		srcCode    []byte
+		fileName   string
+		expected   []lexer.Token
+		flags      lexer.U8
+		annotation []byte
 	}{
 		{
 			name: "should not create any tokens when consuming a non-comment notation byte",
 			// int is not "//" or "/*" - denotes the opening notation of a comment in c-like languages
-			srcCode:  []byte("int"),
-			fileName: "main.c",
-			expected: []lexer.Token{},
+			srcCode:    []byte("int"),
+			fileName:   "main.c",
+			expected:   []lexer.Token{},
+			annotation: testAnnotation,
+			flags:      lexer.FLAG_SCAN,
 		},
 		{
-			name:     "should not create any tokens when consuming single line comment bytes that do not have an issue annotation",
-			srcCode:  []byte("// regular single line comment with no issue annotation in c"),
-			fileName: "main.c",
-			expected: []lexer.Token{},
+			name:       "should not create any tokens when consuming single line comment bytes that do not have an issue annotation",
+			srcCode:    []byte("// regular single line comment with no issue annotation in c"),
+			fileName:   "main.c",
+			expected:   []lexer.Token{},
+			annotation: testAnnotation,
+			flags:      lexer.FLAG_SCAN,
 		},
 		{
-			name:     "should create the comment start, comment annotation and comment end tokens",
-			srcCode:  []byte("// @TEST_ANNOTATION\n"),
-			fileName: "main.c",
+			name:       "should create the comment start, comment annotation and comment end tokens",
+			srcCode:    []byte("// @TEST_ANNOTATION\n"),
+			fileName:   "main.c",
+			flags:      lexer.FLAG_SCAN,
+			annotation: testAnnotation,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
@@ -56,9 +64,11 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 			},
 		},
 		{
-			name:     "should create the comment start, comment annotation, comment title and comment end tokens",
-			srcCode:  []byte("// @TEST_ANNOTATION check for edge cases"),
-			fileName: "main.c",
+			name:       "should create the comment start, comment annotation, comment title and comment end tokens",
+			srcCode:    []byte("// @TEST_ANNOTATION check for edge cases"),
+			fileName:   "main.c",
+			flags:      lexer.FLAG_SCAN,
+			annotation: testAnnotation,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
@@ -111,11 +121,71 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "should create the comment start, comment annotation, comment title and comment end tokens when given the purge flag",
+			// the src code for this test simulates an issue annotation that has been reported already. I.E., issue was published to github,gitlab,ect
+			srcCode:  []byte("// @TEST_ANNOTATION(98321) check for edge cases"),
+			fileName: "main.c",
+			flags:    lexer.FLAG_PURGE,
+			// this pattern is constructed within the issue package
+			annotation: []byte("@TEST_ANNOTATION\\(\\d+\\)"),
+			expected: []lexer.Token{
+				{
+					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
+					Start:  0,
+					End:    1,
+					Line:   1,
+					Lexeme: []byte("//"),
+				},
+				{
+					Type:   lexer.TOKEN_COMMENT_ANNOTATION,
+					Start:  3,
+					End:    25,
+					Line:   1,
+					Lexeme: []byte("@TEST_ANNOTATION(98321)"),
+				},
+				{
+					Type:   lexer.TOKEN_COMMENT_TITLE,
+					Start:  27,
+					End:    31,
+					Line:   1,
+					Lexeme: []byte("check"),
+				},
+				{
+					Type:   lexer.TOKEN_COMMENT_TITLE,
+					Start:  33,
+					End:    35,
+					Line:   1,
+					Lexeme: []byte("for"),
+				},
+				{
+					Type:   lexer.TOKEN_COMMENT_TITLE,
+					Start:  37,
+					End:    40,
+					Line:   1,
+					Lexeme: []byte("edge"),
+				},
+				{
+					Type:   lexer.TOKEN_COMMENT_TITLE,
+					Start:  42,
+					End:    46,
+					Line:   1,
+					Lexeme: []byte("cases"),
+				},
+				{
+					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_END,
+					Start:  47,
+					End:    47,
+					Line:   1,
+					Lexeme: []byte{0},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
+			baseLexer := lexer.NewLexer(tc.annotation, tc.srcCode, tc.fileName, tc.flags)
 			cLexer := lexer.Clexer{Base: baseLexer}
 			err := cLexer.AnalyzeToken()
 			require.NoError(t, err)
@@ -314,7 +384,7 @@ func TestAnalyzeTokenMultiLineComments(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName)
+			baseLexer := lexer.NewLexer(testAnnotation, tc.srcCode, tc.fileName, lexer.FLAG_SCAN)
 			cLexer := lexer.Clexer{Base: baseLexer}
 			err := cLexer.AnalyzeToken()
 			require.NoError(t, err)
