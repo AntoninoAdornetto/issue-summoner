@@ -44,7 +44,7 @@ func (c *Clexer) AnalyzeToken() error {
 
 // @TEST_TODO Test the CLexer String func
 func (c *Clexer) String(delim byte) error {
-	for !c.Base.pastEnd() && c.Base.peek() != delim {
+	for !c.Base.pastEnd() && c.Base.peekNext() != delim {
 		b := c.Base.next()
 		if b == NEWLINE {
 			c.Base.Line++
