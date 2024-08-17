@@ -1,6 +1,6 @@
 module github.com/AntoninoAdornetto/issue-summoner
 
-go 1.22.4
+go 1.22.6
 
 require (
 	github.com/AntoninoAdornetto/go-gitignore v0.1.5
