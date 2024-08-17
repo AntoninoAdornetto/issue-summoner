@@ -34,20 +34,31 @@ a PythonLexer and so on.
 package lexer
 
 import (
+	"bytes"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"unicode"
+)
+
+type U8 uint8
+
+const (
+	FLAG_PURGE U8 = 1 << iota
+	FLAG_SCAN
 )
 
 type Lexer struct {
 	FilePath   string
 	FileName   string
-	Src        []byte  // source code bytes
-	Tokens     []Token // comment tokens after lexical analysis has been complete
-	Start      int     // byte index
-	Current    int     // byte index, used in conjunction with Start to construct tokens
-	Line       int     // Line number
-	Annotation []byte  // issue annotation to search for within comments
+	Src        []byte         // source code bytes
+	Tokens     []Token        // comment tokens after lexical analysis has been complete
+	Start      int            // byte index
+	Current    int            // byte index, used in conjunction with Start to construct tokens
+	Line       int            // Line number
+	Annotation []byte         // issue annotation to search for within comments
+	re         *regexp.Regexp // primary use is for purging comments
+	flags      U8
 }
 
 type LexicalTokenizer interface {
@@ -56,8 +67,8 @@ type LexicalTokenizer interface {
 	Comment() error
 }
 
-func NewLexer(annotation, src []byte, filePath string) *Lexer {
-	return &Lexer{
+func NewLexer(annotation, src []byte, filePath string, flags U8) *Lexer {
+	lex := &Lexer{
 		Src:        src,
 		FilePath:   filePath,
 		FileName:   filepath.Base(filePath),
@@ -66,7 +77,14 @@ func NewLexer(annotation, src []byte, filePath string) *Lexer {
 		Current:    0,
 		Line:       1,
 		Annotation: annotation,
+		flags:      flags,
 	}
+
+	if flags&FLAG_PURGE != 0 {
+		lex.re = regexp.MustCompile(string(annotation))
+	}
+
+	return lex
 }
 
 func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
@@ -140,6 +158,13 @@ func (base *Lexer) nextLexeme() []byte {
 
 func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
+}
+
+func (base *Lexer) matchAnnotation(token *Token) bool {
+	if base.re != nil {
+		return base.re.Match(token.Lexeme)
+	}
+	return bytes.Equal(token.Lexeme, base.Annotation)
 }
 
 func (base *Lexer) resetStartIndex() {
