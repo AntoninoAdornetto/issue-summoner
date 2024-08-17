@@ -7,9 +7,11 @@ import (
 	"text/template"
 )
 
+type IssueMode = string
+
 const (
-	PENDING_ISSUE   = "pending"
-	PROCESSED_ISSUE = "processed"
+	IssueModePurge IssueMode = "purge"
+	IssueModeScan  IssueMode = "scan"
 )
 
 type Issue struct {
@@ -45,8 +47,14 @@ func NewIssueManager(issueType string, annotation string) (IssueManager, error) 
 		return &PendingIssue{Annotation: annotation}, nil
 	case PROCESSED_ISSUE:
 		return &ProcessedIssue{Annotation: annotation}, nil
+	switch mode {
+	case IssueModeScan:
+		manager.annotation = annotation
+	case IssueModePurge:
+		annotation = append(annotation, []byte("\\(\\d+\\)")...)
+		manager.annotation = annotation
 	default:
-		return nil, errors.New("Unsupported issue type. Use 'pending' or 'processed'")
+		return nil, errors.New("expected mode of \"report\" or \"purge\"")
 	}
 }
 
