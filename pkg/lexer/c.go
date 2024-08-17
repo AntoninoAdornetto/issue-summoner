@@ -17,7 +17,6 @@ import (
 var (
 	cSLCommentNotation      = []byte("//") // Single Line Comment notation for c-like languages
 	cMLCommentNotationStart = []byte("/*") // Multi Line Comment prefix notation
-	cMLCommentNotationEnd   = []byte("*/") // Multi Line Comment suffix notation
 	cMLCommentSeparator     = []byte("*")  // Multi Line Comment separator
 )
 
@@ -43,7 +42,16 @@ func (c *Clexer) AnalyzeToken() error {
 	}
 }
 
+// @TEST_TODO Test the CLexer String func
 func (c *Clexer) String(delim byte) error {
+	for !c.Base.pastEnd() && c.Base.peek() != delim {
+		b := c.Base.next()
+		if b == NEWLINE {
+			c.Base.Line++
+		}
+	}
+
+	c.Base.next()
 	return nil
 }
 
