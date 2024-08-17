@@ -15,7 +15,7 @@ func TestBuildComments(t *testing.T) {
 	}{
 		{
 			name: "should return the correct comments when parsing c code",
-			path: "../../testdata/fixtures/c/mix.c",
+			path: "./testdata/c/mix.c",
 			expected: []lexer.Comment{
 				{
 					Title:                "inline comment #1",
