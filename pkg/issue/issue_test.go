@@ -1,6 +1,8 @@
 package issue
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -8,7 +10,9 @@ import (
 )
 
 var (
-	testAnnotation = []byte("@TEST_ANNOTATION")
+	// currentIssueCount is the actual number of annotations that this project currently has
+	currentIssueCount = 4
+	testAnnotation    = []byte("@TEST_ANNOTATION")
 )
 
 func TestNewIssueManager(t *testing.T) {
@@ -43,6 +47,17 @@ func TestNewIssueManager(t *testing.T) {
 			err:  false,
 		},
 		{
+			name: "Create a new issue manager with the correct mode and annotation fields when invoked with report mode",
+			expected: &IssueManager{
+				annotation: testAnnotation,
+				Issues:     []Issue{},
+				mode:       IssueModeReport,
+				os:         runtime.GOOS,
+			},
+			mode: IssueModeReport,
+			err:  false,
+		},
+		{
 			name:     "Returns an error when provided a mode that is not supported",
 			expected: nil,
 			mode:     "unsupported-mode",
@@ -66,5 +81,47 @@ func TestNewIssueManager(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestWalk(t *testing.T) {
+	manager, err := NewIssueManager([]byte("@TODO"), IssueModeScan)
+	require.NoError(t, err)
+
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+
+	err = manager.Walk(filepath.Join(wd, "../../"))
+	require.NoError(t, err)
+
+	require.Len(t, manager.Issues, currentIssueCount)
+}
+
+func BenchmarkWalk(b *testing.B) {
+	manager, err := NewIssueManager([]byte("@TODO"), IssueModeScan)
+	if err != nil {
+		b.Fatalf("Failed to create IssueManager: %v", err)
+	}
+
+	wd, err := os.Getwd()
+	if err != nil {
+		b.Fatalf("Failed to get working directory: %v", err)
+	}
+
+	path := filepath.Join(wd, "../../")
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		manager.Issues = nil
+
+		err := manager.Walk(path)
+		if err != nil {
+			b.Fatalf("Walk func failed: %v", err)
+		}
+
+		if len(manager.Issues) != currentIssueCount {
+			b.Fatalf("Expected %d issues, but got %d", currentIssueCount, len(manager.Issues))
+		}
 	}
 }
