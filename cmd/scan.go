@@ -32,50 +32,54 @@ that reside in your code base.`,
 			logger.Fatal(err.Error())
 		}
 
-		mode, err := cmd.Flags().GetString(flag_mode)
-		if err != nil {
-			logger.Fatal(err.Error())
-		}
-
-		if mode == "pending" {
-			logger.Info(fmt.Sprintf("Scanning for comments with %s annotation", annotation))
-		} else {
-			logger.Info("Scanning for comments that have been reported already")
-		}
-
 		repo, err := git.NewRepository(path)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
 
-		issueManager, err := issue.NewIssueManager(mode, annotation)
+		manager, err := issue.NewIssueManager([]byte(annotation), issue.IssueModeScan)
 		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		if _, err := issueManager.Walk(repo.WorkTree); err != nil {
 			logger.Fatal(err.Error())
 		}
 
-		if len(issueManager.GetIssues()) == 0 {
-			logger.Success(no_issues + annotation)
+		if err := manager.Walk(repo.WorkTree); err != nil {
+			logger.Fatal(err.Error())
+		}
+
+		if len(manager.Issues) == 0 {
+			logger.Success(fmt.Sprintf("Scan finished: %s %s", no_issues, annotation))
 			return
 		}
 
-		msg := fmt.Sprintf(
-			"Found %d issue annotations using %s",
-			len(issueManager.GetIssues()),
-			annotation,
-		)
+		msg := fmt.Sprintf("Found %d issue annotations using %s", len(manager.Issues), annotation)
 
 		if verbose {
-			issue.PrintIssueDetails(
-				issueManager.GetIssues(),
-				ui.AccentTextStyle,
-				ui.BackgroundStyle,
-			)
+			for _, issue := range manager.Issues {
+				fmt.Printf("\n\n")
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("File name: "),
+					ui.PrimaryTextStyle.Render(issue.FileName),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Title: "),
+					ui.PrimaryTextStyle.Render(issue.Title),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Description: "),
+					ui.PrimaryTextStyle.Render(issue.Description),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Line number: "),
+					ui.PrimaryTextStyle.Render(fmt.Sprintf("%d", issue.LineNumber)),
+				)
+			}
 		}
 
+		fmt.Printf("\n")
 		logger.Success(msg)
 
 		if !verbose {
@@ -87,7 +91,6 @@ that reside in your code base.`,
 func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModePending, flag_desc_mode)
 	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
 	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
