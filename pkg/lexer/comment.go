@@ -10,6 +10,7 @@ type Comment struct {
 	TokenAnnotationIndex int
 	TokenEndIndex        int
 	LineNumber           int
+	AnnotationPos        []int
 }
 
 type CommentManager struct {
@@ -42,6 +43,7 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 			comment.TokenStartIndex = *index
 		case TOKEN_COMMENT_ANNOTATION:
 			comment.TokenAnnotationIndex = *index
+			comment.AnnotationPos = []int{token.Start, token.End}
 		case TOKEN_COMMENT_TITLE:
 			title = append(title, token.Lexeme)
 		case TOKEN_COMMENT_DESCRIPTION:
