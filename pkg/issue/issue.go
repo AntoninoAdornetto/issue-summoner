@@ -87,8 +87,8 @@ type Issue struct {
 }
 
 type IssueMapEntry struct {
-	Index      int   // index of the issue in [IssueManager.Issues]
-	ReportedID int64 // issue identifier after calling [git.Report] func
+	Index      int // index of the issue in [IssueManager.Issues]
+	ReportedID int // issue identifier after calling [git.Report] func
 }
 
 // NewIssueManager accepts an annotation as input, which is used to locate issues/action
@@ -252,10 +252,10 @@ func (mngr *IssueManager) toBitFlag() (lexer.U8, error) {
 
 // Groups [Issues] together by file path so that when we are writting issue ids
 // back to where the issue [Annotation] is located, we can do so with fewer sys calls.
-func (mngr *IssueManager) Group(index int, id int64) error {
+func (mngr *IssueManager) Group(index, id int) error {
 	if index < 0 || index > len(mngr.Issues)-1 {
 		return fmt.Errorf(
-			"Failed to group issues by filepath: index %d of out of bounds with length of %d",
+			"Failed to group issues by filepath: index %d out of bounds with length of %d",
 			index,
 			len(mngr.Issues),
 		)
