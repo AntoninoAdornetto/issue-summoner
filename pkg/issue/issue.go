@@ -108,6 +108,11 @@ func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 		break
 	case IssueModeReport:
 		manager.IssueMap = make(map[string][]IssueMapEntry)
+		tmpl, err := generateIssueTemplate()
+		if err != nil {
+			return nil, err
+		}
+		manager.template = tmpl
 	case IssueModePurge:
 		manager.Annotation = append(manager.Annotation, []byte("\\(#\\d+\\)")...)
 	default:
