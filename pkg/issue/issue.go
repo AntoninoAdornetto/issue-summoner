@@ -41,10 +41,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -62,7 +64,8 @@ const (
 
 type IssueManager struct {
 	Issues      []Issue
-	annotation  []byte
+	IssueMap    map[string][]IssueMapEntry
+	Annotation  []byte
 	currentBase string
 	currentPath string
 	mode        IssueMode
@@ -71,33 +74,44 @@ type IssueManager struct {
 }
 
 type Issue struct {
-	ID          string
-	Body        string
-	Description string
-	EndIndex    int
-	FileName    string
-	FilePath    string
-	LineNumber  int
-	OS          string
-	StartIndex  int
-	Title       string
+	ID          string // Used as a key for the multi select tui component for issue selection <issue summoner report> cmd
+	Title       string // Title of the issue
+	Description string // Description of the issue
+	Body        string // Contains the issue body/description to use for the issue filing. Is a markdown template
+	FileName    string // base
+	FilePath    string // relative to the working tree dir
+	LineNumber  int    // Line number of where the comment resides
+	OS          string // Used for env section of the issue markdown template
+	Index       int    // index of the issue in [IssueManager.Issues]
+	Comment     *lexer.Comment
 }
 
+type IssueMapEntry struct {
+	Index      int   // index of the issue in [IssueManager.Issues]
+	ReportedID int64 // issue identifier after calling [git.Report] func
+}
+
+// NewIssueManager accepts an annotation as input, which is used to locate issues/action
+// items that are contained within comments, and a [mode] that is used to determine
+// the functionality/behavior of both the issue & lexer packages. @See top comment in this
+// file for a description on the supported modes and their responsibilities.
 func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 	manager := &IssueManager{
-		Issues: make([]Issue, 0),
-		mode:   mode,
-		os:     runtime.GOOS,
+		Issues:     make([]Issue, 0),
+		Annotation: annotation,
+		mode:       mode,
+		os:         runtime.GOOS,
 	}
 
 	switch mode {
-	case IssueModeScan, IssueModeReport:
-		manager.annotation = annotation
+	case IssueModeScan:
+		break
+	case IssueModeReport:
+		manager.IssueMap = make(map[string][]IssueMapEntry)
 	case IssueModePurge:
-		annotation = append(annotation, []byte("\\(\\d+\\)")...)
-		manager.annotation = annotation
+		manager.Annotation = append(manager.Annotation, []byte("\\(#\\d+\\)")...)
 	default:
-		return nil, errors.New("expected mode of \"report\" or \"purge\"")
+		return nil, errors.New("expected mode of \"report\", \"scan\", or \"purge\"")
 	}
 
 	return manager, nil
@@ -108,14 +122,17 @@ func (mngr *IssueManager) appendIssue(comment *lexer.Comment) error {
 
 	issue := Issue{
 		Description: comment.Description,
-		EndIndex:    comment.TokenEndIndex,
 		FileName:    mngr.currentBase,
 		FilePath:    mngr.currentPath,
 		ID:          id,
 		LineNumber:  comment.LineNumber,
 		OS:          mngr.os,
-		StartIndex:  comment.TokenStartIndex,
 		Title:       comment.Title,
+		Comment:     comment,
+	}
+
+	if len(mngr.Issues) > 0 {
+		issue.Index = len(mngr.Issues)
 	}
 
 	if mngr.mode == IssueModeReport && mngr.template != nil {
@@ -200,7 +217,7 @@ func (mngr *IssueManager) Scan(path string) error {
 		return err
 	}
 
-	base := lexer.NewLexer(mngr.annotation, src, mngr.currentPath, flag)
+	base := lexer.NewLexer(mngr.Annotation, src, path, flag)
 	target, err := lexer.NewTargetLexer(base)
 	if err != nil {
 		// @TODO create error/warning message when encountering an unsupported file extension/programming language
@@ -230,5 +247,101 @@ func (mngr *IssueManager) toBitFlag() (lexer.U8, error) {
 		return lexer.FLAG_PURGE, nil
 	default:
 		return 0, errors.New("unsupported issue mode. expected scan or purge")
+	}
+}
+
+// Groups [Issues] together by file path so that when we are writting issue ids
+// back to where the issue [Annotation] is located, we can do so with fewer sys calls.
+func (mngr *IssueManager) Group(index int, id int64) error {
+	if index < 0 || index > len(mngr.Issues)-1 {
+		return fmt.Errorf(
+			"Failed to group issues by filepath: index %d of out of bounds with length of %d",
+			index,
+			len(mngr.Issues),
+		)
+	}
+
+	current := mngr.Issues[index]
+	mngr.IssueMap[current.FilePath] = append(mngr.IssueMap[current.FilePath], IssueMapEntry{
+		Index:      index,
+		ReportedID: id,
+	})
+
+	return nil
+}
+
+func (mngr *IssueManager) WriteIssues(pathKey string) error {
+	if _, ok := mngr.IssueMap[pathKey]; !ok {
+		return fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
+	}
+
+	size := len(mngr.IssueMap[pathKey]) - 1
+	if size == 0 {
+		return nil
+	}
+
+	srcFile, err := os.OpenFile(pathKey, os.O_RDWR, 0666)
+	if err != nil {
+		return nil
+	}
+
+	defer srcFile.Close()
+
+	srcCode, err := io.ReadAll(srcFile)
+	if err != nil {
+		return err
+	}
+
+	mngr.sortPathGroup(pathKey)
+	entries := mngr.IssueMap[pathKey]
+
+	buf := bytes.Buffer{}
+	for i, entry := range entries {
+		comment := mngr.Issues[entry.Index].Comment
+		start, end := comment.AnnotationPos[0], comment.AnnotationPos[1]
+
+		if i == 0 {
+			buf.Write(srcCode[:end+1])
+		} else {
+			buf.Write(srcCode[start : end+1])
+		}
+
+		buf.WriteString(fmt.Sprintf("(#%d)", entry.ReportedID))
+
+		if i < size {
+			next := entries[i+1]
+			nextComment := mngr.Issues[next.Index].Comment
+			nextStart := nextComment.AnnotationPos[0]
+			buf.Write(srcCode[end+1 : nextStart])
+		} else {
+			buf.Write(srcCode[end+1:])
+		}
+	}
+
+	if _, err := srcFile.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+
+	if err := srcFile.Sync(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// sortPathGroup is needed to restore order to our [IssueMap]. This is important
+// because [Issues] are reported to scm's using go routines and we can't guarantee
+// when they will finish. Having them in sequential order will also help during the
+// [WriteIssues] invokation
+func (mngr *IssueManager) sortPathGroup(pathKey string) {
+	if group, ok := mngr.IssueMap[pathKey]; ok {
+		sort.Slice(group, func(i, j int) bool {
+			return group[i].Index < group[j].Index
+		})
+		mngr.IssueMap[pathKey] = group
 	}
 }
