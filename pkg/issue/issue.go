@@ -353,7 +353,7 @@ func (mngr *IssueManager) sortPathGroup(pathKey string) {
 
 var (
 	errFailedWrite = "Issue <%s> was reported to %s but the program failed to write id %d back to the src file at path %s"
-	successWrite   = "Issue <%s> successfully reported to %s and annotated with issue ID %d"
+	successWrite   = "Issue <%s> successfully reported to %s and annotated with issue number %d"
 )
 
 // returns the results of reporting issues to a source code management platform
