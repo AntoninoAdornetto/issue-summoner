@@ -13,7 +13,7 @@ const (
 	flag_debug           = "debug"
 	flag_desc_annotation = "The issue annotation to search for. Example: @TODO:"
 	flag_desc_debug      = "Log the stack trace when errors occur"
-	flag_desc_mode       = "'processed' is for issues that have already been pushed to a scm. 'pending' is for issues that have not yet been published"
+	flag_desc_mode       = "scan: searches for annotations denoted with the -annotation flag. purge: checks status of reported issues and removes comments"
 	flag_desc_path       = "the path to your local git repository"
 	flag_desc_scm        = "The source code management platform you would like to use. Such as, github, gitlab, or bitbucket"
 	flag_desc_verbose    = "log detailed information about each issue annotation that is located during the scan"
