@@ -2,12 +2,13 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Selection struct {
-	Options map[string]bool
+	Options map[int]bool
 }
 
 type Step struct {
@@ -18,10 +19,11 @@ type Step struct {
 }
 
 type Item struct {
-	ID, Title, Desc string
+	ID          int
+	Title, Desc string
 }
 
-func (s *Selection) OnSelect(option string, value bool) {
+func (s *Selection) OnSelect(option int, value bool) {
 	s.Options[option] = value
 }
 
@@ -38,7 +40,7 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func InitialModelMultiSelect(
+func InitMultiSelect(
 	options []Item,
 	selection *Selection,
 	header string,
@@ -57,7 +59,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q":
+		case "ctrl+c", "q", "esc":
 			*m.exit = true
 			return m, tea.Quit
 		case "up", "k":
@@ -80,6 +82,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.choices.OnSelect(m.options[selectedKey].ID, true)
 				m.cursor = selectedKey
 			}
+			*m.exit = true
 			return m, tea.Quit
 		}
 	}
@@ -87,7 +90,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := m.header + "\n\n"
+	s := strings.Builder{}
+	s.WriteString(m.header + "\n\n")
 
 	for i, option := range m.options {
 		cursor := " "
@@ -105,9 +109,24 @@ func (m model) View() string {
 		title := DimTextStyle.Render(option.Title)
 		description := DimTextStyle.Render(option.Desc)
 
-		s += fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, description)
+		s.WriteString(fmt.Sprintf("%s [%s] %s\n%s\n\n", cursor, checked, title, description))
 	}
 
-	s += fmt.Sprintf("Press %s to confirm choice.\n", AccentTextStyle.Render("y"))
-	return s
+	s.WriteString(AccentTextStyle.Render("\u2191 "))
+	s.WriteString("or ")
+	s.WriteString(AccentTextStyle.Render("k "))
+	s.WriteString("= move up list")
+
+	s.WriteString(AccentTextStyle.Render("\n\u2193 "))
+	s.WriteString("or ")
+	s.WriteString(AccentTextStyle.Render("j "))
+	s.WriteString("= move down list")
+
+	s.WriteString(AccentTextStyle.Render("\nspace "))
+	s.WriteString("= select/deselect")
+
+	s.WriteString(AccentTextStyle.Render("\ny "))
+	s.WriteString("= confirm choices\n")
+
+	return s.String()
 }
