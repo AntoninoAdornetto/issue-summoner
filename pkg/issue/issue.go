@@ -275,9 +275,9 @@ func (mngr *IssueManager) WriteIssues(pathKey string) error {
 		return fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
 	}
 
-	size := len(mngr.IssueMap[pathKey]) - 1
+	size := len(mngr.IssueMap[pathKey])
 	if size == 0 {
-		return nil
+		return fmt.Errorf("Expected Issue map to have at least 1 entry")
 	}
 
 	srcFile, err := os.OpenFile(pathKey, os.O_RDWR, 0666)
@@ -308,7 +308,7 @@ func (mngr *IssueManager) WriteIssues(pathKey string) error {
 
 		buf.WriteString(fmt.Sprintf("(#%d)", entry.ReportedID))
 
-		if i < size {
+		if i < size-1 {
 			next := entries[i+1]
 			nextComment := mngr.Issues[next.Index].Comment
 			nextStart := nextComment.AnnotationPos[0]
