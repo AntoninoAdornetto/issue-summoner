@@ -18,10 +18,12 @@ func TestNewLexer(t *testing.T) {
 		name     string
 		path     string
 		expected *lexer.Lexer
+		flags    lexer.U8
 	}{
 		{
-			name: "should create a new base lexer using c source code",
-			path: "./testdata/c/no-comments.c",
+			name:  "should create a new base lexer using c source code",
+			path:  "./testdata/c/no-comments.c",
+			flags: lexer.FLAG_SCAN,
 			expected: &lexer.Lexer{
 				FilePath:   "./testdata/c/no-comments.c",
 				FileName:   "no-comments.c",
@@ -33,8 +35,9 @@ func TestNewLexer(t *testing.T) {
 			},
 		},
 		{
-			name: "should create a new base lexer using go source code",
-			path: "./testdata/go/no-comments.go",
+			name:  "should create a new base lexer using go source code",
+			path:  "./testdata/go/no-comments.go",
+			flags: lexer.FLAG_SCAN,
 			expected: &lexer.Lexer{
 				FilePath:   "./testdata/go/no-comments.go",
 				FileName:   "no-comments.go",
@@ -46,8 +49,9 @@ func TestNewLexer(t *testing.T) {
 			},
 		},
 		{
-			name: "should create a new base lexer using js source code",
-			path: "./testdata/js/no-comments.js",
+			name:  "should create a new base lexer using js source code",
+			path:  "./testdata/js/no-comments.js",
+			flags: lexer.FLAG_SCAN,
 			expected: &lexer.Lexer{
 				FilePath:   "./testdata/js/no-comments.js",
 				FileName:   "no-comments.js",
@@ -64,8 +68,15 @@ func TestNewLexer(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			src := getSrcCode(t, tc.path)
 			tc.expected.Src = src
-			actual := lexer.NewLexer(testAnnotation, src, tc.path)
-			require.Equal(t, tc.expected, actual)
+			actual := lexer.NewLexer(testAnnotation, src, tc.path, tc.flags)
+			require.Equal(t, tc.expected.Src, actual.Src)
+			require.Equal(t, tc.expected.FilePath, actual.FilePath)
+			require.Equal(t, tc.expected.FileName, actual.FileName)
+			require.Equal(t, tc.expected.Tokens, actual.Tokens)
+			require.Equal(t, tc.expected.Start, actual.Start)
+			require.Equal(t, tc.expected.Current, actual.Current)
+			require.Equal(t, tc.expected.Line, actual.Line)
+			require.Equal(t, tc.expected.Annotation, actual.Annotation)
 		})
 	}
 }
@@ -75,31 +86,38 @@ func TestNewTargetLexer(t *testing.T) {
 		name     string
 		base     *lexer.Lexer
 		expected lexer.LexicalTokenizer
+		flags    lexer.U8
 	}{
 		{
-			name: "Should create a c-lexer (target lexer) when provided c source code",
+			name:  "Should create a c-lexer (target lexer) when provided c source code",
+			flags: lexer.FLAG_SCAN,
 			base: lexer.NewLexer(
 				testAnnotation,
 				getSrcCode(t, "./testdata/c/no-comments.c"),
 				"./testdata/c/no-comments.c",
+				lexer.FLAG_SCAN,
 			),
 			expected: &lexer.Clexer{},
 		},
 		{
-			name: "Should create a c-lexer (target lexer) when provided go source code",
+			name:  "Should create a c-lexer (target lexer) when provided go source code",
+			flags: lexer.FLAG_SCAN,
 			base: lexer.NewLexer(
 				testAnnotation,
 				getSrcCode(t, "./testdata/go/no-comments.go"),
 				"./testdata/go/no-comments.go",
+				lexer.FLAG_SCAN,
 			),
 			expected: &lexer.Clexer{},
 		},
 		{
-			name: "Should create a c-lexer (target lexer) when provided js source code",
+			name:  "Should create a c-lexer (target lexer) when provided js source code",
+			flags: lexer.FLAG_SCAN,
 			base: lexer.NewLexer(
 				testAnnotation,
 				getSrcCode(t, "./testdata/js/no-comments.js"),
 				"./testdata/js/no-comments.js",
+				lexer.FLAG_SCAN,
 			),
 			expected: &lexer.Clexer{},
 		},
@@ -119,10 +137,12 @@ func TestAnalyzeTokensCSrcCode(t *testing.T) {
 		name     string
 		path     string
 		expected []lexer.Token
+		flags    lexer.U8
 	}{
 		{
-			name: "should return 1 token (EOF) when there are no comments present in a c source code file",
-			path: "./testdata/c/no-comments.c",
+			name:  "should return 1 token (EOF) when there are no comments present in a c source code file",
+			path:  "./testdata/c/no-comments.c",
+			flags: lexer.FLAG_SCAN,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_EOF,
@@ -134,8 +154,9 @@ func TestAnalyzeTokensCSrcCode(t *testing.T) {
 			},
 		},
 		{
-			name: "should return the correct tokens for c source code",
-			path: "./testdata/c/mix.c",
+			name:  "should return the correct tokens for c source code",
+			path:  "./testdata/c/mix.c",
+			flags: lexer.FLAG_SCAN,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_MULTI_LINE_COMMENT_START,
@@ -648,7 +669,7 @@ func TestAnalyzeTokensCSrcCode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			src := getSrcCode(t, tc.path)
-			base := lexer.NewLexer(testAnnotation, src, tc.path)
+			base := lexer.NewLexer(testAnnotation, src, tc.path, tc.flags)
 
 			target, err := lexer.NewTargetLexer(base)
 			require.NoError(t, err)
@@ -675,10 +696,12 @@ func TestAnalyzeTokensGoSrcCode(t *testing.T) {
 		name     string
 		path     string
 		expected []lexer.Token
+		flags    lexer.U8
 	}{
 		{
-			name: "should return 1 token (EOF) when there are no comments present in a go source code file",
-			path: "./testdata/go/no-comments.go",
+			name:  "should return 1 token (EOF) when there are no comments present in a go source code file",
+			path:  "./testdata/go/no-comments.go",
+			flags: lexer.FLAG_SCAN,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_EOF,
@@ -690,8 +713,9 @@ func TestAnalyzeTokensGoSrcCode(t *testing.T) {
 			},
 		},
 		{
-			name: "should return the correct tokens for go source code",
-			path: "./testdata/go/mix.go",
+			name:  "should return the correct tokens for go source code",
+			path:  "./testdata/go/mix.go",
+			flags: lexer.FLAG_SCAN,
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_MULTI_LINE_COMMENT_START,
@@ -1204,7 +1228,7 @@ func TestAnalyzeTokensGoSrcCode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			src := getSrcCode(t, tc.path)
-			base := lexer.NewLexer(testAnnotation, src, tc.path)
+			base := lexer.NewLexer(testAnnotation, src, tc.path, tc.flags)
 
 			target, err := lexer.NewTargetLexer(base)
 			require.NoError(t, err)
@@ -1231,40 +1255,68 @@ func TestAnalyzeTokensJsSrcCode(t *testing.T) {
 		name     string
 		path     string
 		expected []lexer.Token
+		flags    lexer.U8
 	}{
 		{
-			name: "should do something",
-			path: "./testdata/js/mix.js",
+			name:  "should do something",
+			flags: lexer.FLAG_SCAN,
+			path:  "./testdata/js/mix.js",
 			expected: []lexer.Token{
 				{
-					Type: lexer.TOKEN_SINGLE_LINE_COMMENT_START,
+					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
 					Lexeme: []byte("//"),
+					Line:   1,
+					Start:  26,
+					End:    27,
 				},
 				{
-					Type: lexer.TOKEN_COMMENT_ANNOTATION,
+					Type:   lexer.TOKEN_COMMENT_ANNOTATION,
 					Lexeme: testAnnotation,
+					Line:   1,
+					Start:  29,
+					End:    44,
 				},
 				{
-					Type: lexer.TOKEN_COMMENT_TITLE,
+					Type:   lexer.TOKEN_COMMENT_TITLE,
 					Lexeme: []byte("fix"),
+					Line:   1,
+					Start:  46,
+					End:    48,
 				},
 				{
-					Type: lexer.TOKEN_COMMENT_TITLE,
+					Type:   lexer.TOKEN_COMMENT_TITLE,
 					Lexeme: []byte("bug"),
+					Line:   1,
+					Start:  50,
+					End:    52,
 				},
 				{
-					Type: lexer.TOKEN_COMMENT_TITLE,
+					Type:   lexer.TOKEN_COMMENT_TITLE,
 					Lexeme: []byte("in"),
+					Line:   1,
+					Start:  54,
+					End:    55,
 				},
 				{
-					Type: lexer.TOKEN_COMMENT_TITLE,
+					Type:   lexer.TOKEN_COMMENT_TITLE,
 					Lexeme: []byte("v8"),
+					Line:   1,
+					Start:  57,
+					End:    58,
 				},
 				{
-					Type: lexer.TOKEN_SINGLE_LINE_COMMENT_END,
+					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_END,
+					Lexeme: []byte{'\n'},
+					Line:   2,
+					Start:  59,
+					End:    59,
 				},
 				{
-					Type: lexer.TOKEN_EOF,
+					Type:   lexer.TOKEN_EOF,
+					Lexeme: []byte{0},
+					Line:   6,
+					Start:  98,
+					End:    98,
 				},
 			},
 		},
@@ -1273,7 +1325,7 @@ func TestAnalyzeTokensJsSrcCode(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			src := getSrcCode(t, tc.path)
-			base := lexer.NewLexer(testAnnotation, src, tc.path)
+			base := lexer.NewLexer(testAnnotation, src, tc.path, tc.flags)
 
 			target, err := lexer.NewTargetLexer(base)
 			require.NoError(t, err)

@@ -14,7 +14,7 @@ import (
 var (
 	// currentIssueCount is the current number of issues contained in the entire issue-summoner project.
 	// The value will change as issues, contained in this project, are resolved and added
-	currentIssueCount = 4
+	currentIssueCount = 3
 	testAnnotation    = []byte("@TEST_ANNOTATION")
 )
 
@@ -178,7 +178,7 @@ func TestWriteIssues(t *testing.T) {
 					manager.IssueMap[tc.dstPath],
 					issue.IssueMapEntry{
 						Index:      currentIssue.Index,
-						ReportedID: int64(index + 1),
+						ReportedID: index + 1,
 					},
 				)
 			}
