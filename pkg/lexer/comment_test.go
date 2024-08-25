@@ -24,6 +24,7 @@ func TestBuildComments(t *testing.T) {
 					TokenAnnotationIndex: 1,
 					TokenEndIndex:        5,
 					LineNumber:           5,
+					AnnotationPos:        []int{65, 80},
 				},
 				{
 					Title:                "inline comment #2",
@@ -32,6 +33,7 @@ func TestBuildComments(t *testing.T) {
 					TokenAnnotationIndex: 7,
 					TokenEndIndex:        11,
 					LineNumber:           6,
+					AnnotationPos:        []int{124, 139},
 				},
 				{
 					Title:                "decode the message and clean up after yourself!",
@@ -40,6 +42,7 @@ func TestBuildComments(t *testing.T) {
 					TokenAnnotationIndex: 13,
 					TokenEndIndex:        22,
 					LineNumber:           10,
+					AnnotationPos:        []int{207, 222},
 				},
 				{
 					// multi line comments have a description
@@ -49,6 +52,7 @@ func TestBuildComments(t *testing.T) {
 					TokenAnnotationIndex: 24,
 					TokenEndIndex:        70,
 					LineNumber:           14,
+					AnnotationPos:        []int{293, 308},
 				},
 			},
 		},
@@ -56,7 +60,7 @@ func TestBuildComments(t *testing.T) {
 
 	for _, tc := range testCases {
 		src := getSrcCode(t, tc.path)
-		base := lexer.NewLexer(testAnnotation, src, tc.path)
+		base := lexer.NewLexer(testAnnotation, src, tc.path, lexer.FLAG_SCAN)
 		target, err := lexer.NewTargetLexer(base)
 		require.NoError(t, err)
 
@@ -65,5 +69,10 @@ func TestBuildComments(t *testing.T) {
 
 		actual := lexer.BuildComments(tokens)
 		require.Equal(t, tc.expected, actual.Comments)
+
+		for _, comment := range actual.Comments {
+			start, end := comment.AnnotationPos[0], comment.AnnotationPos[1]
+			require.Equal(t, testAnnotation, src[start:end+1])
+		}
 	}
 }
