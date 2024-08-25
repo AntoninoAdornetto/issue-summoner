@@ -17,13 +17,20 @@ const (
 
 type GitManager interface {
 	Authorize() error
-	Report(issue ReportIssueReq) (int64, error)
+	Report(issue ReportRequest, res chan ReportResponse)
 	Authenticated() bool
 }
 
-type ReportIssueReq struct {
+type ReportRequest struct {
 	Title string `json:"title"`
 	Body  string `json:"body"`
+	Index int    // index location in [IssueManager.Issues] slice in the issue package
+}
+
+type ReportResponse struct {
+	ID    int // issue number
+	Err   error
+	Index int // index location in [IssueManager.Issues] slice in the issue package
 }
 
 func NewGitManager(scm sourceCodeManagement, repo *Repository) (GitManager, error) {
