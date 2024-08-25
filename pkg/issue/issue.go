@@ -350,3 +350,30 @@ func (mngr *IssueManager) sortPathGroup(pathKey string) {
 		mngr.IssueMap[pathKey] = group
 	}
 }
+
+var (
+	errFailedWrite = "Issue <%s> was reported to %s but the program failed to write id %d back to the src file at path %s"
+	successWrite   = "Issue <%s> successfully reported to %s and annotated with issue ID %d"
+)
+
+// returns the results of reporting issues to a source code management platform
+// and writing the ids obtained from the scm back to the src code files
+func (mngr *IssueManager) Results(pathKey, scm string, failed bool) ([]string, error) {
+	if _, ok := mngr.IssueMap[pathKey]; !ok {
+		return nil, fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
+	}
+
+	msgs := make([]string, len(mngr.IssueMap[pathKey]))
+	for i, entry := range mngr.IssueMap[pathKey] {
+		var msg string
+		issue := mngr.Issues[entry.Index]
+		if failed {
+			msg = fmt.Sprintf(errFailedWrite, issue.Title, scm, entry.ReportedID, pathKey)
+		} else {
+			msg = fmt.Sprintf(successWrite, issue.Title, scm, entry.ReportedID)
+		}
+		msgs[i] = msg
+	}
+
+	return msgs, nil
+}
