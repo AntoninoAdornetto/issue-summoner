@@ -153,7 +153,9 @@ platform.`,
 			if r.Err != nil {
 				logger.Warning(r.Err.Error())
 			} else {
-				manager.Group(r.Index, r.ID)
+				if err := manager.Group(r.Index, r.ID); err != nil {
+					logger.Warning(err.Error())
+				}
 			}
 		}
 
