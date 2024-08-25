@@ -1,0 +1,53 @@
+/*
+This file contains a series of functions that each contain a bug and an issue annotation
+that indicates where the bug may be located. We will use this source code file to scan
+for issue annotations and mock the reporting/publishing functionality so that we can assert
+the issue id writing functionality found in issue.go [WriteIssueIDs]
+*/
+package testdata_test
+
+import "fmt"
+
+func findOdd(seq []int) int {
+	counts := make(map[int]int)
+
+	for _, num := range seq {
+		counts[num]++
+	}
+
+	// @TEST_ANNOTATION(#1) Bug #1 introduced in findOdd, Incorrectly checking for even occurrence instead of odd
+	for num, count := range counts {
+		if count%2 == 0 {
+			return num
+		}
+	}
+
+	return -1
+}
+
+func positiveSum(numbers []int) int {
+	sum := 0
+
+	for _, num := range numbers {
+		// @TEST_ANNOTATION(#2) Bug #2 introduced in positiveSum, Incorrectly summing all numbers instead of just positives
+		if num >= 0 {
+			sum += num
+		}
+	}
+
+	return sum
+}
+
+func countVowels(str string) int {
+	vowels := "aeiou"
+	count := 0
+
+	for _, char := range str {
+		// @TEST_ANNOTATION(#3) Bug #3 introduced in countVowels, Incorrectly using a simple `if` instead of checking membership
+		if char == 'a' || char == 'e' || char == 'i' || char == 'o' || char == 'u' {
+			count++
+		}
+	}
+
+	return count
+}

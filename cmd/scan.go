@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
 	"github.com/spf13/cobra"
@@ -23,41 +24,71 @@ command. Report will actually publish the located comments to your favorite
 source code management platform. Scan is for reviewing the issue annotations
 that reside in your code base.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		annotation, path := handleCommonFlags(cmd)
+		annotation, path := getCommonFlags(cmd)
+		logger := getLogger(cmd)
 
 		verbose, err := cmd.Flags().GetBool(flag_verbose)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
 		mode, err := cmd.Flags().GetString(flag_mode)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		issueManager, err := issue.NewIssueManager(mode, annotation)
+		repo, err := git.NewRepository(path)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		_, err = issueManager.Walk(path)
+		manager, err := issue.NewIssueManager([]byte(annotation), mode)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		issues := issueManager.GetIssues()
-		if len(issues) > 0 {
-			success := fmt.Sprintf("Found %d issue annotations using %s", len(issues), annotation)
-			fmt.Println(ui.SuccessTextStyle.Render(success))
-		} else {
-			fmt.Println(ui.SecondaryTextStyle.Render(fmt.Sprintf("%s %s", no_issues, annotation)))
+		if err := manager.Walk(repo.WorkTree); err != nil {
+			logger.Fatal(err.Error())
+		}
+
+		if len(manager.Issues) == 0 {
+			logger.Success(fmt.Sprintf("Scan finished: %s %s", no_issues, annotation))
 			return
 		}
 
+		msg := fmt.Sprintf("Found %d issue annotations using %s", len(manager.Issues), annotation)
+
 		if verbose {
-			issue.PrintIssueDetails(issues, ui.DimTextStyle, ui.PrimaryTextStyle)
-		} else {
-			fmt.Println(ui.SecondaryTextStyle.Render(tip_verbose))
+			for _, issue := range manager.Issues {
+				fmt.Printf("\n\n")
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("File name: "),
+					ui.PrimaryTextStyle.Render(issue.FileName),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Title: "),
+					ui.PrimaryTextStyle.Render(issue.Title),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Description: "),
+					ui.PrimaryTextStyle.Render(issue.Description),
+				)
+
+				fmt.Println(
+					ui.AccentTextStyle.Render("Line number: "),
+					ui.PrimaryTextStyle.Render(fmt.Sprintf("%d", issue.LineNumber)),
+				)
+			}
+		}
+
+		fmt.Printf("\n")
+		logger.Success(msg)
+
+		if !verbose {
+			logger.Hint(tip_verbose)
 		}
 	},
 }
@@ -65,7 +96,8 @@ that reside in your code base.`,
 func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.PENDING_ISSUE, flag_desc_mode)
+	scanCmd.Flags().StringP(flag_mode, shortflag_mode, "", flag_desc_mode)
 	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
+	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 }

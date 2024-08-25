@@ -1,4 +1,4 @@
-package utils
+package common
 
 import (
 	"os/exec"
@@ -15,5 +15,6 @@ func OpenBrowser(url string) error {
 	default:
 		cmd = exec.Command("xdg-open", url)
 	}
+
 	return cmd.Run()
 }

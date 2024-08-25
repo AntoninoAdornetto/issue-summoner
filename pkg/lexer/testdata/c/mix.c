@@ -2,17 +2,17 @@
 #include <stdlib.h>
 
 struct Person {
-  int /* @TEST_TODO inline comment #1 */ age;
-  char *name /* @TEST_TODO inline comment #2 */;
+  int /* @TEST_ANNOTATION inline comment #1 */ age;
+  char *name /* @TEST_ANNOTATION inline comment #2 */;
 };
 
 int main(int argc, char *argv[]) {
-  // @TEST_TODO decode the message and clean up after yourself!
+  // @TEST_ANNOTATION decode the message and clean up after yourself!
   return 0;
 }
 
 /*
- * @TEST_TODO drop a star if you know about this code wars challenge
+ * @TEST_ANNOTATION drop a star if you know about this code wars challenge
  * Digital Cypher assigns to each letter of the alphabet unique number.
  * Instead of letters in encrypted word we write the corresponding number
  * Then we add to each obtained digit consecutive digits from the key

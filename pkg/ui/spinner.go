@@ -11,17 +11,17 @@ import (
 type errMsg error
 
 type spinnerModel struct {
-	spinner spinner.Model
-	exit    bool
-	err     error
-	msg     string
+	spinner  spinner.Model
+	quitting bool
+	err      error
+	message  string
 }
 
-func InitialModelNew(str string) spinnerModel {
+func InitSpinner(msg string) spinnerModel {
 	s := spinner.New()
-	s.Spinner = spinner.Line
-	s.Style = lipgloss.NewStyle().Foreground(AccentTextStyle.GetForeground())
-	return spinnerModel{spinner: s, msg: str}
+	s.Spinner = spinner.MiniDot
+	s.Style = lipgloss.NewStyle().Foreground(SuccessTextStyle.GetForeground())
+	return spinnerModel{spinner: s, message: msg}
 }
 
 func (m spinnerModel) Init() tea.Cmd {
@@ -33,7 +33,7 @@ func (m spinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			m.exit = true
+			m.quitting = true
 			return m, tea.Quit
 		default:
 			return m, nil
@@ -51,12 +51,11 @@ func (m spinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m spinnerModel) View() string {
-
 	if m.err != nil {
 		return m.err.Error()
 	}
-	str := fmt.Sprintf("%s %s\n\n", m.spinner.View(), m.msg)
-	if m.exit {
+	str := fmt.Sprintf("%s %s", m.spinner.View(), m.message)
+	if m.quitting {
 		return str + "\n"
 	}
 	return str

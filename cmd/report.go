@@ -4,18 +4,22 @@ Copyright © 2024 AntoninoAdornetto
 package cmd
 
 import (
-	"bytes"
+	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
+	"sync"
 
+	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
-	"github.com/AntoninoAdornetto/issue-summoner/pkg/scm"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/ui"
-	"github.com/AntoninoAdornetto/issue-summoner/templates"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 )
+
+type writeIssueResult struct {
+	Err     error
+	PathKey string
+}
 
 var reportCmd = &cobra.Command{
 	Use:   "report",
@@ -27,127 +31,169 @@ Once issue annotations are discovered, you will be presented with a list of all 
 that were located and you can select which ones you would like to report to a source code management
 platform.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		annotation, path := handleCommonFlags(cmd)
+		annotation, path := getCommonFlags(cmd)
+		logger := getLogger(cmd)
 
-		sourceCodeManager, err := cmd.Flags().GetString(flag_scm)
+		srcCodeManager, err := cmd.Flags().GetString(flag_scm)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		_, err = scm.ReadAccessToken(sourceCodeManager)
+		repo, err := git.NewRepository(path)
 		if err != nil {
-			if os.IsNotExist(err) {
-				ui.LogFatal(
-					"configuration file does not exist. please run <issue-summoner authorize> or see <issue-summoner authorize --help>",
-				)
-			} else {
-				ui.LogFatal(err.Error())
-			}
+			logger.Fatal(err.Error())
 		}
 
-		issueManager, err := issue.NewIssueManager(issue.PENDING_ISSUE, annotation)
+		manager, err := issue.NewIssueManager([]byte(annotation), issue.IssueModeReport)
 		if err != nil {
-			ui.LogFatal(err.Error())
+			logger.Fatal(err.Error())
 		}
 
-		_, err = issueManager.Walk(path)
-		if err != nil {
-			ui.LogFatal(err.Error())
+		if err := manager.Walk(repo.WorkTree); err != nil {
+			logger.Fatal(err.Error())
 		}
 
-		issues := issueManager.GetIssues()
-		if len(issues) == 0 {
-			fmt.Println(ui.ErrorTextStyle.Render(no_issues))
+		if len(manager.Issues) == 0 {
+			logger.Info(no_issues + annotation)
 			return
 		}
 
-		selections := ui.Selection{
-			Options: make(map[string]bool),
+		gitManager, err := git.NewGitManager(srcCodeManager, repo)
+		if err != nil {
+			logger.Fatal(err.Error())
 		}
 
-		options := make([]ui.Item, len(issues))
-		for i, is := range issues {
+		options := make([]ui.Item, len(manager.Issues))
+		for i, toReport := range manager.Issues {
 			options[i] = ui.Item{
-				Title: is.Title,
-				Desc:  is.Description,
-				ID:    is.ID,
+				Title: toReport.Title,
+				Desc:  toReport.Description,
+				ID:    i,
 			}
 		}
 
 		var quit bool
-		teaProgram := tea.NewProgram(
-			ui.InitialModelMultiSelect(
-				options,
-				&selections,
-				select_issues,
-				&quit,
-			),
+		selections := ui.Selection{Options: make(map[int]bool)}
+		multiSelect := tea.NewProgram(
+			ui.InitMultiSelect(options, &selections, select_issues, &quit),
 		)
 
-		if _, err := teaProgram.Run(); err != nil {
-			ui.LogFatal(err.Error())
+		if _, err := multiSelect.Run(); err != nil {
+			logger.Fatal(err.Error())
 		}
 
-		tmpl, err := templates.LoadIssueTemplate()
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		reportQueue := make([]scm.GitIssue, 0)
-		for i, is := range issues {
-			if selections.Options[is.ID] {
-				md, err := is.ExecuteIssueTemplate(tmpl)
-				if err != nil {
-					ui.LogFatal(err.Error())
-				}
-				reportQueue = append(
-					reportQueue,
-					scm.GitIssue{Title: is.Title, Body: string(md), QueueIndex: i},
-				)
+		selectedCount := 0
+		for _, selected := range selections.Options {
+			if selected {
+				selectedCount++
 			}
 		}
 
-		out := bytes.Buffer{}
-		remoteCmd := exec.Command("git", "remote", "-v")
-		remoteCmd.Stdout = &out
-		if err := remoteCmd.Run(); err != nil {
-			ui.LogFatal(err.Error())
+		switch selectedCount {
+		case 0:
+			logger.Info("No issues selected")
+			return
+		case 1:
+			logger.PrintStdout(
+				fmt.Sprintf("\nReport %d issue to %s? (y/n): ", selectedCount, srcCodeManager),
+			)
+		default:
+			logger.PrintStdout(
+				fmt.Sprintf("\nReport %d issues to %s? (y/n): ", selectedCount, srcCodeManager),
+			)
 		}
 
-		userName, repoName, err := scm.ExtractUserRepoName(out.Bytes())
-		if err != nil {
-			ui.LogFatal(err.Error())
+		scanner := bufio.NewScanner(os.Stdin)
+		if !scanner.Scan() {
+			logger.Fatal(err.Error())
 		}
 
-		gitManager, err := scm.NewGitManager(sourceCodeManager, userName, repoName)
-		if err != nil {
-			ui.LogFatal(err.Error())
-		}
-
-		reported := gitManager.Report(reportQueue)
-		for ch := range reported {
-			if err := issueManager.WriteIssueID(ch.ID, ch.QueueIndex); err != nil {
-				ui.LogFatal(err.Error())
-			}
-		}
-
-		if len(reportQueue) == 0 {
+		switch scanner.Text() {
+		case "y", "yes", "return":
+			break
+		default:
+			logger.Info("Aborting report request")
 			return
 		}
 
-		fmt.Println(
-			ui.SuccessTextStyle.Render(
-				fmt.Sprintf(
-					"Success! Uploaded %d issue(s) to %s",
-					len(reportQueue),
-					sourceCodeManager,
-				),
-			),
-		)
+		spinner := tea.NewProgram(ui.InitSpinner(fmt.Sprintf("Reporting to %s", srcCodeManager)))
+		go func() {
+			if _, err := spinner.Run(); err != nil {
+				logger.Fatal(err.Error())
+			}
+		}()
 
-		fmt.Println(
-			ui.SecondaryTextStyle.Render("make sure to commit and push the annotation updates!"),
-		)
+		defer func() {
+			if r := recover(); err != nil {
+				logger.Fatal(fmt.Sprintf("Failed to recover program with unexpected error: %s", r))
+			}
+
+			if err := spinner.ReleaseTerminal(); err != nil {
+				logger.Fatal(err.Error())
+			}
+		}()
+
+		wg := sync.WaitGroup{}
+		wg.Add(selectedCount)
+
+		reportedChan := make(chan git.ReportResponse, selectedCount)
+		for index := range selections.Options {
+			toReport := manager.Issues[index]
+			req := git.ReportRequest{Title: toReport.Title, Body: toReport.Body, Index: index}
+			go func(request git.ReportRequest) {
+				defer wg.Done()
+				gitManager.Report(request, reportedChan)
+			}(req)
+		}
+
+		wg.Wait()
+		close(reportedChan)
+
+		for r := range reportedChan {
+			if r.Err != nil {
+				logger.Warning(r.Err.Error())
+			} else {
+				if err := manager.Group(r.Index, r.ID); err != nil {
+					logger.Warning(err.Error())
+				}
+			}
+		}
+
+		reportCount := 0
+		for range manager.IssueMap {
+			reportCount++
+		}
+
+		wg.Add(reportCount)
+		writeChan := make(chan writeIssueResult, reportCount)
+		for path := range manager.IssueMap {
+			go func(filePath string) {
+				result := writeIssueResult{PathKey: filePath}
+				defer wg.Done()
+				if err := manager.WriteIssues(filePath); err != nil {
+					result.Err = err
+				}
+				writeChan <- result
+			}(path)
+		}
+
+		wg.Wait()
+		close(writeChan)
+		for r := range writeChan {
+			messages, err := manager.Results(r.PathKey, srcCodeManager, r.Err != nil)
+			if err != nil {
+				logger.Warning(err.Error())
+			}
+
+			for _, msg := range messages {
+				if r.Err != nil {
+					logger.Warning(msg)
+				} else {
+					logger.Success(msg)
+					fmt.Printf("\n")
+				}
+			}
+		}
 	},
 }
 
@@ -155,5 +201,6 @@ func init() {
 	rootCmd.AddCommand(reportCmd)
 	reportCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
 	reportCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
-	reportCmd.Flags().StringP(flag_scm, shortflag_scm, scm.GITHUB, flag_desc_scm)
+	reportCmd.Flags().StringP(flag_scm, shortflag_scm, git.Github, flag_desc_scm)
+	reportCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 }
