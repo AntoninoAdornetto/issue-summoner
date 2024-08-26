@@ -14,15 +14,16 @@ import (
 
 var scanCmd = &cobra.Command{
 	Use:   "scan",
-	Short: "scans source code for Issue annotations (actionable comments)",
-	Long: `scans your git project for comments that include issue annotations.
-Issue annotations can be as simple as @TODO or any annotation that you see
-fit. The only requirement is that the annotation resides in a single or multi
-line comment. Once found, you can see details about the located comment using
-the verbose flag. The scan command is a preliminary command to the report 
-command. Report will actually publish the located comments to your favorite
-source code hosting platform. Scan is for reviewing the issue annotations
-that reside in your code base.`,
+	Short: "scans source code for Issue annotations",
+	Long: `Scan provides functionality for managing and reviewing both reported
+and un-reported issues that reside in your codebase. It serves as an aid to the report
+command through two primary modes, scan and purge mode. These modes help you manage and 
+track issues directly within your codebase using custom annotations. The default scan mode
+will inform you how many issues are in your codebase that have not been reported. Purge mode
+will inform you how many reported issues are in your codebase that are still open. Additonally,
+purge mode will check the status of each reported issue and remove the corresponding comment if 
+the source code hosting platform indicates it is in a resolved state. Both modes can be used to 
+print details about the issues, such as the description and location of the issues.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		annotation, path := getCommonFlags(cmd)
 		logger := getLogger(cmd)
@@ -95,9 +96,9 @@ that reside in your code base.`,
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
-	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModeScan, flag_desc_mode)
-	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
 	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
+	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModeScan, flag_desc_mode)
+	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
+	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 }
