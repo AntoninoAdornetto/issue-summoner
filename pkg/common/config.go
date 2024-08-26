@@ -23,7 +23,7 @@ type Config = map[string]IssueSummonerConfig
 var (
 	// emptyConfig is utilized when the config.json file does not exist within the root dir for user specific
 	// configuration data. The location depends on the operating system. Additionally, emptyConfig defines
-	// the allowed source code management configurations.
+	// the allowed source code hosting configurations.
 	emptyConfig = Config{
 		"github":    {},
 		"gitlab":    {},

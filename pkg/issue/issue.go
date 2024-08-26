@@ -5,7 +5,7 @@ SOURCE CODE COMMENTS.
 ISSUE ANNOTATIONS ARE LOCATED BY WALKING [Walk] THE WORKING TREE AND SCANNING/TOKENIZING
 [Scan] SOURCE CODE COMMENTS. SEE THE LEXER PACKAGE FOR DETAILS ON THE LEXICAL TOKENIZATION PROCESS.
 
-ISSUES CAN BE REPORTED TO VARIOUS SVN/SCM PLATFORMS, SUCH AS GITHUB, GITLAB, BITBUCKET, ECT...
+ISSUES CAN BE REPORTED TO VARIOUS PLATFORMS, SUCH AS GITHUB, GITLAB, BITBUCKET, ECT...
 ONCE REPORTED TO AN SVN, THE ID'S ASSOCIATED WITH THE ISSUE AND PLATFORM THEY WERE PUBLISHED ON
 ARE APPENDED AND WRITTEN TO THE ISSUE ANNOTATION. THIS ALLOWS ISSUE-SUMMONER TO CHECK
 THE STATUS OF ISSUES AND REMOVE THE COMMENT/ISSUE ENTIRELY, ONCE IT IS MARKED AS RESOLVED.
@@ -23,7 +23,7 @@ RESULTS IN THE [Issues] SLICE.
 
 - `REPORT`: PRODUCES THE SAME LIST OF ISSUES FROM `SCAN` MODE, AND CREATES A MAP THAT
 GROUPS ISSUES TOGETHER BY FILE PATH. THE MAP IS USED AFTER ALL SELECTED [Issues] HAVE BEEN
-REPORTED TO A SOURCE CODE MANAGEMENT PLATFORM, I.E. GITHUB, GITLAB ECT..., AND WRITES THE
+REPORTED TO A SOURCE CODE HOSTING PLATFORM, I.E. GITHUB, GITLAB ECT..., AND WRITES THE
 ISSUE ID BACK TO THE SOURCE FILE. THE ISSUE ID IS OBTAINED FROM PUBLISHING AN ISSUE,
 SEE GIT PACKAGE FOR MORE DETAILS. THE GROUPING, FROM THE MAP, HELPS WITH EXECUTING 1 WRITE
 CALL PER FILEPATH. MEANING, IF THERE ARE 10 ISSUES BEING REPORTED AND THEY RESIDE IN 2 SOURCE
@@ -339,9 +339,9 @@ func (mngr *IssueManager) WriteIssues(pathKey string) error {
 }
 
 // sortPathGroup is needed to restore order to our [IssueMap]. This is important
-// because [Issues] are reported to scm's using go routines and we can't guarantee
-// when they will finish. Having them in sequential order will also help during the
-// [WriteIssues] invokation
+// because [Issues] are reported to source code hosting platforms using go routines
+// and we can't guarantee when they will finish.
+// Having them in sequential order will also help during the [WriteIssues] invokation
 func (mngr *IssueManager) sortPathGroup(pathKey string) {
 	if group, ok := mngr.IssueMap[pathKey]; ok {
 		sort.Slice(group, func(i, j int) bool {
@@ -356,9 +356,9 @@ var (
 	successWrite   = "Issue <%s> successfully reported to %s and annotated with issue number %d"
 )
 
-// returns the results of reporting issues to a source code management platform
-// and writing the ids obtained from the scm back to the src code files
-func (mngr *IssueManager) Results(pathKey, scm string, failed bool) ([]string, error) {
+// returns the results of reporting issues to a source code hosting platform
+// and writing the ids obtained from the source code hosting platform back to the src code files
+func (mngr *IssueManager) Results(pathKey, sch string, failed bool) ([]string, error) {
 	if _, ok := mngr.IssueMap[pathKey]; !ok {
 		return nil, fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
 	}
@@ -368,9 +368,9 @@ func (mngr *IssueManager) Results(pathKey, scm string, failed bool) ([]string, e
 		var msg string
 		issue := mngr.Issues[entry.Index]
 		if failed {
-			msg = fmt.Sprintf(errFailedWrite, issue.Title, scm, entry.ReportedID, pathKey)
+			msg = fmt.Sprintf(errFailedWrite, issue.Title, sch, entry.ReportedID, pathKey)
 		} else {
-			msg = fmt.Sprintf(successWrite, issue.Title, scm, entry.ReportedID)
+			msg = fmt.Sprintf(successWrite, issue.Title, sch, entry.ReportedID)
 		}
 		msgs[i] = msg
 	}

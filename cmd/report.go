@@ -23,18 +23,18 @@ type writeIssueResult struct {
 
 var reportCmd = &cobra.Command{
 	Use:   "report",
-	Short: "Report pending issues to a source code management platform",
+	Short: "Report pending issues to a source code hosting platform",
 	Long: `Report will scan your git project for comments that include issue annotations.
 Issue annotations can be as simple as @TODO or any other value that you seefit. 
 The only requirement is that the annotation resides in a single or multi line comment. 
 Once issue annotations are discovered, you will be presented with a list of all the issues 
-that were located and you can select which ones you would like to report to a source code management
+that were located and you can select which ones you would like to report to a source code hosting 
 platform.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		annotation, path := getCommonFlags(cmd)
 		logger := getLogger(cmd)
 
-		srcCodeManager, err := cmd.Flags().GetString(flag_scm)
+		srcCodeHost, err := cmd.Flags().GetString(flag_sch)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -58,7 +58,7 @@ platform.`,
 			return
 		}
 
-		gitManager, err := git.NewGitManager(srcCodeManager, repo)
+		gitManager, err := git.NewGitManager(srcCodeHost, repo)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -95,11 +95,11 @@ platform.`,
 			return
 		case 1:
 			logger.PrintStdout(
-				fmt.Sprintf("\nReport %d issue to %s? (y/n): ", selectedCount, srcCodeManager),
+				fmt.Sprintf("\nReport %d issue to %s? (y/n): ", selectedCount, srcCodeHost),
 			)
 		default:
 			logger.PrintStdout(
-				fmt.Sprintf("\nReport %d issues to %s? (y/n): ", selectedCount, srcCodeManager),
+				fmt.Sprintf("\nReport %d issues to %s? (y/n): ", selectedCount, srcCodeHost),
 			)
 		}
 
@@ -116,7 +116,7 @@ platform.`,
 			return
 		}
 
-		spinner := tea.NewProgram(ui.InitSpinner(fmt.Sprintf("Reporting to %s", srcCodeManager)))
+		spinner := tea.NewProgram(ui.InitSpinner(fmt.Sprintf("Reporting to %s", srcCodeHost)))
 		go func() {
 			if _, err := spinner.Run(); err != nil {
 				logger.Fatal(err.Error())
@@ -180,7 +180,7 @@ platform.`,
 		wg.Wait()
 		close(writeChan)
 		for r := range writeChan {
-			messages, err := manager.Results(r.PathKey, srcCodeManager, r.Err != nil)
+			messages, err := manager.Results(r.PathKey, srcCodeHost, r.Err != nil)
 			if err != nil {
 				logger.Warning(err.Error())
 			}
@@ -201,6 +201,6 @@ func init() {
 	rootCmd.AddCommand(reportCmd)
 	reportCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
 	reportCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
-	reportCmd.Flags().StringP(flag_scm, shortflag_scm, git.Github, flag_desc_scm)
+	reportCmd.Flags().StringP(flag_sch, shortflag_sch, git.Github, flag_desc_sch)
 	reportCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 }

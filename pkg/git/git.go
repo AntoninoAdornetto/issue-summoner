@@ -7,12 +7,12 @@ import (
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/common"
 )
 
-type sourceCodeManagement = string
+type sourceCodeHost = string
 
 const (
-	Github    sourceCodeManagement = "github"
-	Gitlab    sourceCodeManagement = "gitlab"
-	Bitbucket sourceCodeManagement = "bitbucket"
+	Github    sourceCodeHost = "github"
+	Gitlab    sourceCodeHost = "gitlab"
+	Bitbucket sourceCodeHost = "bitbucket"
 )
 
 type GitManager interface {
@@ -33,13 +33,13 @@ type ReportResponse struct {
 	Index int // index location in [IssueManager.Issues] slice in the issue package
 }
 
-func NewGitManager(scm sourceCodeManagement, repo *Repository) (GitManager, error) {
+func NewGitManager(sch sourceCodeHost, repo *Repository) (GitManager, error) {
 	conf, err := common.ReadConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	switch scm {
+	switch sch {
 	case Bitbucket:
 		return nil, errors.New("bitbucket is not supported yet. Check back soon")
 	case Gitlab:
@@ -48,11 +48,11 @@ func NewGitManager(scm sourceCodeManagement, repo *Repository) (GitManager, erro
 		return &githubManager{conf: conf, repo: repo}, nil
 	default:
 		return nil, fmt.Errorf(
-			"unsupported scm. expected one of the following: %s %s %s but got %s",
+			"unsupported source code host. expected one of the following: %s %s %s but got %s",
 			Github,
 			Gitlab,
 			Bitbucket,
-			scm,
+			sch,
 		)
 	}
 }

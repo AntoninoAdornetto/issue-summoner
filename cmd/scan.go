@@ -21,7 +21,7 @@ fit. The only requirement is that the annotation resides in a single or multi
 line comment. Once found, you can see details about the located comment using
 the verbose flag. The scan command is a preliminary command to the report 
 command. Report will actually publish the located comments to your favorite
-source code management platform. Scan is for reviewing the issue annotations
+source code hosting platform. Scan is for reviewing the issue annotations
 that reside in your code base.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		annotation, path := getCommonFlags(cmd)
