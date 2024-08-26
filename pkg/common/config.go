@@ -91,5 +91,5 @@ func getConfigFile() (*os.File, error) {
 		return nil, err
 	}
 
-	return os.OpenFile(filepath.Join(path, "config.json"), os.O_RDWR, 0666)
+	return os.OpenFile(filepath.Join(path, "config.json"), os.O_RDWR|os.O_CREATE, 0666)
 }
