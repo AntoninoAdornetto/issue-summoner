@@ -12,14 +12,10 @@
 
 <br />
 <div align="center">
-  <a href="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73">
-    <img src="https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/e16afca7-003d-41f3-94a8-1229b182ac73" alt="Logo" width="300" height="300">
-  </a>
-
-<h3 align="center">Go Issue Summoner</h3>
+<h3 align="center">Issue Summoner</h3>
 
   <p align="center">
-    Turn your comments into trackable issues that are reported to your favorite source code management system. 
+    Turn those pesky todo comments into track-able issues that can be reported to your favorite source code hosting platform.
     <br />
     <!-- @TODO Uncomment 'explore docs' section once we have added documentation. -->
     <!-- <a href="https://github.com/AntoninoAdornetto/go-issue-summoner"><strong>Explore the docs »</strong></a> -->
@@ -57,33 +53,41 @@
   </ol>
 </details>
 
-## Development Status 🚧
-
-This repo is under active development. I am in the early stages of building out the core features. As such, some parts of the program may be missing and change significantly.
-
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+Issue Summoner is a tool designed to streamline the process of managing issues in your codebase. Its primary function is to locate custom defined annotations within your project and use them to improve your issue tracking workflow. Your code can be scanned for these annotations, generate a summary directly in your terminal, and even report the issues to your preferred source code hosting platform.
 
-Go Issue Summoner is a tool that will streamline the process of creating issues within your code base. It works by scanning source code files for special annotations (that you define and pass into the program via a flag) and automatically creates issues on a source code management platform of your choosing. This process will ensure that no important task or concern is overlooked.
+After reporting an issue, you can use Issue Summoner to check the status of the issues and automatically clean up your code by removing the corresponding comments.
 
-## Core Features
+This tool helps keep track of tasks, and concerns to ensure that nothing is overlooked or forgotten in your development process.
 
-- `Customizable Annotations`: Define your own set of annotations, that you would use in a single or multi line comment to mark tasks, concerns, or areas of code that require attention.
+## Features
 
-<!-- @TODO Uncomment language support Note in README when more lanagues are added -->
+#### Custom Annotations
 
-- `Language Agnostic`: Annotations are scanned and discovered by locating single and multi line comments and then parsing the information surrounding the annotation. This process is language agnostic and uses the current file extension (when walking the directory) to determine the the proper syntax for a single or multi line comment. **Note: Additional language support will be added soon**
+Define your own annotations to flag issues, tasks, or concerns directly within your code comments. Whether it's a single or multi line comment, you can include a custom annotation followed by a description. This makes it easy to keep track of issues directly in the context where they occur.
 
-- `SCM Adapters`: Support multiple source code management platforms. GitHub, GitLab, BitBucket etc...
+#### Summary
 
-- `Minimized Context Switching`: Developers can write a quick note in their source code file about the issue and then run the report command. Those details will be pushed to the source code management platform you selected and will allow the developer to continue on with their original task with minimal context switching.
+Analyze your codebase to detect and compile a summary of outstanding issues. This provides an overview, including the number of issues, where each issue resides (file name, line number, etc...) and a brief description.
 
-- `Discover Issues for contributing to open source projects`: Contributing to open source can be a daunting task. Where does one start? What issue should I tackle first? Well, issue-summoner can be used to locate forgotten issues that may have never been reported and were forgotten about. Simply running `issue-summoner scan` on your favorite open source project may return hundreds of `TODO:` annotations that went under the radar. What a great place to start!
+#### Language Agnostic
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Designed to work across different programming languages, each with its own syntax for comments.
+
+#### Source Code Hosting Platform Adpaters
+
+Integrate with code hosting platforms like GitHub, GitLab, and more. This allows you to publish detected issues from your codebase to your preferred platform.
+
+#### Self Cleansing
+
+Keep your codebase clean by checking the status of issues, that were reported with the tool. Once an issue has been marked as resolved on the hosting platform, the corresponding comment is automatically removed.
+
+#### Reduced Context Switching
+
+Minimize disruptions in your workflow by writing a quick note about the issue, or concern directly in the code. At any point during development, you can invoke the `scan`, or `report` command to review the newly added issues or publish them to a source code hosting platform, without needing to leave your development environment.
 
 ### Built With
 
@@ -128,9 +132,9 @@ go install github.com/AntoninoAdornetto/issue-summoner@latest
 
 ### Authorize Command
 
-In order to publish issues to a source code management system, we must first authorize the program to allow this. Authorizing will look different for each provider. As of now, I have added support for GitHub. I will be adding more in the near future.
+In order to publish issues to a source code hosting platform, we must first authorize the program to allow this. Authorizing will look different for each provider. As of now, I have added support for GitHub. More will be added in the near future.
 
-- `-s`, `--scm` The source code management platform to authorize. (default is GitHub).
+- `-s`, `--sch` The source code hosting platform to authorize. (default is GitHub).
 
 #### Authorize for GitHub
 
@@ -142,71 +146,124 @@ issue-summoner authorize -s github
 
 ### Scan Command
 
-Scans your local git project for comments that are denoted with an annotation. Details about the comment are constructed through lexical analysis. Each programming language uses it's own lexer to gather the comment tokens and parse information about the comment. Scan is a preliminary command that may be used prior to the `report` command. This will give you an idea of the issue annotations that reside in your project.
+The `scan` command provides functionality for managing and reviewing issues that reside in your codebase. It serves as an aid to the `report` command through two primary modes. `scan`and `purge` mode. These modes help you manage and track issues directly within your codebase using custom annotations.
 
-- `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
+##### Scan Mode (Default)
 
-- `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
+In scan mode, the command analyzes your codebase to locate un-reported issues marked by a specific annotation flag (e.g., `@TODO`, `@FIXME`, etc). This mode is useful when you want to:
 
-- `-m`, `--mode` The two modes are `pending` and `processed`. Meaning, you can scan for annotations that have not been uploaded to a source code management platform, I.E pending, or you can scan for annotations that have been published, I.E processed. Processed annotations will look differently than pending annotations because when issues are reported, the program will update the comment, write to the file at the location of the comment, and append the issue id that is tied to the comment. This is so the comment can be removed after it's been resolved.
+- Identify issues currently residing in your codebase that have not been reported yet
+- Generate a summary of each un-reported issue that includes a description, location (file name, line number) of the issue.
 
-- `-v`, `--verbose` Logs detailed information about each issue annotation that was located during the scan.
-
-#### Scan Usage
+##### Scan Mode usage
 
 ```sh
+# will return a count of all issues that are annotated with @TODO
 issue-summoner scan
+
+# will return a count of all issues that are annotated with @FIXME
+issue-summoner scan --annotation @FIXME
+
+ # will return a count and detailed summary of each issue that is annotated with @TODO
+issue-summoner scan --verbose
 ```
 
-The command will walk your git project directory and check each source file. It adheres to the rules of your projects .gitignore file and skips entire directories and files when it finds a match. Yes, you do not need to worry about your node_modules folder being scanned! The comment syntax to use for each file is based on the files extension. Most languages are supported and more are to come! Let's take a look at an example that uses a single line comment for a C file:
+##### Purge Mode
 
-```c
-#include <stdio.h>
+In purge mode, the command analyzes your codebase to locate reported issues marked by a specific annotation flag that has been appended with an issue number (e.g., `@TODO(#405)`). This mode is useful when you want to:
 
-// @TODO implement the main function
-int main() {
-    printf("Hello world\n");
-    return 0;
-}
+- Identify issues that have been reported, to a source code hosting platform, but haven't been resolved as of yet.
+- Generate a summary of each reported issue that includes a description, location (file name, line number) of the issue.
+- Checks the status of all reported issues and will remove the comment entirely if it's been marked as resolved on the hosting platform it was reported to.
+
+**note**: issue summoner obviously cannot keep track of issues that were reported outside of using the `report` command.
+
+##### Purge Mode usage
+
+```sh
+# checks the status of each reported issue and returns the count of all open issues that are annotated with @TODO
+issue-summoner scan --mode purge
+
+# checks the status of each reported issue and return the count of all open issues that are annotated with @FIXME
+issue-summoner scan --mode purge --annotation @FIXME
+
+# shorthand flags
+# checks the status of each reported issue and returns a detailed summary of each open issue that is annotated with @TODO
+issue-summoner scan -m purge -v
 ```
 
-Basic usage of the command would result in the following:
+##### Flags
 
-![issue-summoner-scan](https://github.com/AntoninoAdornetto/go-issue-summoner/assets/70185688/f9eaef15-ac50-49d1-b8b2-1c0dd72f8393)
+- `-a`, `--annotation` **string**: The annotation to search for. Example: @TODO, @FIXME, etc. (Default is "@TODO").
 
-We can get a little more information about the annotation by passing the verbose flag `-v` the result would be:
+- `-d`, `--debug` Log the stack trace when errors occur
 
-![issue-summoner-scan-verbose](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/45373977-8828-4f57-9371-6486c634bb52)
+- `-h`, `--help` Help for scan
 
-You may have noticed that there is not a description. This is because single line comments are concise. However, we can be more granular by utilizing a multi line comment:
+- `-m`, `--mode`, **string**: `scan`: searches for annotations denoted with the --annotation flag. `purge`: searches for annotations that have been appended with an issue number and removes comments if issues are resolved.(Default is "scan")
+
+- `-p`, `--path` **string**: the path to your local git directory. (Defaults to your working directory).
+
+- `-v`, `--verbose` Log the details about each issue annotation that was located during the scan. Can be used with both `scan`, and `purge` modes.
+
+##### Scan usage
+
+```sh
+# search for un-reported issues using @TEST_TODO annotation
+# and log details about each issue, with verbose flag
+issue-summoner scan -a @TEST_TODO -v
+
+# check the status of all reported issues using the annotation @TEST_TODO,
+# removes code comments, automatically, for all issues that have a status of resolved and
+# print verbose output about all open issues
+issue-summoner scan -a @TEST_TODO -m purge -v
+```
+
+##### Code Example
+
+issues that have not been reported yet:
 
 ```c
-#include <stdio.h>
-
 int main() {
-  /*
-   * @TODO implement the main function
-   * The main function does nothing useful.
-   * Remove the print statement and build something that is useful!
-   * */
-  printf("Hello world\n");
+  // @TODO do something useful in the main function
   return 0;
 }
+
+/*
+* @TODO do something useful with the sum function
+* for the love of god
+*/
+int sum(int a, int b) {
+  return a + b;
+}
 ```
 
-The new result using a multi line comment:
+issues that have been reported, using the `report` command:
 
-![issue-summoner-scan-verbose-multi-line](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/09313924-2a02-4000-898e-09b2aeca07a1)
+```c
+int main() {
+  // @TODO(#504) do something useful in the main function
+  return 0;
+}
+
+/*
+* @TODO(#505) do something useful with the sum function
+* for the love of god
+*/
+int sum(int a, int b) {
+  return a + b;
+}
+```
 
 ### Report Command
 
-Report is similar to the scan command but with added functionality. It allows you to report selected comments to a source code management platform. After all selections are uploaded, the issue id is written to the same location that the comment token is located. Meaning, your todo annotation will be transformed so that issue summoner can be used to remove the entire comment once the issue has been marked as resolved.
+Report is similar to the scan command but with added functionality. It allows you to report selected comments to a source code hosting platform. After all selections are uploaded, the issue id is written to the same location that the comment token is located. Meaning, your todo annotation will be transformed so that issue summoner can be used to remove the entire comment once the issue has been marked as resolved.
 
 - `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
 
 - `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
 
-- `-s`, `--scm` The souce code management platform you would like to upload issues to. Such as, github, gitlab, or bitbucket (default "github")
+- `-s`, `--sch` The souce code hosting platform you would like to upload issues to. Such as, github, gitlab, or bitbucket (default "github")
 
 #### Report usage
 
@@ -258,6 +315,7 @@ int main() {
 
   - [x] `C Lexer`: scan & build comment tokens for c like languages
   - [ ] `Python Lexer`: scan & build comment tokens for python
+  - [ ] `Markdown Lexer`: scan & build comment tokens for python
         <br></br>
 
 - [ ] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
@@ -267,7 +325,7 @@ int main() {
   - [ ] BitBucket
         <br></br>
 
-- [ ] `SCM Adapter`: Implement a basic adapter for issue reporting functionality.
+- [ ] `Source Code Hosting Adpaters`: Implement a basic adapter for issue reporting functionality.
 
   - [x] GitHub Adapter
   - [ ] GitLab Adapater
