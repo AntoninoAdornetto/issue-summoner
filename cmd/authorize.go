@@ -18,13 +18,13 @@ import (
 // authorizeCmd represents the authorize command
 var authorizeCmd = &cobra.Command{
 	Use:   "authorize",
-	Short: "Create access tokens for the source code management platform you want to use for issue creation",
-	Long: `Access tokens can be created for multiple source code management platforms (github, gitlab, bitbucket). This allows
-Issue Summoner to submit issues to a specified source code management platform on your behalf`,
+	Short: "Create access tokens for the source code hosting platform you want to use for issue creation",
+	Long: `Access tokens can be created for multiple source code hosting platforms (github, gitlab, bitbucket). This allows
+Issue Summoner to submit issues to a specified source code hosting platform on your behalf`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := getLogger(cmd)
 
-		srcCodeManager, err := cmd.Flags().GetString("scm")
+		srcCodeHost, err := cmd.Flags().GetString(flag_sch)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
@@ -39,13 +39,13 @@ Issue Summoner to submit issues to a specified source code management platform o
 			logger.Fatal(err.Error())
 		}
 
-		gitManager, err := git.NewGitManager(srcCodeManager, repo)
+		gitManager, err := git.NewGitManager(srcCodeHost, repo)
 		if err != nil {
 			logger.Fatal(err.Error())
 		}
 
 		if gitManager.Authenticated() {
-			logger.Warning(fmt.Sprintf("You are authorized for %s already", srcCodeManager))
+			logger.Warning(fmt.Sprintf("You are authorized for %s already", srcCodeHost))
 			logger.PrintStdout("Do you want to create a new access token? (y/n): ")
 
 			scanner := bufio.NewScanner(os.Stdin)
@@ -62,7 +62,7 @@ Issue Summoner to submit issues to a specified source code management platform o
 		}
 
 		spinner := tea.NewProgram(
-			ui.InitSpinner(fmt.Sprintf("Pending %s authorization", srcCodeManager)),
+			ui.InitSpinner(fmt.Sprintf("Pending %s authorization", srcCodeHost)),
 		)
 
 		defer func() {
@@ -86,12 +86,12 @@ Issue Summoner to submit issues to a specified source code management platform o
 			}
 		}
 
-		logger.Success(fmt.Sprintf("Authorization for %s succeeded!", srcCodeManager))
+		logger.Success(fmt.Sprintf("Authorization for %s succeeded!", srcCodeHost))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(authorizeCmd)
-	authorizeCmd.Flags().StringP(flag_scm, shortflag_scm, git.Github, flag_desc_scm)
+	authorizeCmd.Flags().StringP(flag_sch, shortflag_sch, git.Github, flag_desc_sch)
 	authorizeCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 }

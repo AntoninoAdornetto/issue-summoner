@@ -138,7 +138,7 @@ func (repo *Repository) extractRemoteUrl(val string) error {
 }
 
 // extracts the user name and repo name that we will use for reporting
-// issues to different source code management platforms
+// issues to different source code hosting platforms
 func (repo *Repository) extractRepoDetails() error {
 	var buf []byte
 
