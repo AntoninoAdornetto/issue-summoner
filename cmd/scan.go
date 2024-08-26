@@ -96,7 +96,7 @@ that reside in your code base.`,
 func init() {
 	rootCmd.AddCommand(scanCmd)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	scanCmd.Flags().StringP(flag_mode, shortflag_mode, "", flag_desc_mode)
+	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModeScan, flag_desc_mode)
 	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
 	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
