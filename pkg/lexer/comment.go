@@ -13,6 +13,17 @@ type Comment struct {
 	AnnotationPos        []int
 }
 
+// Notation contains the comment syntax for the target
+// lexer programming language. Meaning, if lexing comments
+// for a c-like language, we would use "//", "/*", "*/"
+// for python, "#", "”'", etc...
+type Notation struct {
+	SingleLineStart [][]byte
+	SingleLineEnd   [][]byte
+	MultiLineStart  [][]byte
+	MultiLineEnd    [][]byte
+}
+
 type CommentManager struct {
 	Comments []Comment
 }
@@ -55,5 +66,14 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 			m.Comments = append(m.Comments, comment)
 			return
 		}
+	}
+}
+
+func NewCommentNotation(slStart, slEnd, mlStart, mlEnd [][]byte) *Notation {
+	return &Notation{
+		SingleLineStart: slStart,
+		SingleLineEnd:   slEnd,
+		MultiLineStart:  mlStart,
+		MultiLineEnd:    mlEnd,
 	}
 }
