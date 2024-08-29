@@ -96,7 +96,7 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
 	default:
 		// @TODO return a list of supported programming languages when an error is returned from invoking NewTargetLexer
-		return nil, fmt.Errorf("unsupported file extension (%s)", ext)
+		return nil, base.reportError(fmt.Sprintf("unsupported file extension (%s)", ext))
 	}
 }
 
@@ -104,7 +104,7 @@ func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
 	for base.Current < len(base.Src) {
 		base.resetStartIndex()
 		if err := target.AnalyzeToken(); err != nil {
-			return nil, err
+			return nil, base.reportError(err.Error())
 		} else {
 			base.next()
 		}
