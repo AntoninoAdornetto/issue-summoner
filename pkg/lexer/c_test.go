@@ -124,11 +124,11 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 		{
 			name: "should create the comment start, comment annotation, comment title and comment end tokens when given the purge flag",
 			// the src code for this test simulates an issue annotation that has been reported already. I.E., issue was published to github,gitlab,ect
-			srcCode:  []byte("// @TEST_ANNOTATION(98321) check for edge cases"),
+			srcCode:  []byte("// @TEST_ANNOTATION(#98321) check for edge cases"),
 			fileName: "main.c",
 			flags:    lexer.FLAG_PURGE,
 			// this pattern is constructed within the issue package
-			annotation: []byte("@TEST_ANNOTATION\\(\\d+\\)"),
+			annotation: []byte("@TEST_ANNOTATION\\(#\\d+\\)"),
 			expected: []lexer.Token{
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_START,
@@ -140,42 +140,42 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 				{
 					Type:   lexer.TOKEN_COMMENT_ANNOTATION,
 					Start:  3,
-					End:    25,
+					End:    26,
 					Line:   1,
-					Lexeme: []byte("@TEST_ANNOTATION(98321)"),
+					Lexeme: []byte("@TEST_ANNOTATION(#98321)"),
 				},
 				{
 					Type:   lexer.TOKEN_COMMENT_TITLE,
-					Start:  27,
-					End:    31,
+					Start:  28,
+					End:    32,
 					Line:   1,
 					Lexeme: []byte("check"),
 				},
 				{
 					Type:   lexer.TOKEN_COMMENT_TITLE,
-					Start:  33,
-					End:    35,
+					Start:  34,
+					End:    36,
 					Line:   1,
 					Lexeme: []byte("for"),
 				},
 				{
 					Type:   lexer.TOKEN_COMMENT_TITLE,
-					Start:  37,
-					End:    40,
+					Start:  38,
+					End:    41,
 					Line:   1,
 					Lexeme: []byte("edge"),
 				},
 				{
 					Type:   lexer.TOKEN_COMMENT_TITLE,
-					Start:  42,
-					End:    46,
+					Start:  43,
+					End:    47,
 					Line:   1,
 					Lexeme: []byte("cases"),
 				},
 				{
 					Type:   lexer.TOKEN_SINGLE_LINE_COMMENT_END,
-					Start:  47,
-					End:    47,
+					Start:  48,
+					End:    48,
 					Line:   1,
 					Lexeme: []byte{0},
 				},
