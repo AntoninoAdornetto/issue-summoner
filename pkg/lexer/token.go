@@ -33,7 +33,6 @@ const (
 	WHITESPACE     byte = ' '
 	OPEN_PARAN     byte = '('
 	CLOSE_PARAN    byte = ')'
-	HASH           byte = '#'
 )
 
 type Token struct {

@@ -156,6 +156,65 @@ func (base *Lexer) nextLexeme() []byte {
 	return lexeme
 }
 
+// @TESTING finish the impl
+func (base *Lexer) nextIssueTokens(lexeme []byte) ([]Token, error) {
+	tokens := make([]Token, 0, 5)
+
+	if base.flags == FLAG_SCAN {
+		tokens = append(tokens, NewToken(TOKEN_COMMENT_ANNOTATION, lexeme, base))
+		return tokens, nil
+	}
+
+	for offset, b := range lexeme {
+		pos := base.Current - offset
+		switch b {
+		case OPEN_PARAN:
+			tokens = append(tokens, Token{
+				Type:   TOKEN_OPEN_PARAN,
+				Lexeme: []byte{b},
+				Line:   base.Line,
+				Start:  pos,
+				End:    pos,
+			})
+		case CLOSE_PARAN:
+			tokens = append(tokens, Token{
+				Type:   TOKEN_CLOSE_PARAN,
+				Lexeme: []byte{b},
+				Line:   base.Line,
+				Start:  pos,
+				End:    pos,
+			})
+		case HASH:
+			tokens = append(tokens, Token{
+				Type:   TOKEN_HASH,
+				Lexeme: []byte{b},
+				Line:   base.Line,
+				Start:  pos,
+				End:    pos,
+			})
+
+			issueNumLexeme := make([]byte, 0, 5)
+			for _, nextB := range lexeme[offset:] {
+				if nextB == CLOSE_PARAN {
+					break
+				} else {
+					issueNumLexeme = append(issueNumLexeme, nextB)
+				}
+			}
+
+			tokens = append(tokens, Token{
+				Type:   TOKEN_ISSUE_NUM,
+				Lexeme: issueNumLexeme,
+				Line:   base.Line,
+				Start:  offset,
+				End:    offset + len(issueNumLexeme),
+			})
+		}
+	}
+
+	return tokens, nil
+}
+
 func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }

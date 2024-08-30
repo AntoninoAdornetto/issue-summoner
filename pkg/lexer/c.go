@@ -69,6 +69,17 @@ func (c *Clexer) Comment() error {
 func (c *Clexer) tokenizeSLComment() error {
 	for !c.Base.pastEnd() {
 		lexeme := c.Base.nextLexeme()
+		// @TESTING finish the impl
+		if !c.annotated && bytes.HasPrefix(lexeme, c.Base.Annotation) {
+			fmt.Println("___DEBUG____ CONTAINS PREFIX __________", string(lexeme))
+			tkns, _ := c.Base.nextIssueTokens(lexeme)
+			for _, t := range tkns {
+				fmt.Println("LEXEME: ", string(t.Lexeme))
+				fmt.Println("START: ", t.Start)
+				fmt.Println("END: ", t.End)
+			}
+		}
+
 		if err := c.classifyToken(lexeme, TOKEN_SINGLE_LINE_COMMENT); err != nil {
 			return err
 		}
