@@ -31,6 +31,9 @@ const (
 	NEWLINE        byte = '\n'
 	TAB            byte = '\t'
 	WHITESPACE     byte = ' '
+	OPEN_PARAN     byte = '('
+	CLOSE_PARAN    byte = ')'
+	HASH           byte = '#'
 )
 
 type Token struct {
