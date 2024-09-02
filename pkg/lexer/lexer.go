@@ -35,6 +35,7 @@ package lexer
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -160,6 +161,26 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
 
+func (base *Lexer) startCommentLex(tokenType TokenType) (Token, error) {
+	var token Token
+
+	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
+		return token, fmt.Errorf(
+			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
+			decodeTokenType(tokenType),
+		)
+	}
+
+	lexeme := base.nextLexeme()
+	if len(lexeme) == 0 {
+		return token, errors.New(
+			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
+		)
+	}
+
+	token = NewToken(tokenType, lexeme, base)
+	return token, nil
+}
 func (base *Lexer) matchAnnotation(token *Token) bool {
 	if base.re != nil {
 		return base.re.Match(token.Lexeme)
