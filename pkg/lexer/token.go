@@ -8,10 +8,14 @@ const (
 	TOKEN_MULTI_LINE_COMMENT_START
 	TOKEN_MULTI_LINE_COMMENT_END
 	TOKEN_COMMENT_ANNOTATION
+	TOKEN_ISSUE_NUMBER
 	TOKEN_COMMENT_TITLE
 	TOKEN_COMMENT_DESCRIPTION
 	TOKEN_SINGLE_LINE_COMMENT
 	TOKEN_MULTI_LINE_COMMENT
+	TOKEN_OPEN_PARAN
+	TOKEN_CLOSE_PARAN
+	TOKEN_HASH
 	TOKEN_UNKNOWN
 	TOKEN_EOF
 )
@@ -26,6 +30,8 @@ const (
 	DOUBLE_QUOTE   byte = '"'
 	NEWLINE        byte = '\n'
 	TAB            byte = '\t'
+	OPEN_PARAN     byte = '('
+	CLOSE_PARAN    byte = ')'
 	WHITESPACE     byte = ' '
 )
 
@@ -80,6 +86,14 @@ func decodeTokenType(tokenType TokenType) string {
 		return "TOKEN_MULTI_LINE_COMMENT"
 	case containsBits(tokenType, TOKEN_EOF):
 		return "TOKEN_EOF"
+	case containsBits(tokenType, TOKEN_OPEN_PARAN):
+		return "TOKEN_OPEN_PARAN"
+	case containsBits(tokenType, TOKEN_CLOSE_PARAN):
+		return "TOKEN_CLOSE_PARAN"
+	case containsBits(tokenType, TOKEN_HASH):
+		return "TOKEN_HASH"
+	case containsBits(tokenType, TOKEN_ISSUE_NUMBER):
+		return "TOKEN_ISSUE_NUMBER"
 	default:
 		return "TOKEN_UNKNOWN"
 	}
