@@ -181,6 +181,27 @@ func (base *Lexer) startCommentLex(tokenType TokenType) (Token, error) {
 	token = NewToken(tokenType, lexeme, base)
 	return token, nil
 }
+
+func (base *Lexer) tokenizeAnnotation(lexeme []byte, isAnnotated bool) ([]Token, error) {
+	if isAnnotated || len(lexeme) == 0 {
+		return []Token{}, nil
+	}
+
+	tokens := make([]Token, 0, 5)
+	switch base.flags {
+	case FLAG_SCAN:
+		if base.matchAnnotationScan(lexeme) {
+			tokens = append(tokens, NewToken(TOKEN_COMMENT_ANNOTATION, lexeme, base))
+		}
+	}
+
+	return tokens, nil
+}
+
+func (base *Lexer) matchAnnotationScan(lexeme []byte) bool {
+	return bytes.Equal(lexeme, base.Annotation)
+}
+
 func (base *Lexer) matchAnnotation(token *Token) bool {
 	if base.re != nil {
 		return base.re.Match(token.Lexeme)
