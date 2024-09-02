@@ -58,12 +58,31 @@ func (c *Clexer) String(delim byte) error {
 func (c *Clexer) Comment() error {
 	switch c.Base.peekNext() {
 	case FORWARD_SLASH:
+		if err := c.initComment(TOKEN_SINGLE_LINE_COMMENT_START); err != nil {
+			return err
+		}
+
 		return c.tokenizeSLComment()
 	case ASTERISK:
+		if err := c.initComment(TOKEN_MULTI_LINE_COMMENT_START); err != nil {
+			return err
+		}
+
 		return c.tokenizeMLComment()
 	default:
 		return nil
 	}
+}
+
+func (c *Clexer) initComment(tokenType TokenType) error {
+	start, err := c.Base.startCommentLex(tokenType)
+	if err != nil {
+		return err
+	}
+
+	c.DraftTokens = append(c.DraftTokens, start)
+	c.Base.next()
+	return nil
 }
 
 func (c *Clexer) tokenizeSLComment() error {
