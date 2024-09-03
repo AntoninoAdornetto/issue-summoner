@@ -25,6 +25,8 @@ func TestBuildComments(t *testing.T) {
 					TokenEndIndex:        5,
 					LineNumber:           5,
 					AnnotationPos:        []int{65, 80},
+					NotationStartIndex:   62,
+					NotationEndIndex:     101,
 				},
 				{
 					Title:                "inline comment #2",
@@ -34,6 +36,8 @@ func TestBuildComments(t *testing.T) {
 					TokenEndIndex:        11,
 					LineNumber:           6,
 					AnnotationPos:        []int{124, 139},
+					NotationStartIndex:   121,
+					NotationEndIndex:     160,
 				},
 				{
 					Title:                "decode the message and clean up after yourself!",
@@ -43,6 +47,8 @@ func TestBuildComments(t *testing.T) {
 					TokenEndIndex:        22,
 					LineNumber:           10,
 					AnnotationPos:        []int{207, 222},
+					NotationStartIndex:   204,
+					NotationEndIndex:     271,
 				},
 				{
 					// multi line comments have a description
@@ -53,6 +59,8 @@ func TestBuildComments(t *testing.T) {
 					TokenEndIndex:        70,
 					LineNumber:           14,
 					AnnotationPos:        []int{293, 308},
+					NotationStartIndex:   287,
+					NotationEndIndex:     585,
 				},
 			},
 		},
