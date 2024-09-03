@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/git"
 	"github.com/AntoninoAdornetto/issue-summoner/pkg/issue"
@@ -57,35 +58,114 @@ print details about the issues, such as the description and location of the issu
 			return
 		}
 
-		msg := fmt.Sprintf("Found %d issue annotations using %s", len(manager.Issues), annotation)
+		var msg string
+
+		issueCount, purgeCount := len(manager.Issues), 0
+		if mode == issue.IssueModePurge {
+			wg := sync.WaitGroup{}
+			wg.Add(issueCount)
+
+			sourceCodeHost, err := cmd.Flags().GetString(flag_sch)
+			if err != nil {
+				logger.Fatal(err.Error())
+			}
+
+			logger.Info("Checking statuses of reported issues on " + sourceCodeHost)
+
+			gitManager, err := git.NewGitManager(sourceCodeHost, repo)
+			if err != nil {
+				logger.Fatal(err.Error())
+			}
+
+			statusChan := make(chan git.StatusResponse, issueCount)
+			for _, iss := range manager.Issues {
+				go func(toCheck issue.Issue) {
+					defer wg.Done()
+					gitManager.GetStatus(iss.Comment.IssueNumber, toCheck.Index, statusChan)
+				}(iss)
+			}
+
+			wg.Wait()
+			close(statusChan)
+
+			for c := range statusChan {
+				currentIssue := manager.Issues[c.Index]
+				switch {
+				case c.Err != nil:
+					logger.Warning(
+						fmt.Sprintf(
+							"failed to get issue status for <%s> with error: %s",
+							currentIssue.Title,
+							c.Err.Error(),
+						),
+					)
+				case c.Resolved:
+					if err := manager.Group(c.Index, currentIssue.Comment.IssueNumber); err != nil {
+						logger.Warning("Failed to group")
+					}
+				case c.Err != nil && !c.Resolved:
+					logger.Warning(
+						fmt.Sprintf("Issue <%s> has not been resolved yet", currentIssue.Title),
+					)
+				}
+			}
+
+			for pathKey, entries := range manager.IssueMap {
+				// @TODO utilize go routines for large purge requests
+				if err := manager.Purge(pathKey); err != nil {
+					logger.Fatal(err.Error())
+				} else {
+					purgeCount += len(entries)
+				}
+			}
+
+			if purgeCount > 0 {
+				msg += fmt.Sprintf("Purged %d issue(s). ", purgeCount)
+			}
+
+			if issueCount > 0 {
+				msg += fmt.Sprintf(
+					"%d issue(s) remain open and awaiting resolution ",
+					issueCount-purgeCount,
+				)
+			}
+		} else {
+			msg = fmt.Sprintf("Found %d issue annotations using %s", len(manager.Issues), annotation)
+		}
 
 		if verbose {
-			for _, issue := range manager.Issues {
+			for _, iss := range manager.Issues {
 				fmt.Printf("\n\n")
 
 				fmt.Println(
 					ui.AccentTextStyle.Render("File name: "),
-					ui.PrimaryTextStyle.Render(issue.FileName),
+					ui.PrimaryTextStyle.Render(iss.FileName),
 				)
 
 				fmt.Println(
 					ui.AccentTextStyle.Render("Title: "),
-					ui.PrimaryTextStyle.Render(issue.Title),
+					ui.PrimaryTextStyle.Render(iss.Title),
 				)
 
 				fmt.Println(
 					ui.AccentTextStyle.Render("Description: "),
-					ui.PrimaryTextStyle.Render(issue.Description),
+					ui.PrimaryTextStyle.Render(iss.Description),
 				)
 
 				fmt.Println(
 					ui.AccentTextStyle.Render("Line number: "),
-					ui.PrimaryTextStyle.Render(fmt.Sprintf("%d", issue.LineNumber)),
+					ui.PrimaryTextStyle.Render(fmt.Sprintf("%d", iss.LineNumber)),
 				)
+
+				if mode == issue.IssueModePurge && iss.Comment.IssueNumber != 0 {
+					fmt.Println(
+						ui.AccentTextStyle.Render("Issue number: "),
+						ui.PrimaryTextStyle.Render(fmt.Sprintf("%d", iss.Comment.IssueNumber)),
+					)
+				}
 			}
 		}
 
-		fmt.Printf("\n")
 		logger.Success(msg)
 
 		if !verbose {
@@ -100,5 +180,6 @@ func init() {
 	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModeScan, flag_desc_mode)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
+	scanCmd.Flags().StringP(flag_sch, shortflag_sch, git.Github, flag_desc_sch)
 	scanCmd.Flags().BoolP(flag_verbose, shortflag_verbose, false, flag_desc_verbose)
 }

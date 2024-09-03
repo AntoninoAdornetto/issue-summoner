@@ -355,6 +355,65 @@ func (mngr *IssueManager) sortPathGroup(pathKey string) {
 	}
 }
 
+func (mngr *IssueManager) Purge(pathKey string) error {
+	if _, ok := mngr.IssueMap[pathKey]; !ok {
+		return fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
+	}
+
+	size := len(mngr.IssueMap[pathKey])
+	if size == 0 {
+		return fmt.Errorf("Expected Issue map to have at least 1 entry")
+	}
+
+	srcFile, err := os.OpenFile(pathKey, os.O_RDWR, 0666)
+	if err != nil {
+		return nil
+	}
+
+	defer srcFile.Close()
+
+	srcCode, err := io.ReadAll(srcFile)
+	if err != nil {
+		return err
+	}
+
+	mngr.sortPathGroup(pathKey)
+	entries := mngr.IssueMap[pathKey]
+
+	buf := bytes.Buffer{}
+	lastIndex := 0
+
+	for _, entry := range entries {
+		comment := mngr.Issues[entry.Index].Comment
+		start, end := comment.NotationStartIndex, comment.NotationEndIndex
+		buf.Write(srcCode[lastIndex:start])
+
+		lastIndex = end + 1
+		if srcCode[end] == '\n' {
+			buf.WriteByte('\n')
+		}
+	}
+
+	buf.Write(srcCode[lastIndex:])
+	if err := srcFile.Truncate(0); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+
+	if err := srcFile.Sync(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 var (
 	errFailedWrite = "Issue <%s> was reported to %s but the program failed to write id %d back to the src file at path %s"
 	successWrite   = "Issue <%s> successfully reported to %s and annotated with issue number %d"
