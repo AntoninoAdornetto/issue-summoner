@@ -64,6 +64,21 @@ func newEofToken(lexer *Lexer) Token {
 	}
 }
 
+// newPosToken accepts params for creating a new token but instead of relying on
+// positions from a lexer, it allows you to specify index & line number positions.
+// The functions that utilize newPosToken have a lot of testing to ensure the locations
+// of [Start], [End], and [Line] are correct. The primary use case for this func is
+// to handle the issue number tokens for issues that have been reported.
+func newPosToken(start, end, line int, lexeme []byte, tokenType TokenType) Token {
+	return Token{
+		Start:  start,
+		End:    end,
+		Line:   line,
+		Lexeme: lexeme,
+		Type:   tokenType,
+	}
+}
+
 func decodeTokenType(tokenType TokenType) string {
 	switch {
 	case containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START):
