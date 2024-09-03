@@ -67,7 +67,8 @@ func TestBuildComments(t *testing.T) {
 		tokens, err := base.AnalyzeTokens(target)
 		require.NoError(t, err)
 
-		actual := lexer.BuildComments(tokens)
+		actual, err := lexer.BuildComments(tokens)
+		require.NoError(t, err)
 		require.Equal(t, tc.expected, actual.Comments)
 
 		for _, comment := range actual.Comments {
