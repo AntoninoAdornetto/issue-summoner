@@ -66,10 +66,15 @@ type Lexer struct {
 	flags      U8
 }
 
+// AnalyzeToken - checks the current byte from [Lexer.peek()] and determines how we should process the proceeding bytes
+// String - tokens from the string method are not stored. It's needed to prevent lexing comment notation within a string
+// Comment - The bread and butter of our target lexers. Handles processing single & multi line comments
+// processLexeme - transforms the lexeme into a token and appends it to the draft tokens contained in the target lexer struct
 type LexicalTokenizer interface {
 	AnalyzeToken() error
 	String(delim byte) error
 	Comment() error
+	processLexeme(lexeme []byte, commentType TokenType) error
 }
 
 func NewLexer(annotation, src []byte, filePath string, flags U8) *Lexer {
