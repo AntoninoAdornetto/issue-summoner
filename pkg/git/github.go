@@ -21,10 +21,11 @@ const (
 )
 
 type githubManager struct {
-	conf      common.Config
-	repo      *Repository
-	device    requestDeviceResponse
-	reportReq *http.Request
+	conf        common.Config
+	repo        *Repository
+	device      requestDeviceResponse
+	reportReq   *http.Request
+	getIssueReq *http.Request
 }
 
 // Authorize will request device infromation details from githubs device flow,
@@ -250,7 +251,7 @@ func (ghub *githubManager) Report(issue ReportRequest, res chan ReportResponse) 
 		return
 	}
 
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		result.Err = createIssueErr(data, resp.StatusCode, issue.Title)
 		res <- result
 		return
@@ -305,7 +306,7 @@ func createIssueErr(data []byte, statusCode int, title string) error {
 		return fmt.Errorf(errCreateIssue, title, statusCode, err.Error())
 	}
 
-	if statusCode == 404 {
+	if statusCode == http.StatusNotFound {
 		return fmt.Errorf(
 			errCreateIssue,
 			title,
@@ -315,4 +316,87 @@ func createIssueErr(data []byte, statusCode int, title string) error {
 	}
 
 	return fmt.Errorf(errCreateIssue, title, statusCode, res.Message)
+}
+
+type githubIssueStatusResponse struct {
+	State string `json:"state"`
+}
+
+func (ghub *githubManager) GetStatus(issueNum, index int, status chan StatusResponse) {
+	res := StatusResponse{Index: index, Resolved: false}
+	if ghub.getIssueReq == nil {
+		if err := ghub.prepareGetStatusRequest(issueNum); err != nil {
+			res.Err = err
+			status <- res
+			return
+		}
+	}
+
+	url, headers := ghub.getIssueReq.URL.String(), ghub.getIssueReq.Header
+	resp, data, err := common.Request("GET", url, nil, headers)
+	if err != nil {
+		res.Err = err
+		status <- res
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		errRes := onGetIssueError(data)
+		res.Err = errors.New(
+			fmt.Sprintf("%s with status code: %d", errRes.Message, resp.StatusCode),
+		)
+		status <- res
+		return
+	}
+
+	val := githubIssueStatusResponse{}
+	if err := json.Unmarshal(data, &val); err != nil {
+		status <- StatusResponse{Err: err}
+		return
+	}
+
+	if val.State == "closed" {
+		res.Resolved = true
+	}
+
+	status <- res
+}
+
+func (ghub *githubManager) prepareGetStatusRequest(issueNum int) error {
+	accessToken := ghub.conf[Github].Auth.AccessToken
+
+	ghub.getIssueReq = &http.Request{
+		Header: make(http.Header),
+	}
+
+	path := fmt.Sprintf("/repos/%s/%s/issues/%d", ghub.repo.UserName, ghub.repo.RepoName, issueNum)
+
+	u, err := common.ConstructURL(githubApiBaseUrl, nil, path)
+	if err != nil {
+		return err
+	}
+
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+
+	ghub.getIssueReq.Header.Add("Accept", "application/vnd.github+json")
+	ghub.getIssueReq.Header.Add("Authorization", "Bearer "+accessToken)
+	ghub.getIssueReq.Header.Add("X-GitHub-Api-Version", githubApiVersion)
+	ghub.getIssueReq.URL = parsedURL
+	return nil
+}
+
+type getIssueErr struct {
+	Message string `json:"message"`
+}
+
+func onGetIssueError(data []byte) getIssueErr {
+	var res getIssueErr
+	if err := json.Unmarshal(data, &res); err != nil {
+		res.Message = err.Error()
+	}
+
+	return res
 }
