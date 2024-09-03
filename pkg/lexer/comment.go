@@ -2,37 +2,41 @@ package lexer
 
 import (
 	"bytes"
+	"strconv"
 )
 
 type Comment struct {
-	Title, Description   string
-	TokenStartIndex      int
 	TokenAnnotationIndex int
-	TokenEndIndex        int
+	Title, Description   string
+	TokenStartIndex      int   // location of the first token
+	TokenEndIndex        int   // location of the last token
+	AnnotationPos        []int // start/end index of the annotation
 	IssueNumber          int   // will contain a non 0 value if the comment has been reported
 	LineNumber           int
-	AnnotationPos        []int
+	NotationStartIndex   int // index of where the comment starts
+	NotationEndIndex     int // index of where the comment ends
 }
 
 type CommentManager struct {
 	Comments []Comment
 }
 
-func BuildComments(tokens []Token) CommentManager {
+func BuildComments(tokens []Token) (CommentManager, error) {
+	var err error
 	manager := CommentManager{Comments: make([]Comment, 0, 10)}
 
 	for i := 0; i < len(tokens); i++ {
 		cur := tokens[i]
 		if cur.Type == TOKEN_SINGLE_LINE_COMMENT_START ||
 			cur.Type == TOKEN_MULTI_LINE_COMMENT_START {
-			manager.iterCommentEnd(tokens, &i)
+			err = manager.iterCommentEnd(tokens, &i)
 		}
 	}
 
-	return manager
+	return manager, err
 }
 
-func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
+func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) error {
 	token := tokens[*index]
 	comment := Comment{LineNumber: token.Line}
 	title, description := make([][]byte, 0), make([][]byte, 0)
@@ -41,7 +45,8 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 		token = tokens[*index]
 		switch token.Type {
 		case TOKEN_SINGLE_LINE_COMMENT_START, TOKEN_MULTI_LINE_COMMENT_START:
-			comment.TokenStartIndex = token.Start
+			comment.TokenStartIndex = *index
+			comment.NotationStartIndex = token.Start
 		case TOKEN_COMMENT_ANNOTATION:
 			comment.TokenAnnotationIndex = *index
 			comment.AnnotationPos = []int{token.Start, token.End}
@@ -50,11 +55,12 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 		case TOKEN_COMMENT_DESCRIPTION:
 			description = append(description, token.Lexeme)
 		case TOKEN_SINGLE_LINE_COMMENT_END, TOKEN_MULTI_LINE_COMMENT_END:
-			comment.TokenEndIndex = token.End
+			comment.TokenEndIndex = *index
+			comment.NotationEndIndex = token.End
 			comment.Title = string(bytes.Join(title, []byte(" ")))
 			comment.Description = string(bytes.Join(description, []byte(" ")))
 			m.Comments = append(m.Comments, comment)
-			return
+			return nil
 		case TOKEN_ISSUE_NUMBER:
 			issueNum, err := strconv.Atoi(string(token.Lexeme))
 			if err != nil {
@@ -63,4 +69,6 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 			comment.IssueNumber = issueNum
 		}
 	}
+
+	return nil
 }
