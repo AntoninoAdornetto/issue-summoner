@@ -49,6 +49,10 @@ const (
 	FLAG_SCAN
 )
 
+var (
+	errTargetTokenize = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
+)
+
 type Lexer struct {
 	FilePath   string
 	FileName   string
