@@ -18,6 +18,7 @@ const (
 type GitManager interface {
 	Authorize() error
 	Report(issue ReportRequest, res chan ReportResponse)
+	GetStatus(issueNum, index int, res chan StatusResponse)
 	Authenticated() bool
 }
 
@@ -31,6 +32,12 @@ type ReportResponse struct {
 	ID    int // issue number
 	Err   error
 	Index int // index location in [IssueManager.Issues] slice in the issue package
+}
+
+type StatusResponse struct {
+	Resolved bool
+	Err      error
+	Index    int // index location in [IssueManager.Issues] slice in the issue package
 }
 
 func NewGitManager(sch sourceCodeHost, repo *Repository) (GitManager, error) {

@@ -14,7 +14,7 @@ import (
 var (
 	// currentIssueCount is the current number of issues contained in the entire issue-summoner project.
 	// The value will change as issues, contained in this project, are resolved and added
-	currentIssueCount = 3
+	currentIssueCount = 4
 	testAnnotation    = []byte("@TEST_ANNOTATION")
 )
 
@@ -31,7 +31,7 @@ func TestNewIssueManager(t *testing.T) {
 			expected: &issue.IssueManager{
 				Annotation: testAnnotation,
 				Issues:     []issue.Issue{},
-				IssueMap:   nil,
+				IssueMap:   make(map[string][]issue.IssueMapEntry),
 			},
 			err: false,
 		},
@@ -43,7 +43,7 @@ func TestNewIssueManager(t *testing.T) {
 				// to discover annotations that have an issue id, enclosed within parans, appended to the annotation.
 				Annotation: []byte("@TEST_ANNOTATION\\(#\\d+\\)"),
 				Issues:     []issue.Issue{},
-				IssueMap:   nil,
+				IssueMap:   make(map[string][]issue.IssueMapEntry),
 			},
 			err: false,
 		},

@@ -6,14 +6,14 @@ ISSUE ANNOTATIONS ARE LOCATED BY WALKING [Walk] THE WORKING TREE AND SCANNING/TO
 [Scan] SOURCE CODE COMMENTS. SEE THE LEXER PACKAGE FOR DETAILS ON THE LEXICAL TOKENIZATION PROCESS.
 
 ISSUES CAN BE REPORTED TO VARIOUS PLATFORMS, SUCH AS GITHUB, GITLAB, BITBUCKET, ECT...
-ONCE REPORTED TO AN SVN, THE ID'S ASSOCIATED WITH THE ISSUE AND PLATFORM THEY WERE PUBLISHED ON
+ONCE REPORTED TO AN SCH, THE ID'S ASSOCIATED WITH THE ISSUE AND PLATFORM THEY WERE PUBLISHED ON
 ARE APPENDED AND WRITTEN TO THE ISSUE ANNOTATION. THIS ALLOWS ISSUE-SUMMONER TO CHECK
 THE STATUS OF ISSUES AND REMOVE THE COMMENT/ISSUE ENTIRELY, ONCE IT IS MARKED AS RESOLVED.
 
 EXAMPLE PRIOR TO REPORTING THE ISSUE:
 // @MY_ISSUE_ANNOTATION resolve bug....
 
-EXAMPLE AFTER REPORTING THE ISSUE TO AN SVN:
+EXAMPLE AFTER REPORTING THE ISSUE TO AN SCH:
 // @MY_ISSUE_ANNOTATION(#45323) resolve bug....
 
 # SUPPORTED MODES
@@ -30,10 +30,10 @@ CALL PER FILEPATH. MEANING, IF THERE ARE 10 ISSUES BEING REPORTED AND THEY RESID
 CODE FILES, THERE WOULD ONLY BE 2 WRITE FILE CALLS BECAUSE THE ISSUES ARE GROUPED BY FILE PATH
 AND BATCHED TOGETHER TO AVOID MULTIPLE WRITES. @SEE [WriteIssues] FUNC.
 
-- `Purge`: Check the status of issues that were reported using issue summoner and attempts
-to remove the comments. Comments are removed if the issue was reported using <issue-summoner report>
-command and the issue ID was written back to the source file. The ID is used to check the status
-and if resolved, the comment is removed.
+- `PURGE`: CHECK THE STATUS OF ISSUES THAT WERE REPORTED USING ISSUE SUMMONER AND ATTEMPTS
+TO REMOVE THE COMMENTS. COMMENTS ARE REMOVED IF THE ISSUE WAS REPORTED USING <issue-summoner report>
+COMMAND AND THE ISSUE ID WAS WRITTEN BACK TO THE SOURCE FILE. THE ID IS USED TO CHECK THE STATUS
+AND IF RESOLVED, THE COMMENT IS REMOVED. @SEE [Purge] FUNC.
 */
 package issue
 
@@ -98,6 +98,7 @@ type IssueMapEntry struct {
 func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 	manager := &IssueManager{
 		Issues:     make([]Issue, 0),
+		IssueMap:   make(map[string][]IssueMapEntry),
 		Annotation: annotation,
 		mode:       mode,
 		os:         runtime.GOOS,
@@ -107,7 +108,6 @@ func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 	case IssueModeScan:
 		break
 	case IssueModeReport:
-		manager.IssueMap = make(map[string][]IssueMapEntry)
 		tmpl, err := generateIssueTemplate()
 		if err != nil {
 			return nil, err
@@ -234,7 +234,11 @@ func (mngr *IssueManager) Scan(path string) error {
 		return err
 	}
 
-	c := lexer.BuildComments(tokens)
+	c, err := lexer.BuildComments(tokens)
+	if err != nil {
+		return err
+	}
+
 	for _, comment := range c.Comments {
 		if err := mngr.appendIssue(&comment); err != nil {
 			return err
@@ -349,6 +353,65 @@ func (mngr *IssueManager) sortPathGroup(pathKey string) {
 		})
 		mngr.IssueMap[pathKey] = group
 	}
+}
+
+func (mngr *IssueManager) Purge(pathKey string) error {
+	if _, ok := mngr.IssueMap[pathKey]; !ok {
+		return fmt.Errorf("File path key (%s) does not exist in issue map", pathKey)
+	}
+
+	size := len(mngr.IssueMap[pathKey])
+	if size == 0 {
+		return fmt.Errorf("Expected Issue map to have at least 1 entry")
+	}
+
+	srcFile, err := os.OpenFile(pathKey, os.O_RDWR, 0666)
+	if err != nil {
+		return nil
+	}
+
+	defer srcFile.Close()
+
+	srcCode, err := io.ReadAll(srcFile)
+	if err != nil {
+		return err
+	}
+
+	mngr.sortPathGroup(pathKey)
+	entries := mngr.IssueMap[pathKey]
+
+	buf := bytes.Buffer{}
+	lastIndex := 0
+
+	for _, entry := range entries {
+		comment := mngr.Issues[entry.Index].Comment
+		start, end := comment.NotationStartIndex, comment.NotationEndIndex
+		buf.Write(srcCode[lastIndex:start])
+
+		lastIndex = end + 1
+		if srcCode[end] == '\n' {
+			buf.WriteByte('\n')
+		}
+	}
+
+	buf.Write(srcCode[lastIndex:])
+	if err := srcFile.Truncate(0); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+
+	if _, err := srcFile.Write(buf.Bytes()); err != nil {
+		return err
+	}
+
+	if err := srcFile.Sync(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var (

@@ -35,6 +35,7 @@ package lexer
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -46,6 +47,10 @@ type U8 uint8
 const (
 	FLAG_PURGE U8 = 1 << iota
 	FLAG_SCAN
+)
+
+var (
+	errTargetTokenize = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
 )
 
 type Lexer struct {
@@ -61,10 +66,15 @@ type Lexer struct {
 	flags      U8
 }
 
+// AnalyzeToken - checks the current byte from [Lexer.peek()] and determines how we should process the proceeding bytes
+// String - tokens from the string method are not stored. It's needed to prevent lexing comment notation within a string
+// Comment - The bread and butter of our target lexers. Handles processing single & multi line comments
+// processLexeme - transforms the lexeme into a token and appends it to the draft tokens contained in the target lexer struct
 type LexicalTokenizer interface {
 	AnalyzeToken() error
 	String(delim byte) error
 	Comment() error
+	processLexeme(lexeme []byte, commentType TokenType) error
 }
 
 func NewLexer(annotation, src []byte, filePath string, flags U8) *Lexer {
@@ -104,7 +114,7 @@ func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
 	for base.Current < len(base.Src) {
 		base.resetStartIndex()
 		if err := target.AnalyzeToken(); err != nil {
-			return nil, err
+			return nil, base.reportError(err.Error())
 		} else {
 			base.next()
 		}
@@ -160,11 +170,110 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
 
-func (base *Lexer) matchAnnotation(token *Token) bool {
-	if base.re != nil {
-		return base.re.Match(token.Lexeme)
+func (base *Lexer) startCommentLex(tokenType TokenType) (Token, error) {
+	var token Token
+
+	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
+		return token, fmt.Errorf(
+			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
+			decodeTokenType(tokenType),
+		)
 	}
-	return bytes.Equal(token.Lexeme, base.Annotation)
+
+	lexeme := base.nextLexeme()
+	if len(lexeme) == 0 {
+		return token, errors.New(
+			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
+		)
+	}
+
+	token = NewToken(tokenType, lexeme, base)
+	return token, nil
+}
+
+func (base *Lexer) processAnnotation(lexeme []byte, isAnnotated bool) ([]Token, error) {
+	if isAnnotated || len(lexeme) == 0 {
+		return []Token{}, nil
+	}
+
+	tokens := make([]Token, 0, 5)
+	switch base.flags {
+	case FLAG_SCAN:
+		if base.matchAnnotationScan(lexeme) {
+			tokens = append(tokens, NewToken(TOKEN_COMMENT_ANNOTATION, lexeme, base))
+		}
+	case FLAG_PURGE:
+		if base.matchAnnotationPurge(lexeme) {
+			base.appendReportedTokens(lexeme, &tokens)
+		}
+	default:
+		return tokens, errors.New("failed to create annotation tokens. Want SCAN or PURGE flag")
+	}
+
+	return tokens, nil
+}
+
+func (base *Lexer) matchAnnotationScan(lexeme []byte) bool {
+	return bytes.Equal(lexeme, base.Annotation)
+}
+
+func (base *Lexer) matchAnnotationPurge(lexeme []byte) bool {
+	return base.re != nil && base.re.Match(lexeme)
+}
+
+// appendReportedTokens accepts a lexeme and token slice as input. It is responbile for building tokens that
+// correspond to a reported issue on a source code hosting platform. For example, if we have reported an
+// issue to github and the issue number is 432. The issue annotation would be written as @YOUR_ANNOTATION(#432)
+// after reporting it using issue-summoner in the source code file the [Annotation] was located in.
+// Later on, when we want to check the status of the reported issue, the program will need to locate every
+// every issue number, such as (432), and check the status of it. appendReportedTokens uses
+// the [re] regexp to match the lexeme against a pattern. Only if there is a match will appendReportedTokens be invoked.
+func (base *Lexer) appendReportedTokens(lexeme []byte, tokens *[]Token) {
+	index := bytes.Index(lexeme, []byte{OPEN_PARAN})
+	start, end := base.Start, (base.Start + index)
+	annotation := newPosToken(start, end-1, base.Line, lexeme[:index], TOKEN_COMMENT_ANNOTATION)
+	*tokens = append(*tokens, annotation)
+	base.processIssueNumberTokens(lexeme, tokens, index)
+}
+
+func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, index int) {
+	for ; index < len(lexeme); index++ {
+		start := base.Start + index
+		end := start
+
+		switch lexeme[index] {
+		case OPEN_PARAN:
+			base.appendToken(start, end, lexeme[index], TOKEN_OPEN_PARAN, tokens)
+		case HASH:
+			index = base.processHashToken(lexeme, tokens, index)
+		case CLOSE_PARAN:
+			base.appendToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
+		}
+	}
+}
+
+func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) int {
+	start := base.Start + index
+	end := start
+	base.appendToken(start, end, lexeme[index], TOKEN_HASH, tokens)
+	index++
+
+	start = base.Start + index
+	issueNumLexeme := make([]byte, 0, 5)
+	for index < len(lexeme) && lexeme[index] != CLOSE_PARAN {
+		issueNumLexeme = append(issueNumLexeme, lexeme[index])
+		index++
+	}
+
+	end = (base.Start + index) - 1
+	issueNum := newPosToken(start, end, base.Line, issueNumLexeme, TOKEN_ISSUE_NUMBER)
+	*tokens = append(*tokens, issueNum)
+	return index - 1
+}
+
+func (base *Lexer) appendToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
+	token := newPosToken(start, end, base.Line, []byte{char}, tokenType)
+	*tokens = append(*tokens, token)
 }
 
 func (base *Lexer) resetStartIndex() {
