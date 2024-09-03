@@ -58,17 +58,9 @@ func (c *Clexer) String(delim byte) error {
 func (c *Clexer) Comment() error {
 	switch c.Base.peekNext() {
 	case FORWARD_SLASH:
-		if err := c.initComment(TOKEN_SINGLE_LINE_COMMENT_START); err != nil {
-			return err
-		}
-
-		return c.tokenizeSLComment()
+		return c.singleLineComment()
 	case ASTERISK:
-		if err := c.initComment(TOKEN_MULTI_LINE_COMMENT_START); err != nil {
-			return err
-		}
-
-		return c.tokenizeMLComment()
+		return c.multiLineComment()
 	default:
 		return nil
 	}
@@ -85,10 +77,14 @@ func (c *Clexer) initComment(tokenType TokenType) error {
 	return nil
 }
 
-func (c *Clexer) tokenizeSLComment() error {
+func (c *Clexer) singleLineComment() error {
+	if err := c.initComment(TOKEN_SINGLE_LINE_COMMENT_START); err != nil {
+		return err
+	}
+
 	for !c.Base.pastEnd() {
 		lexeme := c.Base.nextLexeme()
-		if err := c.classifyToken(lexeme, TOKEN_SINGLE_LINE_COMMENT); err != nil {
+		if err := c.processLexeme(lexeme, TOKEN_SINGLE_LINE_COMMENT); err != nil {
 			return err
 		}
 
@@ -108,7 +104,11 @@ func (c *Clexer) tokenizeSLComment() error {
 	return nil
 }
 
-func (c *Clexer) tokenizeMLComment() error {
+func (c *Clexer) multiLineComment() error {
+	if err := c.initComment(TOKEN_MULTI_LINE_COMMENT_START); err != nil {
+		return err
+	}
+
 	for !c.Base.pastEnd() {
 		currentByte := c.Base.peek()
 
@@ -122,7 +122,7 @@ func (c *Clexer) tokenizeMLComment() error {
 		}
 
 		lexeme := c.Base.nextLexeme()
-		if err := c.classifyToken(lexeme, TOKEN_MULTI_LINE_COMMENT); err != nil {
+		if err := c.processLexeme(lexeme, TOKEN_MULTI_LINE_COMMENT); err != nil {
 			return err
 		}
 
@@ -137,73 +137,64 @@ func (c *Clexer) tokenizeMLComment() error {
 	return nil
 }
 
-func (c *Clexer) classifyToken(lexeme []byte, tokenType TokenType) error {
+func (c *Clexer) processLexeme(lexeme []byte, commentType TokenType) error {
 	if len(lexeme) == 0 {
 		return nil
 	}
 
-	token := NewToken(TOKEN_UNKNOWN, lexeme, c.Base)
-	return c.classifyCommentToken(&token, tokenType)
-}
-
-func (c *Clexer) classifyCommentToken(token *Token, target TokenType) error {
-	switch {
-	case containsBits(target, TOKEN_SINGLE_LINE_COMMENT):
-		c.classifySLComment(token)
-	case containsBits(target, TOKEN_MULTI_LINE_COMMENT):
-		// not concerned with separators... for now at least
-		if bytes.Equal(token.Lexeme, cMLCommentSeparator) {
-			return nil
-		} else {
-			c.classifyMLComment(token)
-		}
-	default:
-		return c.reportClassificationError(target)
+	tokens, err := c.Base.processAnnotation(lexeme, c.annotated)
+	if err != nil {
+		return err
 	}
 
-	c.DraftTokens = append(c.DraftTokens, *token)
+	if len(tokens) > 0 {
+		c.DraftTokens = append(c.DraftTokens, tokens...)
+		c.annotated = true
+		c.line = c.Base.Line
+		return nil
+	}
+
+	switch commentType {
+	case TOKEN_SINGLE_LINE_COMMENT:
+		c.createSingleLineCommentToken(lexeme)
+	case TOKEN_MULTI_LINE_COMMENT:
+		c.createMultiLineCommentToken(lexeme)
+	default:
+		return fmt.Errorf(errTargetTokenize, string(lexeme), decodeTokenType(commentType))
+	}
+
 	return nil
 }
 
-func (c *Clexer) classifySLComment(token *Token) {
-	if !c.isCommonTokenType(token) {
-		token.Type = TOKEN_COMMENT_TITLE
-	}
+func (c *Clexer) processSingleLineCommentToken(lexeme []byte) {
+	token := NewToken(TOKEN_COMMENT_TITLE, lexeme, c.Base)
+	c.DraftTokens = append(c.DraftTokens, token)
 }
 
-func (c *Clexer) classifyMLComment(token *Token) {
+func (c *Clexer) createSingleLineCommentToken(lexeme []byte) {
+	token := NewToken(TOKEN_COMMENT_TITLE, lexeme, c.Base)
+	c.DraftTokens = append(c.DraftTokens, token)
+}
+
+func (c *Clexer) createMultiLineCommentToken(lexeme []byte) {
+	if bytes.Equal(lexeme, cMLCommentSeparator) {
+		return
+	}
+
 	lineDelta := c.Base.Line - c.line
 	// lineDelta remains at 0 until an issue annotation is located.
 	// this is helpful because we know that subsequent lines will
 	// part of the comments description and thus allow us to classify
 	// it's type correctly
 
-	switch {
-	case c.isCommonTokenType(token):
-		break
-	case lineDelta == 0:
-		token.Type = TOKEN_COMMENT_TITLE
-	default:
-		token.Type = TOKEN_COMMENT_DESCRIPTION
+	var token Token
+	if lineDelta == 0 {
+		token = NewToken(TOKEN_COMMENT_TITLE, lexeme, c.Base)
+	} else {
+		token = NewToken(TOKEN_COMMENT_DESCRIPTION, lexeme, c.Base)
 	}
-}
 
-func (c *Clexer) isCommonTokenType(token *Token) bool {
-	switch {
-	case !c.annotated && c.Base.matchAnnotation(token):
-		c.line = c.Base.Line
-		token.Type = TOKEN_COMMENT_ANNOTATION
-		c.annotated = true
-		return true
-	case bytes.Equal(token.Lexeme, cSLCommentNotation):
-		token.Type = TOKEN_SINGLE_LINE_COMMENT_START
-		return true
-	case bytes.Equal(token.Lexeme, cMLCommentNotationStart):
-		token.Type = TOKEN_MULTI_LINE_COMMENT_START
-		return true
-	default:
-		return false
-	}
+	c.DraftTokens = append(c.DraftTokens, token)
 }
 
 func (c *Clexer) closeSLComment() {
@@ -236,14 +227,6 @@ func (c *Clexer) closeMLComment() {
 func (c *Clexer) promoteTokens() {
 	c.Base.resetStartIndex()
 	c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
-}
-
-func (c *Clexer) reportClassificationError(target TokenType) error {
-	msg := fmt.Sprintf(
-		"wanted TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT by got %s",
-		decodeTokenType(target),
-	)
-	return c.Base.reportError(msg)
 }
 
 func (c *Clexer) reset() {
