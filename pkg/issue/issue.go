@@ -234,7 +234,11 @@ func (mngr *IssueManager) Scan(path string) error {
 		return err
 	}
 
-	c := lexer.BuildComments(tokens)
+	c, err := lexer.BuildComments(tokens)
+	if err != nil {
+		return err
+	}
+
 	for _, comment := range c.Comments {
 		if err := mngr.appendIssue(&comment); err != nil {
 			return err
