@@ -156,9 +156,9 @@ func (c *Clexer) processLexeme(lexeme []byte, commentType TokenType) error {
 
 	switch commentType {
 	case TOKEN_SINGLE_LINE_COMMENT:
-		c.createSingleLineCommentToken(lexeme)
+		c.processSingleLineComment(lexeme)
 	case TOKEN_MULTI_LINE_COMMENT:
-		c.createMultiLineCommentToken(lexeme)
+		c.processMultiLineComment(lexeme)
 	default:
 		return fmt.Errorf(errTargetTokenize, string(lexeme), decodeTokenType(commentType))
 	}
@@ -166,26 +166,20 @@ func (c *Clexer) processLexeme(lexeme []byte, commentType TokenType) error {
 	return nil
 }
 
-func (c *Clexer) processSingleLineCommentToken(lexeme []byte) {
+func (c *Clexer) processSingleLineComment(lexeme []byte) {
 	token := NewToken(TOKEN_COMMENT_TITLE, lexeme, c.Base)
 	c.DraftTokens = append(c.DraftTokens, token)
 }
 
-func (c *Clexer) createSingleLineCommentToken(lexeme []byte) {
-	token := NewToken(TOKEN_COMMENT_TITLE, lexeme, c.Base)
-	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-func (c *Clexer) createMultiLineCommentToken(lexeme []byte) {
+func (c *Clexer) processMultiLineComment(lexeme []byte) {
 	if bytes.Equal(lexeme, cMLCommentSeparator) {
 		return
 	}
 
-	lineDelta := c.Base.Line - c.line
 	// lineDelta remains at 0 until an issue annotation is located.
 	// this is helpful because we know that subsequent lines will
-	// part of the comments description and thus allow us to classify
-	// it's type correctly
+	// part of the comments description
+	lineDelta := c.Base.Line - c.line
 
 	var token Token
 	if lineDelta == 0 {
