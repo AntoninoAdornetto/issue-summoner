@@ -14,7 +14,7 @@ import (
 var (
 	// currentIssueCount is the current number of issues contained in the entire issue-summoner project.
 	// The value will change as issues, contained in this project, are resolved and added
-	currentIssueCount = 3
+	currentIssueCount = 4
 	testAnnotation    = []byte("@TEST_ANNOTATION")
 )
 
