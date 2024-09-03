@@ -14,12 +14,6 @@ import (
 	"fmt"
 )
 
-var (
-	cSLCommentNotation      = []byte("//") // Single Line Comment notation for c-like languages
-	cMLCommentNotationStart = []byte("/*") // Multi Line Comment prefix notation
-	cMLCommentSeparator     = []byte("*")  // Multi Line Comment separator
-)
-
 type Clexer struct {
 	Base        *Lexer  // holds shared byte consumption methods
 	DraftTokens []Token // Unvalidated tokens
@@ -172,7 +166,8 @@ func (c *Clexer) processSingleLineComment(lexeme []byte) {
 }
 
 func (c *Clexer) processMultiLineComment(lexeme []byte) {
-	if bytes.Equal(lexeme, cMLCommentSeparator) {
+	// ignore multi line comment separator (*)
+	if bytes.Equal(lexeme, []byte{'*'}) {
 		return
 	}
 

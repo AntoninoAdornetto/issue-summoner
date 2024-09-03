@@ -114,7 +114,7 @@ func (base *Lexer) AnalyzeTokens(target LexicalTokenizer) ([]Token, error) {
 	for base.Current < len(base.Src) {
 		base.resetStartIndex()
 		if err := target.AnalyzeToken(); err != nil {
-			return nil, err
+			return nil, base.reportError(err.Error())
 		} else {
 			base.next()
 		}
@@ -236,7 +236,7 @@ func (base *Lexer) appendReportedTokens(lexeme []byte, tokens *[]Token) {
 	base.processIssueNumberTokens(lexeme, tokens, index)
 }
 
-func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, index int) error {
+func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, index int) {
 	for ; index < len(lexeme); index++ {
 		start := base.Start + index
 		end := start
@@ -250,8 +250,6 @@ func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, inde
 			base.appendToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
 		}
 	}
-
-	return nil
 }
 
 func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) int {
@@ -276,13 +274,6 @@ func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) i
 func (base *Lexer) appendToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
 	token := newPosToken(start, end, base.Line, []byte{char}, tokenType)
 	*tokens = append(*tokens, token)
-}
-
-func (base *Lexer) matchAnnotation(token *Token) bool {
-	if base.re != nil {
-		return base.re.Match(token.Lexeme)
-	}
-	return bytes.Equal(token.Lexeme, base.Annotation)
 }
 
 func (base *Lexer) resetStartIndex() {

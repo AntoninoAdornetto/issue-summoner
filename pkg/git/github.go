@@ -342,9 +342,7 @@ func (ghub *githubManager) GetStatus(issueNum, index int, status chan StatusResp
 
 	if resp.StatusCode != http.StatusOK {
 		errRes := onGetIssueError(data)
-		res.Err = errors.New(
-			fmt.Sprintf("%s with status code: %d", errRes.Message, resp.StatusCode),
-		)
+		res.Err = fmt.Errorf("%s with status code: %d", errRes.Message, resp.StatusCode)
 		status <- res
 		return
 	}
