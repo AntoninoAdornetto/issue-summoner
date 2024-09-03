@@ -98,6 +98,7 @@ type IssueMapEntry struct {
 func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 	manager := &IssueManager{
 		Issues:     make([]Issue, 0),
+		IssueMap:   make(map[string][]IssueMapEntry),
 		Annotation: annotation,
 		mode:       mode,
 		os:         runtime.GOOS,

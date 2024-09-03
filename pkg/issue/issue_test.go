@@ -31,7 +31,7 @@ func TestNewIssueManager(t *testing.T) {
 			expected: &issue.IssueManager{
 				Annotation: testAnnotation,
 				Issues:     []issue.Issue{},
-				IssueMap:   nil,
+				IssueMap:   make(map[string][]issue.IssueMapEntry),
 			},
 			err: false,
 		},
@@ -43,7 +43,7 @@ func TestNewIssueManager(t *testing.T) {
 				// to discover annotations that have an issue id, enclosed within parans, appended to the annotation.
 				Annotation: []byte("@TEST_ANNOTATION\\(#\\d+\\)"),
 				Issues:     []issue.Issue{},
-				IssueMap:   nil,
+				IssueMap:   make(map[string][]issue.IssueMapEntry),
 			},
 			err: false,
 		},
