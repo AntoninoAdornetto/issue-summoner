@@ -9,6 +9,7 @@ type Comment struct {
 	TokenStartIndex      int
 	TokenAnnotationIndex int
 	TokenEndIndex        int
+	IssueNumber          int   // will contain a non 0 value if the comment has been reported
 	LineNumber           int
 	AnnotationPos        []int
 }
@@ -54,6 +55,12 @@ func (m *CommentManager) iterCommentEnd(tokens []Token, index *int) {
 			comment.Description = string(bytes.Join(description, []byte(" ")))
 			m.Comments = append(m.Comments, comment)
 			return
+		case TOKEN_ISSUE_NUMBER:
+			issueNum, err := strconv.Atoi(string(token.Lexeme))
+			if err != nil {
+				return err
+			}
+			comment.IssueNumber = issueNum
 		}
 	}
 }
