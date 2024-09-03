@@ -108,7 +108,6 @@ func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 	case IssueModeScan:
 		break
 	case IssueModeReport:
-		manager.IssueMap = make(map[string][]IssueMapEntry)
 		tmpl, err := generateIssueTemplate()
 		if err != nil {
 			return nil, err
