@@ -170,27 +170,6 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
 
-func (base *Lexer) startCommentLex(tokenType TokenType) (Token, error) {
-	var token Token
-
-	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
-		return token, fmt.Errorf(
-			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
-			decodeTokenType(tokenType),
-		)
-	}
-
-	lexeme := base.nextLexeme()
-	if len(lexeme) == 0 {
-		return token, errors.New(
-			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
-		)
-	}
-
-	token = NewToken(tokenType, lexeme, base)
-	return token, nil
-}
-
 func (base *Lexer) processAnnotation(lexeme []byte, isAnnotated bool) ([]Token, error) {
 	if isAnnotated || len(lexeme) == 0 {
 		return []Token{}, nil
@@ -274,6 +253,36 @@ func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) i
 func (base *Lexer) appendToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
 	token := newPosToken(start, end, base.Line, []byte{char}, tokenType)
 	*tokens = append(*tokens, token)
+}
+
+func (base *Lexer) initTokenization(tokenType TokenType, draftTokens *[]Token) error {
+	startToken, err := base.createCommentToken(tokenType)
+	if err != nil {
+		return err
+	}
+	*draftTokens = append(*draftTokens, startToken)
+	return nil
+}
+
+func (base *Lexer) createCommentToken(tokenType TokenType) (Token, error) {
+	var token Token
+
+	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
+		return token, fmt.Errorf(
+			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
+			decodeTokenType(tokenType),
+		)
+	}
+
+	lexeme := base.nextLexeme()
+	if len(lexeme) == 0 {
+		return token, errors.New(
+			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
+		)
+	}
+
+	token = NewToken(tokenType, lexeme, base)
+	return token, nil
 }
 
 func (base *Lexer) resetStartIndex() {

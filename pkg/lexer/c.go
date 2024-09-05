@@ -60,22 +60,12 @@ func (c *Clexer) Comment() error {
 	}
 }
 
-func (c *Clexer) initComment(tokenType TokenType) error {
-	start, err := c.Base.startCommentLex(tokenType)
-	if err != nil {
-		return err
-	}
-
-	c.DraftTokens = append(c.DraftTokens, start)
-	c.Base.next()
-	return nil
-}
-
 func (c *Clexer) singleLineComment() error {
-	if err := c.initComment(TOKEN_SINGLE_LINE_COMMENT_START); err != nil {
+	if err := c.Base.initTokenization(TOKEN_SINGLE_LINE_COMMENT_START, &c.DraftTokens); err != nil {
 		return err
 	}
 
+	c.Base.next()
 	for !c.Base.pastEnd() {
 		lexeme := c.Base.nextLexeme()
 		if err := c.processLexeme(lexeme, TOKEN_SINGLE_LINE_COMMENT); err != nil {
@@ -99,10 +89,11 @@ func (c *Clexer) singleLineComment() error {
 }
 
 func (c *Clexer) multiLineComment() error {
-	if err := c.initComment(TOKEN_MULTI_LINE_COMMENT_START); err != nil {
+	if err := c.Base.initTokenization(TOKEN_MULTI_LINE_COMMENT_START, &c.DraftTokens); err != nil {
 		return err
 	}
 
+	c.Base.next()
 	for !c.Base.pastEnd() {
 		currentByte := c.Base.peek()
 
