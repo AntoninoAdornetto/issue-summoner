@@ -88,7 +88,7 @@ func (c *Clexer) singleLineComment() error {
 	}
 
 	if c.annotated {
-		c.promoteTokens()
+		c.Base.promoteTokens(c.DraftTokens)
 	}
 
 	c.reset()
@@ -126,7 +126,7 @@ func (c *Clexer) multiLineComment() error {
 	}
 
 	if c.annotated {
-		c.promoteTokens()
+		c.Base.promoteTokens(c.DraftTokens)
 	}
 
 	c.reset()
@@ -186,14 +186,6 @@ func (c *Clexer) processMultiLineComment(lexeme []byte) {
 	}
 
 	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-// promoteTokens is invoked when c.annotated is true. Meaning, an issue
-// annotation was discovered within the comment and it is safe to append all
-// current DraftTokens into the Base Lexers primary token slice.
-func (c *Clexer) promoteTokens() {
-	c.Base.resetStartIndex()
-	c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
 }
 
 func (c *Clexer) reset() {

@@ -289,6 +289,13 @@ func (base *Lexer) resetStartIndex() {
 	base.Start = base.Current
 }
 
+// promoteTokens is invoked only when an annotation is located during the tokenization
+// process of a single or multi line comment. It serves as a form of validation to keep
+// the [Tokens] slice free of tokens that do not contain issues.
+func (base *Lexer) promoteTokens(draftTokens []Token) {
+	base.Tokens = append(base.Tokens, draftTokens...)
+}
+
 func (base *Lexer) reportError(msg string) error {
 	return fmt.Errorf("[%s line %d]: Error: %s", base.FilePath, base.Line, msg)
 }
