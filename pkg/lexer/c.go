@@ -73,7 +73,14 @@ func (c *Clexer) singleLineComment() error {
 		}
 
 		if next := c.Base.peekNext(); next == NEWLINE || next == 0 {
-			c.closeSLComment()
+			next = c.Base.next()
+			if next == NEWLINE {
+				c.Base.Line++
+			}
+
+			c.Base.resetStartIndex()
+			closeToken := NewToken(TOKEN_SINGLE_LINE_COMMENT_END, []byte{next}, c.Base)
+			c.DraftTokens = append(c.DraftTokens, closeToken)
 			break
 		}
 
@@ -102,7 +109,11 @@ func (c *Clexer) multiLineComment() error {
 		}
 
 		if currentByte == ASTERISK && c.Base.peekNext() == FORWARD_SLASH {
-			c.closeMLComment()
+			c.Base.resetStartIndex()
+			c.Base.next()
+			endLexeme := []byte{ASTERISK, FORWARD_SLASH}
+			token := NewToken(TOKEN_MULTI_LINE_COMMENT_END, endLexeme, c.Base)
+			c.DraftTokens = append(c.DraftTokens, token)
 			break
 		}
 
@@ -174,30 +185,6 @@ func (c *Clexer) processMultiLineComment(lexeme []byte) {
 		token = NewToken(TOKEN_COMMENT_DESCRIPTION, lexeme, c.Base)
 	}
 
-	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-func (c *Clexer) closeSLComment() {
-	next := c.Base.next()
-	c.Base.resetStartIndex()
-	lexeme := make([]byte, 1)
-
-	if next == NEWLINE {
-		c.Base.Line++
-		lexeme[0] = NEWLINE
-	} else {
-		lexeme[0] = 0
-	}
-
-	token := NewToken(TOKEN_SINGLE_LINE_COMMENT_END, lexeme, c.Base)
-	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-func (c *Clexer) closeMLComment() {
-	c.Base.resetStartIndex()
-	c.Base.next()
-	lexeme := []byte{ASTERISK, FORWARD_SLASH}
-	token := NewToken(TOKEN_MULTI_LINE_COMMENT_END, lexeme, c.Base)
 	c.DraftTokens = append(c.DraftTokens, token)
 }
 
