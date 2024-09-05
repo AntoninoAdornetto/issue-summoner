@@ -222,11 +222,11 @@ func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, inde
 
 		switch lexeme[index] {
 		case OPEN_PARAN:
-			base.appendToken(start, end, lexeme[index], TOKEN_OPEN_PARAN, tokens)
+			base.appendPosToken(start, end, lexeme[index], TOKEN_OPEN_PARAN, tokens)
 		case HASH:
 			index = base.processHashToken(lexeme, tokens, index)
 		case CLOSE_PARAN:
-			base.appendToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
+			base.appendPosToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
 		}
 	}
 }
@@ -234,7 +234,7 @@ func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, inde
 func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) int {
 	start := base.Start + index
 	end := start
-	base.appendToken(start, end, lexeme[index], TOKEN_HASH, tokens)
+	base.appendPosToken(start, end, lexeme[index], TOKEN_HASH, tokens)
 	index++
 
 	start = base.Start + index
@@ -250,13 +250,13 @@ func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) i
 	return index - 1
 }
 
-func (base *Lexer) appendToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
+func (base *Lexer) appendPosToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
 	token := newPosToken(start, end, base.Line, []byte{char}, tokenType)
 	*tokens = append(*tokens, token)
 }
 
 func (base *Lexer) initTokenization(tokenType TokenType, draftTokens *[]Token) error {
-	startToken, err := base.createCommentToken(tokenType)
+	startToken, err := base.openCommentToken(tokenType)
 	if err != nil {
 		return err
 	}
@@ -264,7 +264,7 @@ func (base *Lexer) initTokenization(tokenType TokenType, draftTokens *[]Token) e
 	return nil
 }
 
-func (base *Lexer) createCommentToken(tokenType TokenType) (Token, error) {
+func (base *Lexer) openCommentToken(tokenType TokenType) (Token, error) {
 	var token Token
 
 	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
