@@ -60,22 +60,12 @@ func (c *Clexer) Comment() error {
 	}
 }
 
-func (c *Clexer) initComment(tokenType TokenType) error {
-	start, err := c.Base.startCommentLex(tokenType)
-	if err != nil {
-		return err
-	}
-
-	c.DraftTokens = append(c.DraftTokens, start)
-	c.Base.next()
-	return nil
-}
-
 func (c *Clexer) singleLineComment() error {
-	if err := c.initComment(TOKEN_SINGLE_LINE_COMMENT_START); err != nil {
+	if err := c.Base.initTokenization(TOKEN_SINGLE_LINE_COMMENT_START, &c.DraftTokens); err != nil {
 		return err
 	}
 
+	c.Base.next()
 	for !c.Base.pastEnd() {
 		lexeme := c.Base.nextLexeme()
 		if err := c.processLexeme(lexeme, TOKEN_SINGLE_LINE_COMMENT); err != nil {
@@ -83,7 +73,14 @@ func (c *Clexer) singleLineComment() error {
 		}
 
 		if next := c.Base.peekNext(); next == NEWLINE || next == 0 {
-			c.closeSLComment()
+			next = c.Base.next()
+			if next == NEWLINE {
+				c.Base.Line++
+			}
+
+			c.Base.resetStartIndex()
+			closeToken := NewToken(TOKEN_SINGLE_LINE_COMMENT_END, []byte{next}, c.Base)
+			c.DraftTokens = append(c.DraftTokens, closeToken)
 			break
 		}
 
@@ -91,7 +88,7 @@ func (c *Clexer) singleLineComment() error {
 	}
 
 	if c.annotated {
-		c.promoteTokens()
+		c.Base.promoteTokens(c.DraftTokens)
 	}
 
 	c.reset()
@@ -99,10 +96,11 @@ func (c *Clexer) singleLineComment() error {
 }
 
 func (c *Clexer) multiLineComment() error {
-	if err := c.initComment(TOKEN_MULTI_LINE_COMMENT_START); err != nil {
+	if err := c.Base.initTokenization(TOKEN_MULTI_LINE_COMMENT_START, &c.DraftTokens); err != nil {
 		return err
 	}
 
+	c.Base.next()
 	for !c.Base.pastEnd() {
 		currentByte := c.Base.peek()
 
@@ -111,7 +109,11 @@ func (c *Clexer) multiLineComment() error {
 		}
 
 		if currentByte == ASTERISK && c.Base.peekNext() == FORWARD_SLASH {
-			c.closeMLComment()
+			c.Base.resetStartIndex()
+			c.Base.next()
+			endLexeme := []byte{ASTERISK, FORWARD_SLASH}
+			token := NewToken(TOKEN_MULTI_LINE_COMMENT_END, endLexeme, c.Base)
+			c.DraftTokens = append(c.DraftTokens, token)
 			break
 		}
 
@@ -124,7 +126,7 @@ func (c *Clexer) multiLineComment() error {
 	}
 
 	if c.annotated {
-		c.promoteTokens()
+		c.Base.promoteTokens(c.DraftTokens)
 	}
 
 	c.reset()
@@ -184,38 +186,6 @@ func (c *Clexer) processMultiLineComment(lexeme []byte) {
 	}
 
 	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-func (c *Clexer) closeSLComment() {
-	next := c.Base.next()
-	c.Base.resetStartIndex()
-	lexeme := make([]byte, 1)
-
-	if next == NEWLINE {
-		c.Base.Line++
-		lexeme[0] = NEWLINE
-	} else {
-		lexeme[0] = 0
-	}
-
-	token := NewToken(TOKEN_SINGLE_LINE_COMMENT_END, lexeme, c.Base)
-	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-func (c *Clexer) closeMLComment() {
-	c.Base.resetStartIndex()
-	c.Base.next()
-	lexeme := []byte{ASTERISK, FORWARD_SLASH}
-	token := NewToken(TOKEN_MULTI_LINE_COMMENT_END, lexeme, c.Base)
-	c.DraftTokens = append(c.DraftTokens, token)
-}
-
-// promoteTokens is invoked when c.annotated is true. Meaning, an issue
-// annotation was discovered within the comment and it is safe to append all
-// current DraftTokens into the Base Lexers primary token slice.
-func (c *Clexer) promoteTokens() {
-	c.Base.resetStartIndex()
-	c.Base.Tokens = append(c.Base.Tokens, c.DraftTokens...)
 }
 
 func (c *Clexer) reset() {

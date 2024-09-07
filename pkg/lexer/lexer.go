@@ -50,7 +50,9 @@ const (
 )
 
 var (
-	errTargetTokenize = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
+	errTargetTokenize   = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
+	errTargetTokenizeSl = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT, got %s"
+	errStringClose      = "failed to locate closing string delim (%c): %s"
 )
 
 type Lexer struct {
@@ -104,9 +106,10 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 	switch {
 	case derivedFromC(ext):
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
+	case isShell(ext) || base.FileName == "Makefile":
+		return &ShellLexer{Base: base, DraftTokens: tokens}, nil
 	default:
-		// @TODO return a list of supported programming languages when an error is returned from invoking NewTargetLexer
-		return nil, fmt.Errorf("unsupported file extension (%s)", ext)
+		return nil, fmt.Errorf("failed to create target lexer with file extension of: %s", ext)
 	}
 }
 
@@ -170,27 +173,6 @@ func (base *Lexer) breakLexemeIter() bool {
 	return base.Current+1 > len(base.Src)-1 || unicode.IsSpace(rune(base.peekNext()))
 }
 
-func (base *Lexer) startCommentLex(tokenType TokenType) (Token, error) {
-	var token Token
-
-	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
-		return token, fmt.Errorf(
-			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
-			decodeTokenType(tokenType),
-		)
-	}
-
-	lexeme := base.nextLexeme()
-	if len(lexeme) == 0 {
-		return token, errors.New(
-			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
-		)
-	}
-
-	token = NewToken(tokenType, lexeme, base)
-	return token, nil
-}
-
 func (base *Lexer) processAnnotation(lexeme []byte, isAnnotated bool) ([]Token, error) {
 	if isAnnotated || len(lexeme) == 0 {
 		return []Token{}, nil
@@ -243,11 +225,11 @@ func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, inde
 
 		switch lexeme[index] {
 		case OPEN_PARAN:
-			base.appendToken(start, end, lexeme[index], TOKEN_OPEN_PARAN, tokens)
+			base.appendPosToken(start, end, lexeme[index], TOKEN_OPEN_PARAN, tokens)
 		case HASH:
 			index = base.processHashToken(lexeme, tokens, index)
 		case CLOSE_PARAN:
-			base.appendToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
+			base.appendPosToken(start, end, lexeme[index], TOKEN_CLOSE_PARAN, tokens)
 		}
 	}
 }
@@ -255,7 +237,7 @@ func (base *Lexer) processIssueNumberTokens(lexeme []byte, tokens *[]Token, inde
 func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) int {
 	start := base.Start + index
 	end := start
-	base.appendToken(start, end, lexeme[index], TOKEN_HASH, tokens)
+	base.appendPosToken(start, end, lexeme[index], TOKEN_HASH, tokens)
 	index++
 
 	start = base.Start + index
@@ -271,13 +253,50 @@ func (base *Lexer) processHashToken(lexeme []byte, tokens *[]Token, index int) i
 	return index - 1
 }
 
-func (base *Lexer) appendToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
+func (base *Lexer) appendPosToken(start, end int, char byte, tokenType TokenType, tokens *[]Token) {
 	token := newPosToken(start, end, base.Line, []byte{char}, tokenType)
 	*tokens = append(*tokens, token)
 }
 
+func (base *Lexer) initTokenization(tokenType TokenType, draftTokens *[]Token) error {
+	startToken, err := base.openCommentToken(tokenType)
+	if err != nil {
+		return err
+	}
+	*draftTokens = append(*draftTokens, startToken)
+	return nil
+}
+
+func (base *Lexer) openCommentToken(tokenType TokenType) (Token, error) {
+	var token Token
+
+	if !containsBits(tokenType, TOKEN_SINGLE_LINE_COMMENT_START^TOKEN_MULTI_LINE_COMMENT_START) {
+		return token, fmt.Errorf(
+			"failed to start comment analysis with token type of %s. Want single or multi line comment start token",
+			decodeTokenType(tokenType),
+		)
+	}
+
+	lexeme := base.nextLexeme()
+	if len(lexeme) == 0 {
+		return token, errors.New(
+			"failed to start comment analysis. Want comment start notation lexeme to have a len greater than 0",
+		)
+	}
+
+	token = NewToken(tokenType, lexeme, base)
+	return token, nil
+}
+
 func (base *Lexer) resetStartIndex() {
 	base.Start = base.Current
+}
+
+// promoteTokens is invoked only when an annotation is located during the tokenization
+// process of a single or multi line comment. It serves as a form of validation to keep
+// the [Tokens] slice free of tokens that do not contain issues.
+func (base *Lexer) promoteTokens(draftTokens []Token) {
+	base.Tokens = append(base.Tokens, draftTokens...)
 }
 
 func (base *Lexer) reportError(msg string) error {
