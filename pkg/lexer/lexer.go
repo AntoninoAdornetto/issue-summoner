@@ -106,6 +106,8 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 	switch {
 	case derivedFromC(ext):
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
+	case isShell(ext) || base.FileName == "Makefile":
+		return &ShellLexer{Base: base, DraftTokens: tokens}, nil
 	default:
 		return nil, fmt.Errorf("failed to create target lexer with file extension of: %s", ext)
 	}
