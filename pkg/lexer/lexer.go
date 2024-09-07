@@ -50,7 +50,9 @@ const (
 )
 
 var (
-	errTargetTokenize = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
+	errTargetTokenize   = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT or TOKEN_MULTI_LINE_COMMENT, got %s"
+	errTargetTokenizeSl = "failed to tokenize (%s). Want token type of TOKEN_SINGLE_LINE_COMMENT, got %s"
+	errStringClose      = "failed to locate closing string delim (%c): %s"
 )
 
 type Lexer struct {
@@ -105,8 +107,7 @@ func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
 	case derivedFromC(ext):
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
 	default:
-		// @TODO return a list of supported programming languages when an error is returned from invoking NewTargetLexer
-		return nil, fmt.Errorf("unsupported file extension (%s)", ext)
+		return nil, fmt.Errorf("failed to create target lexer with file extension of: %s", ext)
 	}
 }
 
