@@ -68,6 +68,7 @@ type IssueManager struct {
 	Annotation  []byte
 	currentBase string
 	currentPath string
+	root        string
 	mode        IssueMode
 	os          string
 	template    *template.Template
@@ -125,10 +126,15 @@ func NewIssueManager(annotation []byte, mode IssueMode) (*IssueManager, error) {
 func (mngr *IssueManager) appendIssue(comment *lexer.Comment) error {
 	id := fmt.Sprintf("%s-%d:%d", mngr.currentPath, comment.TokenStartIndex, comment.TokenEndIndex)
 
+	rel, err := filepath.Rel(mngr.root, mngr.currentPath)
+	if err != nil {
+		return err
+	}
+
 	issue := Issue{
 		Description: comment.Description,
 		FileName:    mngr.currentBase,
-		FilePath:    mngr.currentPath,
+		FilePath:    rel,
 		ID:          id,
 		LineNumber:  comment.LineNumber,
 		OS:          mngr.os,
@@ -158,6 +164,7 @@ func (mngr *IssueManager) Walk(root string) error {
 		return err
 	}
 
+	mngr.root = root
 	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err

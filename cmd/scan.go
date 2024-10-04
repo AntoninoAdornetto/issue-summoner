@@ -143,6 +143,11 @@ print details about the issues, such as the description and location of the issu
 				)
 
 				fmt.Println(
+					ui.AccentTextStyle.Render("Path: "),
+					ui.PrimaryTextStyle.Render(iss.FilePath),
+				)
+
+				fmt.Println(
 					ui.AccentTextStyle.Render("Title: "),
 					ui.PrimaryTextStyle.Render(iss.Title),
 				)
