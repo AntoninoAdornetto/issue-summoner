@@ -14,16 +14,18 @@ var (
 
 ### Location
 
-***File name:*** {{ .FileName }} ***Line number:*** {{ .LineNumber }}
+- ***File name:*** ` + "`" + `{{ .FileName }}` + "`" + `
+- ***Path:*** ` + "`" + `{{ .FilePath }}` + "`" + `
+- ***Line number:*** ` + "`" + `{{ .LineNumber }}` + "`" + `
 
 ### Environment
 
-{{ .OS }}
+- ` + "`" + `{{ .OS }}` + "`" + `
 
 ### Generated with :heart:
 
-created by [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)
-	`
+- created by [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)
+`
 )
 
 func generateIssueTemplate() (*template.Template, error) {
