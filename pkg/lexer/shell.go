@@ -25,8 +25,13 @@ func (sh *ShellLexer) AnalyzeToken() error {
 
 func (sh *ShellLexer) String(delim byte) error {
 	for !sh.Base.pastEnd() {
-		if sh.Base.next() == NEWLINE {
+		next := sh.Base.next()
+		if next == NEWLINE {
 			sh.Base.Line++
+		}
+
+		if next == delim {
+			break
 		}
 
 		if sh.Base.peekNext() == delim {
