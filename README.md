@@ -92,18 +92,21 @@ go install github.com/AntoninoAdornetto/issue-summoner@latest
 # Needed if you want to report issues. Not needed if you want to scan a code base for issue annotations
 issue-summoner authorize
 
-# scan code base for issues annotated with "@TODO:"
-issue-summoner scan -a @TODO:
+# scan code base for issues annotated with default "@TODO" annotation
+issue-summoner scan
 
-# scan code base for issues annotated with "@TODO:" and print details of each issue
-issue-summoner scan -a @TODO: -v
+# scan code base for a custom annotation "@FIXME:"
+issue-summoner scan -a @FIXME:
 
-# scan for issues annotated with "@TODO:" and allows you to select issues to report to a source code hosting platform
-issue-summoner report -a @TODO: 
+# scan code base for issues annotated with "@FIXME:" and print details of each issue
+issue-summoner scan -a @FIXME: -v
 
-# check the status of all issues, annotated with "@TODO:", that were reported by issue summoner and remove corresponding 
+# scan for issues annotated with "@FIXME:" and allows you to select issues to report to a source code hosting platform
+issue-summoner report -a @FIXME: 
+
+# check the status of all issues, annotated with "@FIXME:", that were reported by issue summoner and remove corresponding 
 # comments if the status is resolved/closed
-issue-summoner scan -m purge -a @TODO:
+issue-summoner scan -m purge -a @FIXME:
 ```
 
 ## Commands Summary
