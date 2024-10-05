@@ -171,7 +171,7 @@ func (mngr *IssueManager) Walk(root string) error {
 		}
 
 		if d.IsDir() {
-			return validateDir(d.Name(), path, ignorer)
+			return validateDir(d.Name(), path, root, ignorer)
 		}
 
 		if strings.HasPrefix(d.Name(), ".") {
@@ -193,7 +193,11 @@ func (mngr *IssueManager) Walk(root string) error {
 	})
 }
 
-func validateDir(dirName, path string, ignorer *ignore.Ignorer) error {
+func validateDir(dirName, path, root string, ignorer *ignore.Ignorer) error {
+	if strings.Compare(root, path) == 0 {
+		return nil
+	}
+
 	if strings.HasPrefix(dirName, ".") {
 		return filepath.SkipDir
 	}
