@@ -44,11 +44,17 @@
       </ul>
     </li>
     <li><a href="#quick-usage">Usage</a></li>
+    <li>
+      <a href="#commands-summary">Command Summaries</a>
+      <ul>
+        <li><a href="#authorize-command">Authorize</a></li>
+        <li><a href="#scan-command">Scan</a></li>
+        <li><a href="#report-command">Report</a></li>
+      </ul>
+    </li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
