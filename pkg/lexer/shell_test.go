@@ -66,9 +66,9 @@ func TestAnalyzeTokenScan(t *testing.T) {
 				{
 					Type:   lexer.TOKEN_EOF,
 					Lexeme: []byte{0},
-					Line:   23,
-					Start:  303,
-					End:    303,
+					Line:   24,
+					Start:  311,
+					End:    311,
 				},
 			},
 		},
