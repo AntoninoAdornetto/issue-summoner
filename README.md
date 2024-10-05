@@ -40,11 +40,10 @@
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li><a href="#quick-usage">Usage</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -63,32 +62,6 @@ After reporting an issue, you can use Issue Summoner to check the status of the 
 
 This tool helps keep track of tasks, and concerns to ensure that nothing is overlooked or forgotten in your development process.
 
-## Features
-
-#### Custom Annotations
-
-Define your own annotations to flag issues, tasks, or concerns directly within your code comments. Whether it's a single or multi line comment, you can include a custom annotation followed by a description. This makes it easy to keep track of issues directly in the context where they occur.
-
-#### Summary
-
-Analyze your codebase to detect and compile a summary of outstanding issues. This provides an overview, including the number of issues, where each issue resides (file name, line number, etc...) and a brief description.
-
-#### Language Agnostic
-
-Designed to work across different programming languages, each with its own syntax for comments.
-
-#### Source Code Hosting Platform Adpaters
-
-Integrate with code hosting platforms like GitHub, GitLab, and more. This allows you to publish detected issues from your codebase to your preferred platform.
-
-#### Self Cleansing
-
-Keep your codebase clean by checking the status of issues, that were reported with the tool. Once an issue has been marked as resolved on the hosting platform, the corresponding comment is automatically removed.
-
-#### Reduced Context Switching
-
-Minimize disruptions in your workflow by writing a quick note about the issue, or concern directly in the code. At any point during development, you can invoke the `scan`, or `report` command to review the newly added issues or publish them to a source code hosting platform, without needing to leave your development environment.
-
 ### Built With
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/AntoninoAdornetto/go-issue-summoner)](https://golang.org/)
@@ -100,8 +73,6 @@ Minimize disruptions in your workflow by writing a quick note about the issue, o
 
 ## Getting Started
 
-To get started, follow these steps:
-
 ### Installation
 
 Install using go. (**_Ensure you have [Go](https://golang.org/doc/install) on your system first._**)
@@ -110,25 +81,32 @@ Install using go. (**_Ensure you have [Go](https://golang.org/doc/install) on yo
 go install github.com/AntoninoAdornetto/issue-summoner@latest
 ```
 
-<!-- Install using archive file (**_Helpful if you don't want to install go on your system_**) -->
-<!---->
-<!-- ### Unix -->
-<!---->
-<!-- Visit releases page and download the latest version and correct architecture for your system -->
-<!---->
-<!-- ```sh -->
-<!-- # replace X with the correct architecture -->
-<!-- tar -xzf go-issue-summoner_X.tar.gz -->
-<!---->
-<!-- # If you want to make the program executable from anywhere, move to your PATH -->
-<!-- sudo mv go-issue-summoner /usr/local/bin -->
-<!-- ``` -->
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
 
-## Usage
+## Quick Usage
+
+```sh
+# authorize for github. 
+# Needed if you want to report issues. Not needed if you want to scan a code base for issue annotations
+issue-summoner authorize
+
+# scan code base for issues annotated with "@TODO:"
+issue-summoner scan -a @TODO:
+
+# scan code base for issues annotated with "@TODO:" and print details of each issue
+issue-summoner scan -a @TODO: -v
+
+# scan for issues annotated with "@TODO:" and allows you to select issues to report to a source code hosting platform
+issue-summoner report -a @TODO: 
+
+# check the status of all issues, annotated with "@TODO:", that were reported by issue summoner and remove corresponding 
+# comments if the status is resolved/closed
+issue-summoner scan -m purge -a @TODO:
+```
+
+## Commands Summary
 
 ### Authorize Command
 
@@ -136,7 +114,7 @@ In order to publish issues to a source code hosting platform, we must first auth
 
 - `-s`, `--sch` The source code hosting platform to authorize. (default is GitHub).
 
-#### Authorize for GitHub
+#### Authorize GitHub
 
 The [device-flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) is utilized to create an access token. The only thing you really need to know here is that when you run the command, you will be given a `user code` in the terminal and your default browser will open to https://github.com/login/device You will then be prompted to enter the user code while the program polls the authorization service for an access token. Once the steps are complete, the program will have all scopes it needs to report issues for you. **Note**: this does grant the program access to both public and private repositories.
 
@@ -166,6 +144,9 @@ issue-summoner scan --annotation @FIXME
 
  # will return a count and detailed summary of each issue that is annotated with @TODO
 issue-summoner scan --verbose
+
+# short flag examples. Will scan for "@TODO:" annotations and print details about each annotation
+issue-summoner scan -a @TODO: -v
 ```
 
 ##### Purge Mode
@@ -176,7 +157,7 @@ In purge mode, the command analyzes your codebase to locate reported issues mark
 - Generate a summary of each reported issue that includes a description, location (file name, line number) of the issue.
 - Checks the status of all reported issues and will remove the comment entirely if it's been marked as resolved on the hosting platform it was reported to.
 
-**note**: issue summoner obviously cannot keep track of issues that were reported outside of using the `report` command.
+**note**: issue summoner cannot keep track of issues that were reported outside of using the `report` command.
 
 ##### Purge Mode usage
 
@@ -257,6 +238,8 @@ int sum(int a, int b) {
 
 ### Report Command
 
+![Screenshot__937](https://github.com/user-attachments/assets/b5301301-40dd-4208-8002-118e694669c3)
+
 Report is similar to the scan command but with added functionality. It allows you to report selected comments to a source code hosting platform. After all selections are uploaded, the issue id is written to the same location that the comment token is located. Meaning, your todo annotation will be transformed so that issue summoner can be used to remove the entire comment once the issue has been marked as resolved.
 
 - `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
@@ -281,8 +264,6 @@ You are then presented with a list of discovered issues that you can select to r
 
 `y` - confirm and report the selected issues
 
-![Screenshot_05-Jun_01-18-10_15255](https://github.com/AntoninoAdornetto/issue-summoner/assets/70185688/68769010-031f-4b73-84c0-1d2b59072490)
-
 After the new issue is published, you will notice that your todo annotation is changed to `@ISSUE(issue_id)`, here is an example of how it may look:
 
 #### Before Report command
@@ -298,7 +279,7 @@ int main() {
 
 ```c
 int main() {
-  // @ISSUE(1999): do something usefull
+  // @TODO(#1999): do something usefull
   return 0;
 }
 ```
@@ -313,9 +294,10 @@ int main() {
 
 - [ ] `Lexical Analysis`: Develop the core engine that scans source code for comment tokens.
 
-  - [x] `C Lexer`: scan & build comment tokens for c like languages
-  - [ ] `Python Lexer`: scan & build comment tokens for python
-  - [ ] `Markdown Lexer`: scan & build comment tokens for python
+  - [x] `C Lexer`: scan, report, and purge comment tokens for c like languages
+  - [x] `Shell Lexer`: scan, report, and purge comment tokens for bash/shell
+  - [ ] `Python Lexer`: scan, report, and purge comment tokens for python
+  - [ ] `Markdown Lexer`: scan, report, and purge comment tokens for markdown
         <br></br>
 
 - [ ] `Authenticate User to submit issues`: Verify and Authenticate a user to allow the program to submit issues on the users behalf.
@@ -325,11 +307,11 @@ int main() {
   - [ ] BitBucket
         <br></br>
 
-- [ ] `Source Code Hosting Adpaters`: Implement a basic adapter for issue reporting functionality.
+- [ ] `Source Code Hosting Drivers`: Implement drivers for issue reporting functionality.
 
-  - [x] GitHub Adapter
-  - [ ] GitLab Adapater
-  - [ ] BitBucket Adapater
+  - [x] GitHub Driver
+  - [ ] GitLab Driver
+  - [ ] BitBucket Driver
 
 See the [open issues](https://github.com/AntoninoAdornetto/go-issue-summoner/issues) for a full list of proposed features (and known issues).
 
