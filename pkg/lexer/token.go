@@ -32,6 +32,7 @@ const (
 	TAB            byte = '\t'
 	OPEN_PARAN     byte = '('
 	CLOSE_PARAN    byte = ')'
+	EXCLAMATION    byte = '!'
 	WHITESPACE     byte = ' '
 )
 

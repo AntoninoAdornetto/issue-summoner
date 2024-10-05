@@ -19,5 +19,6 @@ greet() {
 }
 
 greet "User"
+echo ""
 
 exit 0

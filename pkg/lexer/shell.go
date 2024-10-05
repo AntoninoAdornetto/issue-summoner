@@ -25,8 +25,13 @@ func (sh *ShellLexer) AnalyzeToken() error {
 
 func (sh *ShellLexer) String(delim byte) error {
 	for !sh.Base.pastEnd() {
-		if sh.Base.next() == NEWLINE {
+		next := sh.Base.next()
+		if next == NEWLINE {
 			sh.Base.Line++
+		}
+
+		if next == delim {
+			break
 		}
 
 		if sh.Base.peekNext() == delim {
@@ -43,6 +48,11 @@ func (sh *ShellLexer) String(delim byte) error {
 }
 
 func (sh *ShellLexer) Comment() error {
+	// skip shebang for shell files
+	if sh.Base.peekNext() == EXCLAMATION && isShell(sh.Base.ext) {
+		return nil
+	}
+
 	if err := sh.Base.initTokenization(TOKEN_SINGLE_LINE_COMMENT_START, &sh.DraftTokens); err != nil {
 		return err
 	}
@@ -112,7 +122,8 @@ func isShell(ext string) bool {
 	case ".bash",
 		".sh",
 		".zsh",
-		".ps1":
+		".ps1",
+		".fish":
 		return true
 	default:
 		return false

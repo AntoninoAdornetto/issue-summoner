@@ -65,6 +65,7 @@ type Lexer struct {
 	Line       int            // Line number
 	Annotation []byte         // issue annotation to search for within comments
 	re         *regexp.Regexp // primary use is for purging comments
+	ext        string         // file extension
 	flags      U8
 }
 
@@ -80,16 +81,18 @@ type LexicalTokenizer interface {
 }
 
 func NewLexer(annotation, src []byte, filePath string, flags U8) *Lexer {
+	fileName := filepath.Base(filePath)
 	lex := &Lexer{
 		Src:        src,
 		FilePath:   filePath,
-		FileName:   filepath.Base(filePath),
+		FileName:   fileName,
 		Tokens:     make([]Token, 0, 100),
 		Start:      0,
 		Current:    0,
 		Line:       1,
 		Annotation: annotation,
 		flags:      flags,
+		ext:        filepath.Ext(fileName),
 	}
 
 	if flags&FLAG_PURGE != 0 {
@@ -100,16 +103,15 @@ func NewLexer(annotation, src []byte, filePath string, flags U8) *Lexer {
 }
 
 func NewTargetLexer(base *Lexer) (LexicalTokenizer, error) {
-	ext := filepath.Ext(base.FileName)
 	tokens := make([]Token, 0, 100)
 
 	switch {
-	case derivedFromC(ext):
+	case derivedFromC(base.ext):
 		return &Clexer{Base: base, DraftTokens: tokens}, nil
-	case isShell(ext) || base.FileName == "Makefile":
+	case isShell(base.ext) || base.FileName == "Makefile":
 		return &ShellLexer{Base: base, DraftTokens: tokens}, nil
 	default:
-		return nil, fmt.Errorf("failed to create target lexer with file extension of: %s", ext)
+		return nil, fmt.Errorf("failed to create target lexer with file extension of: %s", base.ext)
 	}
 }
 
