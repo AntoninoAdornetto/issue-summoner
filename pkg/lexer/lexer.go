@@ -69,9 +69,10 @@ type Lexer struct {
 	flags      U8
 }
 
-// AnalyzeToken - checks the current byte from [Lexer.peek()] and determines how we should process the proceeding bytes
-// String - tokens from the string method are not stored. It's needed to prevent lexing comment notation within a string
-// Comment - The bread and butter of our target lexers. Handles processing single & multi line comments
+// AnalyzeToken - peeks at [Current] byte and determines how we should process proceeding bytes (i.e., Comment, String, nil, etc...)
+// String - consumes open string delimiter to closing string delimiter. Used to prevent the creation of comment tokens when the
+// the string may contain single or multi line comment notation.
+// Comment - Processes single and multi line comment tokens and stores them in [Tokens] only if they are annotated with [Annotation]
 // processLexeme - transforms the lexeme into a token and appends it to the draft tokens contained in the target lexer struct
 type LexicalTokenizer interface {
 	AnalyzeToken() error

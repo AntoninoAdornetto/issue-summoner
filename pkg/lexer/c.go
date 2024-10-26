@@ -1,7 +1,8 @@
 /*
 Copyright © 2024 AntoninoAdornetto
 
-The c.go file is responsible for satisfying the `LexicalTokenizer` interface in the `lexer.go` file.
+The c.go file is responsible for implementing the methods of the [LexicalTokenizer] interface for
+languages that have derived their comment syntax from C.
 The methods are a strict set of rules for handling single & multi line comments for c-like languages.
 The result, if an issue annotation is located, is a slice of tokens that will provide information about
 the action item contained in the comment. If a comment does not contain an issue annotation, all subsequent
