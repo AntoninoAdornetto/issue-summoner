@@ -17,7 +17,7 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 		annotation []byte
 	}{
 		{
-			name: "should not create any tokens when consuming a non-comment notation byte",
+			name: "should not create any tokens when consuming bytes that do not contain comments",
 			// int is not "//" or "/*" - denotes the opening notation of a comment in c-like languages
 			srcCode:    []byte("int"),
 			fileName:   "main.c",
@@ -26,7 +26,7 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 			flags:      lexer.FLAG_SCAN,
 		},
 		{
-			name:       "should not create any tokens when consuming single line comment bytes that do not have an issue annotation",
+			name:       "should not create any tokens when consuming bytes for a single line comment that is not annotated",
 			srcCode:    []byte("// regular single line comment with no issue annotation in c"),
 			fileName:   "main.c",
 			expected:   []lexer.Token{},
@@ -34,7 +34,7 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 			flags:      lexer.FLAG_SCAN,
 		},
 		{
-			name:       "should create the comment start, comment annotation and comment end tokens",
+			name:       "should create the comment start, comment annotation, and comment end tokens for an annotated SL comment",
 			srcCode:    []byte("// @TEST_ANNOTATION\n"),
 			fileName:   "main.c",
 			flags:      lexer.FLAG_SCAN,
@@ -64,7 +64,7 @@ func TestAnalyzeTokenSingleLineComments(t *testing.T) {
 			},
 		},
 		{
-			name: "should create the comment start, comment annotation and comment end tokens when more than 2 forward slashes are used to denote a SL comment",
+			name: "should create the comment start, comment annotation, and comment end tokens for an annotated SL comment with multiple leading comment notation bytes",
 			// the key take away here is that the opening SL comment notation has 4 forward slashes
 			srcCode:    []byte("//// @TEST_ANNOTATION\n"),
 			fileName:   "main.c",
