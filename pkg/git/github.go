@@ -21,11 +21,57 @@ const (
 )
 
 type githubManager struct {
-	conf        common.Config
-	repo        *Repository
-	device      requestDeviceResponse
-	reportReq   *http.Request
-	getIssueReq *http.Request
+	conf      common.Config
+	repo      *Repository
+	device    requestDeviceResponse
+	headers   http.Header
+	reportURL string
+}
+
+func newGithubManager(conf common.Config, repo *Repository) (*githubManager, error) {
+	ghub := &githubManager{conf: conf, repo: repo}
+
+	if err := ghub.prepareHeaders(); err != nil {
+		return nil, err
+	}
+
+	if err := ghub.constructReportURL(); err != nil {
+		return nil, err
+	}
+
+	return ghub, nil
+}
+
+func (ghub *githubManager) prepareHeaders() error {
+	var accessToken string
+	if mp, ok := ghub.conf[Github]; ok {
+		accessToken = mp.Auth.AccessToken
+	} else {
+		return errors.New("failed to retrieve access token. You may need to run <issue-summoner authorize>")
+	}
+
+	header := make(http.Header)
+	header.Add("Accept", "application/vnd.github+json")
+	header.Add("Authorization", "Bearer "+accessToken)
+	header.Add("X-GitHub-Api-Version", githubApiVersion)
+	ghub.headers = header
+	return nil
+}
+
+func (ghub *githubManager) constructReportURL() error {
+	paths := []string{"repos", ghub.repo.UserName, ghub.repo.RepoName, "issues"}
+	u, err := common.ConstructURL(githubApiBaseUrl, nil, paths...)
+	if err != nil {
+		return err
+	}
+
+	parsedURL, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+
+	ghub.reportURL = parsedURL.String()
+	return nil
 }
 
 // Authorize will request device infromation details from githubs device flow,
@@ -228,13 +274,6 @@ var (
 
 func (ghub *githubManager) Report(issue ReportRequest, res chan ReportResponse) {
 	result := ReportResponse{Index: issue.Index}
-	if ghub.reportReq == nil {
-		if err := ghub.prepareReportRequest(); err != nil {
-			result.Err = fmt.Errorf(errReport, issue.Title, err)
-			res <- result
-			return
-		}
-	}
 
 	data, err := json.Marshal(issue)
 	if err != nil {
@@ -243,8 +282,8 @@ func (ghub *githubManager) Report(issue ReportRequest, res chan ReportResponse) 
 		return
 	}
 
-	body, url := bytes.NewBuffer(data), ghub.reportReq.URL.String()
-	resp, data, err := common.Request("POST", url, body, ghub.reportReq.Header)
+	body := bytes.NewBuffer(data)
+	resp, data, err := common.Request("POST", ghub.reportURL, body, ghub.headers)
 	if err != nil {
 		result.Err = fmt.Errorf(errReport, issue.Title, err)
 		res <- result
@@ -266,30 +305,6 @@ func (ghub *githubManager) Report(issue ReportRequest, res chan ReportResponse) 
 
 	result.ID = createIssueRes.IssueNumber
 	res <- result
-}
-
-func (ghub *githubManager) prepareReportRequest() error {
-	accessToken := ghub.conf[Github].Auth.AccessToken
-	ghub.reportReq = &http.Request{
-		Header: make(http.Header),
-	}
-
-	paths := []string{"repos", ghub.repo.UserName, ghub.repo.RepoName, "issues"}
-	u, err := common.ConstructURL(githubApiBaseUrl, nil, paths...)
-	if err != nil {
-		return err
-	}
-
-	parsedURL, err := url.Parse(u)
-	if err != nil {
-		return err
-	}
-
-	ghub.reportReq.Header.Add("Accept", "application/vnd.github+json")
-	ghub.reportReq.Header.Add("Authorization", "Bearer "+accessToken)
-	ghub.reportReq.Header.Add("X-GitHub-Api-Version", githubApiVersion)
-	ghub.reportReq.URL = parsedURL
-	return nil
 }
 
 type createIssueErrorResponse struct {
@@ -324,16 +339,14 @@ type githubIssueStatusResponse struct {
 
 func (ghub *githubManager) GetStatus(issueNum, index int, status chan StatusResponse) {
 	res := StatusResponse{Index: index, Resolved: false}
-	if ghub.getIssueReq == nil {
-		if err := ghub.prepareGetStatusRequest(issueNum); err != nil {
-			res.Err = err
-			status <- res
-			return
-		}
+	url, err := ghub.constructStatusURL(issueNum)
+	if err != nil {
+		res.Err = err
+		status <- res
+		return
 	}
 
-	url, headers := ghub.getIssueReq.URL.String(), ghub.getIssueReq.Header
-	resp, data, err := common.Request("GET", url, nil, headers)
+	resp, data, err := common.Request("GET", url, nil, ghub.headers)
 	if err != nil {
 		res.Err = err
 		status <- res
@@ -360,30 +373,20 @@ func (ghub *githubManager) GetStatus(issueNum, index int, status chan StatusResp
 	status <- res
 }
 
-func (ghub *githubManager) prepareGetStatusRequest(issueNum int) error {
-	accessToken := ghub.conf[Github].Auth.AccessToken
-
-	ghub.getIssueReq = &http.Request{
-		Header: make(http.Header),
-	}
-
+func (ghub *githubManager) constructStatusURL(issueNum int) (string, error) {
 	path := fmt.Sprintf("/repos/%s/%s/issues/%d", ghub.repo.UserName, ghub.repo.RepoName, issueNum)
 
 	u, err := common.ConstructURL(githubApiBaseUrl, nil, path)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	parsedURL, err := url.Parse(u)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	ghub.getIssueReq.Header.Add("Accept", "application/vnd.github+json")
-	ghub.getIssueReq.Header.Add("Authorization", "Bearer "+accessToken)
-	ghub.getIssueReq.Header.Add("X-GitHub-Api-Version", githubApiVersion)
-	ghub.getIssueReq.URL = parsedURL
-	return nil
+	return parsedURL.String(), nil
 }
 
 type getIssueErr struct {
