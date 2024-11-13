@@ -52,7 +52,7 @@ func NewGitManager(sch sourceCodeHost, repo *Repository) (GitManager, error) {
 	case Gitlab:
 		return nil, errors.New("gitlab is not supported yet. Check back soon")
 	case Github:
-		return &githubManager{conf: conf, repo: repo}, nil
+		return newGithubManager(conf, repo)
 	default:
 		return nil, fmt.Errorf(
 			"unsupported source code host. expected one of the following: %s %s %s but got %s",
