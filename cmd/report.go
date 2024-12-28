@@ -200,7 +200,7 @@ platform.`,
 func init() {
 	rootCmd.AddCommand(reportCmd)
 	reportCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)
-	reportCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
+	reportCmd.Flags().StringP(flag_annotation, shortflag_annotation, default_annotation, flag_desc_annotation)
 	reportCmd.Flags().StringP(flag_sch, shortflag_sch, git.Github, flag_desc_sch)
 	reportCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 }

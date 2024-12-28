@@ -181,7 +181,7 @@ print details about the issues, such as the description and location of the issu
 
 func init() {
 	rootCmd.AddCommand(scanCmd)
-	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, "@TODO", flag_desc_annotation)
+	scanCmd.Flags().StringP(flag_annotation, shortflag_annotation, default_annotation, flag_desc_annotation)
 	scanCmd.Flags().BoolP(flag_debug, shortflag_debug, false, flag_desc_debug)
 	scanCmd.Flags().StringP(flag_mode, shortflag_mode, issue.IssueModeScan, flag_desc_mode)
 	scanCmd.Flags().StringP(flag_path, shortflag_path, "", flag_desc_path)

@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	default_annotation   = "@TODO:"
 	err_unauthorized     = "Please run `issue-summoner authorize` and complete the authorization process. This will allow us to submit issues on your behalf."
 	flag_annotation      = "annotation"
 	flag_debug           = "debug"
