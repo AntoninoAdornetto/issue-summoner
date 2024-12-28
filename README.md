@@ -98,7 +98,7 @@ go install github.com/AntoninoAdornetto/issue-summoner@latest
 # Needed if you want to report issues. Not needed if you want to scan a code base for issue annotations
 issue-summoner authorize
 
-# scan code base for issues annotated with default "@TODO" annotation
+# scan code base for issues annotated with default "@TODO:" annotation
 issue-summoner scan
 
 # scan code base for a custom annotation "@FIXME:"
@@ -145,17 +145,17 @@ In scan mode, the command analyzes your codebase to locate un-reported issues ma
 ##### Scan Mode usage
 
 ```sh
-# will return a count of all issues that are annotated with @TODO
+# will return a count of all issues that are annotated with "@TODO:"
 issue-summoner scan
 
 # will return a count of all issues that are annotated with @FIXME
 issue-summoner scan --annotation @FIXME
 
- # will return a count and detailed summary of each issue that is annotated with @TODO
+ # will return a count and detailed summary of each issue that is annotated with "@TODO:"
 issue-summoner scan --verbose
 
-# short flag examples. Will scan for "@TODO:" annotations and print details about each annotation
-issue-summoner scan -a @TODO: -v
+# short flag examples. Will scan for "@FIXME" annotations and print details about each annotation
+issue-summoner scan -a @FIXME -v
 ```
 
 ##### Purge Mode
@@ -171,20 +171,20 @@ In purge mode, the command analyzes your codebase to locate reported issues mark
 ##### Purge Mode usage
 
 ```sh
-# checks the status of each reported issue and returns the count of all open issues that are annotated with @TODO
+# checks the status of each reported issue and returns the count of all open issues that are annotated with "@TODO:"
 issue-summoner scan --mode purge
 
 # checks the status of each reported issue and return the count of all open issues that are annotated with @FIXME
 issue-summoner scan --mode purge --annotation @FIXME
 
 # shorthand flags
-# checks the status of each reported issue and returns a detailed summary of each open issue that is annotated with @TODO
+# checks the status of each reported issue and returns a detailed summary of each open issue that is annotated with "@TODO:"
 issue-summoner scan -m purge -v
 ```
 
 ##### Flags
 
-- `-a`, `--annotation` **string**: The annotation to search for. Example: @TODO, @FIXME, etc. (Default is "@TODO").
+- `-a`, `--annotation` **string**: The annotation to search for. Example: @TODO, @FIXME, etc. (Default is "@TODO:").
 
 - `-d`, `--debug` Log the stack trace when errors occur
 
@@ -215,12 +215,12 @@ issues that have not been reported yet:
 
 ```c
 int main() {
-  // @TODO do something useful in the main function
+  // @TODO: do something useful in the main function
   return 0;
 }
 
 /*
-* @TODO do something useful with the sum function
+* @TODO: do something useful with the sum function
 * for the love of god
 */
 int sum(int a, int b) {
@@ -232,12 +232,12 @@ issues that have been reported, using the `report` command:
 
 ```c
 int main() {
-  // @TODO(#504) do something useful in the main function
+  // @TODO:(#504) do something useful in the main function
   return 0;
 }
 
 /*
-* @TODO(#505) do something useful with the sum function
+* @TODO:(#505) do something useful with the sum function
 * for the love of god
 */
 int sum(int a, int b) {
@@ -251,7 +251,7 @@ int sum(int a, int b) {
 
 Report is similar to the scan command but with added functionality. It allows you to report selected comments to a source code hosting platform. After all selections are uploaded, the issue id is written to the same location that the comment token is located. Meaning, your todo annotation will be transformed so that issue summoner can be used to remove the entire comment once the issue has been marked as resolved.
 
-- `-a`, `--annotation` The annotation the program will search for. (default annotation is @TODO)
+- `-a`, `--annotation` The annotation the program will search for. (default annotation is "@TODO:")
 
 - `-p`, `--path` The path to your local git repository (defaults to your current working directory if a path is not provided)
 
@@ -279,7 +279,7 @@ After the new issue is published, you will notice that your todo annotation is c
 
 ```c
 int main() {
-  // @TODO do something usefull
+  // @TODO: do something usefull
   return 0;
 }
 ```
@@ -288,7 +288,7 @@ int main() {
 
 ```c
 int main() {
-  // @TODO(#1999): do something usefull
+  // @TODO:(#1999): do something usefull
   return 0;
 }
 ```

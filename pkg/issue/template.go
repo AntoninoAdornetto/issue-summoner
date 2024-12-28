@@ -24,7 +24,7 @@ var (
 
 ### Generated with :heart:
 
-- created by [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)
+***This issue was automatically generated and reported using [issue-summoner](https://github.com/AntoninoAdornetto/issue-summoner)***
 `
 )
 
