@@ -4,3 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+derive_more = { version = "1.0.0-beta", features = ["from"] }
+clap = { version = "4.5.27", features = ["derive"] }
